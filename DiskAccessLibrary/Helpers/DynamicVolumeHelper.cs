@@ -45,38 +45,6 @@ namespace DiskAccessLibrary
             return result;
         }
 
-        /// <summary>
-        /// Return volumes that are stored (or partially stored) on the given disk
-        /// </summary>
-        [Obsolete]
-        public static List<DynamicVolume> GetDynamicDiskVolumes(DynamicDisk disk)
-        {
-            VolumeManagerDatabase database = VolumeManagerDatabase.ReadFromDisk(disk);
-            List<DynamicDisk> disks = new List<DynamicDisk>();
-            disks.Add(disk);
-
-            List<DynamicVolume> result = new List<DynamicVolume>();
-            if (database != null)
-            {
-                foreach (VolumeRecord volumeRecord in database.VolumeRecords)
-                {
-                    DynamicVolume volume = GetVolume(disks, database, volumeRecord);
-                    if (volume != null)
-                    {
-                        foreach (DynamicDiskExtent extent in volume.Extents)
-                        {
-                            if (extent.DiskGuid == disk.DiskGuid)
-                            {
-                                result.Add(volume);
-                                break;
-                            }
-                        }
-                    }
-                }
-            }
-            return result;
-        }
-
         public static DynamicVolume GetVolume(List<DynamicDisk> disks, VolumeManagerDatabase database, VolumeRecord volumeRecord)
         {
             List<ComponentRecord> componentRecords = database.FindComponentsByVolumeID(volumeRecord.VolumeId);

@@ -14,50 +14,6 @@ namespace DiskAccessLibrary
 {
     public partial class VolumeHelper
     {
-        /// <summary>
-        /// Will return or generate a persistent volume unique ID
-        /// </summary>
-        [Obsolete]
-        public static Guid? GetVolumeUniqueID(Volume volume)
-        {
-            if (volume is MBRPartition)
-            {
-                MBRPartition partition = (MBRPartition)volume;
-                MasterBootRecord mbr = MasterBootRecord.ReadFromDisk(partition.Disk);
-                byte[] firstSectorBytes = BigEndianConverter.GetBytes(partition.FirstSector);
-                return new Guid((int)mbr.DiskSignature, 0, 0, firstSectorBytes);
-            }
-            else if (volume is GPTPartition)
-            {
-                return ((GPTPartition)volume).VolumeGuid;
-            }
-            else if (volume is DynamicVolume)
-            {
-                return ((DynamicVolume)volume).VolumeGuid;
-            }
-            else
-            {
-                return null;
-            }
-        }
-
-        [Obsolete]
-        public static Volume GetVolumeByGuid(List<Disk> disks, Guid volumeGuid)
-        {
-            List<Volume> volumes = GetVolumes(disks);
-            foreach (Volume volume in volumes)
-            {
-                Guid? guid = GetVolumeUniqueID(volume);
-                if (guid == volumeGuid)
-                {
-                    {
-                        return volume;
-                    }
-                }
-            }
-            return null;
-        }
-
         public static List<Volume> GetVolumes(List<Disk> disks)
         {
             List<Volume> result = new List<Volume>();
@@ -88,54 +44,6 @@ namespace DiskAccessLibrary
             }
 
             return result;
-        }
-
-        /// <summary>
-        /// Return volumes that are stored (or partially stored) on the given disk
-        /// </summary>
-        [Obsolete]
-        public static List<Volume> GetDiskVolumes(Disk disk)
-        {
-            List<Volume> result = new List<Volume>();
-
-            DynamicDisk dynamicDisk = DynamicDisk.ReadFromDisk(disk);
-
-            if (dynamicDisk == null)
-            {
-                // basic disk
-                List<Partition> partitions = BasicDiskHelper.GetPartitions(disk);
-                foreach (MBRPartition partition in partitions)
-                {
-                    result.Add(partition);
-                }
-            }
-            else
-            {
-                // dynamic disk
-                List<DynamicVolume> dynamicVolumes = DynamicVolumeHelper.GetDynamicDiskVolumes(dynamicDisk);
-                foreach (DynamicVolume volume in dynamicVolumes)
-                {
-                    result.Add(volume);
-                }
-            }
-            return result;
-        }
-
-        [Obsolete]
-        public static bool ContainsVolumeGuid(List<Volume> volumes, Guid volumeGuid)
-        {
-            foreach (Volume volume in volumes)
-            {
-                if (volume is DynamicVolume)
-                {
-                    DynamicVolume dynamicVolume = (DynamicVolume)volume;
-                    if (dynamicVolume.VolumeGuid == volumeGuid)
-                    {
-                        return true;
-                    }
-                }
-            }
-            return false;
         }
     }
 }
