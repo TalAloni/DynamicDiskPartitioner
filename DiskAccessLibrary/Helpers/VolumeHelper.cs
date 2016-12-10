@@ -45,5 +45,75 @@ namespace DiskAccessLibrary
 
             return result;
         }
+
+        public static string GetVolumeTypeString(Volume volume)
+        {
+            if (volume is SimpleVolume)
+            {
+                return "Simple";
+            }
+            else if (volume is SpannedVolume)
+            {
+                return "Spanned";
+            }
+            else if (volume is StripedVolume)
+            {
+                return "Striped";
+            }
+            else if (volume is MirroredVolume)
+            {
+                return "Mirrored";
+            }
+            else if (volume is Raid5Volume)
+            {
+                return "RAID-5";
+            }
+            else if (volume is Partition)
+            {
+                return "Partition";
+            }
+            else
+            {
+                return "Unknown";
+            }
+        }
+
+        public static string GetVolumeStatusString(Volume volume)
+        {
+            if (volume is DynamicVolume)
+            {
+                if (volume is MirroredVolume)
+                {
+                    if (!((MirroredVolume)volume).IsHealthy && ((MirroredVolume)volume).IsOperational)
+                    {
+                        return "Failed Rd";
+                    }
+                }
+                else if (volume is Raid5Volume)
+                {
+                    if (!((Raid5Volume)volume).IsHealthy && ((Raid5Volume)volume).IsOperational)
+                    {
+                        return "Failed Rd";
+                    }
+                }
+
+                if (((DynamicVolume)volume).IsHealthy)
+                {
+                    return "Healthy";
+                }
+                else
+                {
+                    return "Failed";
+                }
+            }
+            else if (volume is Partition)
+            {
+                return "Healthy";
+            }
+            else
+            {
+                return String.Empty;
+            }
+        }
     }
 }
