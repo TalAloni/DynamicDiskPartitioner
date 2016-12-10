@@ -28,6 +28,11 @@ namespace Raid5Manager
 
                             if (args[2].ToLower() == "write")
                             {
+                                if (m_selectedVolume is DynamicVolume && !((DynamicVolume)m_selectedVolume).IsOperational)
+                                {
+                                    Console.WriteLine("Error: non-operational volume!");
+                                    return;
+                                }
                                 KeyValuePairList<string, string> parameters = ParseParameters(args, 3);
 
                                 Guid? windowsVolumeGuid = WindowsVolumeHelper.GetWindowsVolumeGuid(m_selectedVolume);
@@ -40,7 +45,7 @@ namespace Raid5Manager
                                 // Windows Vista / 7: We MUST request a volume handle with just FileAccess.Read when locking a volume on a basic disk.
                                 // Windows Vista / 7: We MUST request a volume handle with FileAccess.ReadWrite when locking dynamic volumes.
                                 FileAccess fileAccess = (m_selectedVolume is DynamicVolume) ? FileAccess.ReadWrite : FileAccess.Read;
-                                bool success = WindowsVolumeManager.ExclusiveLockIfMounted(windowsVolumeGuid.Value, fileAccess);
+                                bool success = WindowsVolumeManager.ExclusiveLock(windowsVolumeGuid.Value, fileAccess);
                                 if (!success)
                                 {
                                     Console.WriteLine("Unable to lock volume.");

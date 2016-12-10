@@ -286,6 +286,11 @@ namespace Raid5Manager
                 Guid? windowsVolumeGuid = WindowsVolumeHelper.GetWindowsVolumeGuid(m_selectedVolume);
                 if (windowsVolumeGuid.HasValue)
                 {
+                    if (m_selectedVolume is DynamicVolume && !((DynamicVolume)m_selectedVolume).IsOperational)
+                    {
+                        Console.WriteLine("Error: non-operational volume!");
+                        return;
+                    }
                     // Lock volume
                     Console.WriteLine("Locking volume");
                     // Windows XP / 2003: It's acceptable to request a volume handle with just FileAccess.Read when locking a volume.
@@ -293,7 +298,7 @@ namespace Raid5Manager
                     // http://stackoverflow.com/questions/8694713/createfile-direct-write-operation-to-raw-disk-access-is-denied-vista-win7
                     // Windows Vista / 7: We MUST request a volume handle with FileAccess.ReadWrite when locking dynamic volumes.
                     FileAccess fileAccess = (m_selectedVolume is DynamicVolume) ? FileAccess.ReadWrite : FileAccess.Read;
-                    bool success = WindowsVolumeManager.ExclusiveLockIfMounted(windowsVolumeGuid.Value, fileAccess);
+                    bool success = WindowsVolumeManager.ExclusiveLock(windowsVolumeGuid.Value, fileAccess);
                     if (!success)
                     {
                         Console.WriteLine("Unable to lock the volume!");
