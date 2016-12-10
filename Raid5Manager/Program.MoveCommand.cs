@@ -84,7 +84,7 @@ namespace Raid5Manager
 
             if (isSameDisk)
             {
-                long offset = ParseStandardSizeString(parameters.ValueOf("offset"));
+                long offset = FormattingHelper.ParseStandardSizeString(parameters.ValueOf("offset"));
                 DynamicDisk dynamicDisk = DynamicDisk.ReadFromDisk(sourceExtent.Disk);
                 if (!DynamicDiskExtentHelper.IsMoveLocationValid(dynamicDisk, sourceExtent, offset))
                 {
@@ -197,7 +197,7 @@ namespace Raid5Manager
             {
                 Thread.Sleep(1000);
                 Console.SetCursorPosition(0, Console.CursorTop);
-                Console.Write("Committed: {0} / {1}", GetStandardSizeString(bytesCopied), GetStandardSizeString(bytesTotal));
+                Console.Write("Committed: {0} / {1}", FormattingHelper.GetStandardSizeString(bytesCopied), FormattingHelper.GetStandardSizeString(bytesTotal));
             }
 
             Console.WriteLine();

@@ -77,7 +77,7 @@ namespace Raid5Manager
             long availablelNumberOfExtentBytes = ExtendHelper.GetMaximumSizeToExtendVolume(m_selectedVolume);
             if (parameters.ContainsKey("querymax"))
             {
-                Console.Write("Max extend: {0}", GetStandardSizeString(availablelNumberOfExtentBytes));
+                Console.Write("Max extend: {0}", FormattingHelper.GetStandardSizeString(availablelNumberOfExtentBytes));
                 if (m_selectedVolume is Raid5Volume || m_selectedVolume is StripedVolume)
                 {
                     Console.Write(" (Per column)");
@@ -251,7 +251,7 @@ namespace Raid5Manager
             long availableNumberOfBytes = ((IExtendableFileSystem)fileSystem).GetMaximumSizeToExtend();
             if (parameters.ContainsKey("querymax"))
             {
-                Console.WriteLine("Max extend: {0}", GetStandardSizeString(availableNumberOfBytes));
+                Console.WriteLine("Max extend: {0}", FormattingHelper.GetStandardSizeString(availableNumberOfBytes));
             }
             else
             {

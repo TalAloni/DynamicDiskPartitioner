@@ -80,7 +80,7 @@ namespace Raid5Manager
                 }
 
                 diskID = diskID.PadLeft(6);
-                Console.WriteLine("Disk {0}  {1}  {2}  {3}  {4}  {5}", diskNumber, GetStandardSizeString(disk.Size), isGPTStr, isDynStr, diskID, diskGroupName);
+                Console.WriteLine("Disk {0}  {1}  {2}  {3}  {4}  {5}", diskNumber, FormattingHelper.GetStandardSizeString(disk.Size), isGPTStr, isDynStr, diskID, diskGroupName);
             }
         }
 
@@ -107,7 +107,7 @@ namespace Raid5Manager
                     }
                     partitionType = partitionType.PadRight(16);
                     string startSector = partition.FirstSector.ToString().PadLeft(12);
-                    Console.WriteLine("Partition {0}  {1}  {2}  {3}  {4}", index.ToString(), partitionType, GetStandardSizeString(size), GetStandardSizeString(offset), startSector);
+                    Console.WriteLine("Partition {0}  {1}  {2}  {3}  {4}", index.ToString(), partitionType, FormattingHelper.GetStandardSizeString(size), FormattingHelper.GetStandardSizeString(offset), startSector);
                 }
             }
             else
@@ -125,8 +125,8 @@ namespace Raid5Manager
             for (int index = 0; index < volumes.Count; index++)
             {
                 Volume volume = volumes[index];
-                string type = String.Empty;
-                string status = String.Empty;
+                string type = VolumeHelper.GetVolumeTypeString(volume);
+                string status = VolumeHelper.GetVolumeStatusString(volume);
 
                 ulong volumeID = 0;
                 string name = String.Empty;
@@ -135,49 +135,6 @@ namespace Raid5Manager
                 {
                     volumeID = ((DynamicVolume)volume).VolumeID;
                     name = ((DynamicVolume)volume).Name;
-                    
-                    if (((DynamicVolume)volume).IsHealthy)
-                    {
-                        status = "Healthy";
-                    }
-                    else
-                    {
-                        status = "Failed";
-                    }
-                }
-
-                if (volume is SimpleVolume)
-                {
-                    type = "Simple";
-                }
-                else if (volume is SpannedVolume)
-                {
-                    type = "Spanned";
-                }
-                else if (volume is StripedVolume)
-                {
-                    type = "Striped";
-                }
-                else if (volume is MirroredVolume)
-                {
-                    type = "Mirrored";
-                    if (!((MirroredVolume)volume).IsHealthy && ((MirroredVolume)volume).IsOperational)
-                    {
-                        status = "Failed Rd";
-                    }
-                }
-                else if (volume is Raid5Volume)
-                {
-                    type = "RAID-5";
-                    if (!((Raid5Volume)volume).IsHealthy && ((Raid5Volume)volume).IsOperational)
-                    {
-                        status = "Failed Rd";
-                    }
-                }
-                else if (volume is Partition)
-                {
-                    type = "Partition";
-                    status = "Healthy";
                 }
 
                 string volumeNumber = index.ToString().PadLeft(2);
@@ -192,7 +149,7 @@ namespace Raid5Manager
                 }
                 volumeIDString = volumeIDString.PadRight(4);
 
-                Console.WriteLine("Volume {0}  {1}  {2}  {3}  {4}  {5}", volumeNumber, volumeIDString, name, type, GetStandardSizeString(volume.Size), status);
+                Console.WriteLine("Volume {0}  {1}  {2}  {3}  {4}  {5}", volumeNumber, volumeIDString, name, type, FormattingHelper.GetStandardSizeString(volume.Size), status);
             }
         }
 
@@ -232,7 +189,7 @@ namespace Raid5Manager
                     if (extent.Disk != null)
                     {
                         long offset = extent.FirstSector * extent.Disk.BytesPerSector;
-                        offsetString = GetStandardSizeString(offset);
+                        offsetString = FormattingHelper.GetStandardSizeString(offset);
                     }
                     else
                     {
@@ -258,65 +215,12 @@ namespace Raid5Manager
 
                     string startSector = extent.FirstSector.ToString().PadLeft(12);
 
-                    Console.WriteLine("Extent {0}  {1}  {2}  {3}  {4}  {5}  {6}", extentNumber, extentIDString, name, GetStandardSizeString(size), diskIDString, offsetString, startSector);
+                    Console.WriteLine("Extent {0}  {1}  {2}  {3}  {4}  {5}  {6}", extentNumber, extentIDString, name, FormattingHelper.GetStandardSizeString(size), diskIDString, offsetString, startSector);
                 }
             }
             else
             {
                 Console.WriteLine("No volume has been selected");
-            }
-        }
-
-        public static long ParseStandardSizeString(string value)
-        {
-            if (value.ToUpper().EndsWith("TB"))
-            {
-                return (long)1024 * 1024 * 1024 * 1024 * Conversion.ToInt64(value.Substring(0, value.Length - 2), -1);
-            }
-            else if (value.ToUpper().EndsWith("GB"))
-            {
-                return 1024 * 1024 * 1024 * Conversion.ToInt64(value.Substring(0, value.Length - 2), -1);
-            }
-            else if (value.ToUpper().EndsWith("MB"))
-            {
-                return 1024 * 1024 * Conversion.ToInt64(value.Substring(0, value.Length - 2), -1);
-            }
-            else if (value.ToUpper().EndsWith("KB"))
-            {
-                return 1024 * Conversion.ToInt64(value.Substring(0, value.Length - 2), -1);
-            }
-            if (value.ToUpper().EndsWith("B"))
-            {
-                return Conversion.ToInt64(value.Substring(0, value.Length - 1), -1);
-            }
-            else
-            {
-                return Conversion.ToInt64(value, -1);
-            }
-        }
-
-        public static string GetStandardSizeString(long value)
-        {
-            string[] suffixes = { " B", "KB", "MB", "GB", "TB", "PB", "EB" };
-            int suffixIndex = 0;
-            while (value > 9999)
-            {
-                value = value / 1024;
-                suffixIndex++;
-            }
-
-            if (suffixIndex < suffixes.Length)
-            {
-                string FourCharacterValue = value.ToString();
-                while (FourCharacterValue.Length < 4)
-                {
-                    FourCharacterValue = " " + FourCharacterValue;
-                }
-                return String.Format("{0} {1}", FourCharacterValue, suffixes[suffixIndex]);
-            }
-            else
-            {
-                return "Too Big";
             }
         }
     }

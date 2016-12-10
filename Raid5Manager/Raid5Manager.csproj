@@ -35,6 +35,7 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Helpers\AddDiskToArrayHelper.cs" />
+    <Compile Include="Helpers\FormattingHelper.cs" />
     <Compile Include="Helpers\MoveExtentHelper.cs" />
     <Compile Include="Helpers\MoveHelper.cs" />
     <Compile Include="Helpers\RAID5ManagerBootRecord\AddDiskOperationBootRecord.cs" />

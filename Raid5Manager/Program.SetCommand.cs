@@ -31,7 +31,7 @@ namespace Raid5Manager
 
             if (parameters.ContainsKey("buffer"))
             {
-                int bufferSize = (int)ParseStandardSizeString(parameters.ValueOf("buffer"));
+                int bufferSize = (int)FormattingHelper.ParseStandardSizeString(parameters.ValueOf("buffer"));
                 if (bufferSize > 0)
                 {
                     int transferSizeLBA = bufferSize / 512; // we assume 512 bytes per sector
