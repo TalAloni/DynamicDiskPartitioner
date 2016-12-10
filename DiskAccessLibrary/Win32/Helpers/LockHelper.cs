@@ -40,6 +40,41 @@ namespace DiskAccessLibrary.LogicalDiskManager
             return LockStatus.Success;
         }
 
+        /// <summary>
+        /// Will lock physical basic disk and all volumes on it.
+        /// If the operation is not completed successfully, all locks will be releases.
+        /// </summary>
+        public static LockStatus LockBasicDiskAndVolumesOrNone(PhysicalDisk disk)
+        {
+            bool success = disk.ExclusiveLock();
+            if (!success)
+            {
+                return LockStatus.CannotLockDisk;
+            }
+            List<Partition> partitions = BasicDiskHelper.GetPartitions(disk);
+            List<Guid> volumeGuids = new List<Guid>();
+            foreach (Partition partition in partitions)
+            {
+                Guid? windowsVolumeGuid = WindowsVolumeHelper.GetWindowsVolumeGuid(partition);
+                if (windowsVolumeGuid.HasValue)
+                {
+                    volumeGuids.Add(windowsVolumeGuid.Value);
+                }
+                else
+                {
+                    return LockStatus.CannotLockVolume;
+                }
+            }
+
+            success = LockAllMountedVolumesOrNone(volumeGuids);
+            if (!success)
+            {
+                disk.ReleaseLock();
+                return LockStatus.CannotLockVolume;
+            }
+            return LockStatus.Success;
+        }
+
         public static bool LockAllMountedVolumesOrNone(List<Guid> volumeGuids)
         {
             bool success = true;
