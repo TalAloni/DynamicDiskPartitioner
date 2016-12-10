@@ -1,0 +1,95 @@
+Revision History:
+-----------------
+1.0.0 - Initial release.
+
+1.0.1 - Major changes.
+
+1.0.2 - Major changes.
+
+1.0.3 - Major changes.
+
+1.0.4 - New feature: Ability to move extent to another disk.
+        Minor fixes and changes.
+
+1.0.5 - NTFS and LDM bugfixes.
+
+1.0.6 - Show detailed error messages when running without administrator privileges (Windows 7 and earlier).
+        NTFS bugfix: we now use POSIX filename namespace when applicable.
+
+1.0.7 - Minor help screens improvements.
+
+1.0.8 - Minor code clean up.
+		List partition now displays the start sector of each partition.
+
+1.0.9 - ISCSCI server functionality has been moved to a separate project (ISCSI Console).
+
+1.1.0 - LDM related bugfix.
+		NTFS related bugfix and code clean up.
+		Added the ability to create simple volumes (in addition to RAID5 volumes).
+		The DETAIL DISK command now displays more details.
+		Help screens have been improved.
+
+1.1.1 - The CREATE command now have an ALIGN parameter.
+
+1.1.2 - Better handling of a corrupted LDM database.
+
+1.1.4 - Fixed GPT partition size detection bug.
+		Prevent retained extents from being moved.
+		Allow reading from disks that are opened for write access by other applications.
+
+1.1.5 - Improved disk detection mechanism.
+
+1.1.6 - Use the SetFileValidData() Windows API call to extend virtual disks faster.
+
+1.1.7 - Minor improvements.
+
+1.1.8 - Fixed NTFS related issues.
+
+1.1.9 - Disks are now orderered accordind to disk number.
+		Code clean up.
+
+1.2.0 - NTFS related bugfixes.
+
+1.2.1 - Minor enhancements and fixes.
+
+1.2.2 - Minor NTFS changes.
+
+1.2.3 - Support for Windows Vista and newer.
+
+1.2.4 - NTFS related fixes.
+
+1.2.5 - Better handling of unsupported VHDs / VMDKs.
+
+1.2.6 - Dynamic VHD related bugfix.
+
+1.2.7 - Help screens have been improved.
+		The INITIALIZE GPT command can now be used to initialize a disk using the GUID partition table scheme.
+
+1.2.8 - Bugfix: CRC32 was not updated when GPT partition was extended.
+      - Bugfix: Invalid protective MBR partition was written during GPT disk initialization.
+      - Bugfix: A few usable sectors may have been marked as unusable during GPT disk initialization.
+
+1.2.9 - We now use noncached I/O operations when reading virtual disks (Workaround for hosts without KB981166).
+	  - Bugfix: GPT header checksum verification failed if the size of the partition entries was not a multiple of sector size.
+	  - Minor UI enhancements.
+
+1.3.0 - Fixed a bug related to the RESUME command.
+	  - Dynamic disks and volumes are now locked before an operation is performed under Windows Vista and newer.
+
+1.3.1 - Improved progress report when adding disk to a RAID-5 array / moving extent / resuming an operation.
+
+1.3.2 - Volume is now locked before extending a filesystem under Windows Vista and newer.
+
+1.3.3 - Improved volume locking before extending a filesystem under Windows Vista and newer.
+
+1.3.4 - Minor improvements.
+
+1.3.5 - Minor improvements.
+
+1.3.6 - Minor improvements.
+
+1.3.7 - Proper handling of disks with no serial number.
+
+1.3.8 - Minor improvements.
+
+1.3.9 - Minor improvements.
