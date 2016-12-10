@@ -66,7 +66,6 @@
     <Compile Include="FileSystems\NTFS\Enums\FilenameNamespace.cs" />
     <Compile Include="FileSystems\NTFS\Adapters\NTFSFileStream.cs" />
     <Compile Include="FileSystems\NTFS\Adapters\NTFSFileSystem.cs" />
-    <Compile Include="Helpers\MoveHelper.cs" />
     <Compile Include="LogicalDiskManagerHelpers\RetainHelper.cs" />
     <Compile Include="LogicalDiskManager\Exceptions\DatabaseNotFoundException.cs" />
     <Compile Include="LogicalDiskManager\Exceptions\MissingDatabaseRecordException.cs" />
@@ -79,14 +78,9 @@
     <Compile Include="Helpers\DynamicDiskExtentHelper.cs" />
     <Compile Include="Helpers\DynamicDiskHelper.cs" />
     <Compile Include="Helpers\Settings.cs" />
-    <Compile Include="LogicalDiskManagerHelpers\AddDiskToArrayHelper.cs" />
     <Compile Include="Helpers\DynamicVolumeHelper.cs" />
     <Compile Include="Helpers\ExtendHelper.Volume.cs" />
     <Compile Include="LogicalDiskManagerHelpers\VolumeManagerDatabaseHelper.cs" />
-    <Compile Include="LogicalDiskManagerHelpers\MoveExtentHelper.cs" />
-    <Compile Include="LogicalDiskManagerHelpers\RAID5ManagerBootRecord\AddDiskOperationBootRecord.cs" />
-    <Compile Include="LogicalDiskManagerHelpers\RAID5ManagerBootRecord\MoveExtentOperationBootRecord.cs" />
-    <Compile Include="LogicalDiskManagerHelpers\RAID5ManagerBootRecord\RAID5ManagerBootRecord.cs" />
     <Compile Include="Helpers\VolumeHelper.cs" />
     <Compile Include="LogicalDiskManager\VolumeManagerDatabase.cs" />
     <Compile Include="LogicalDiskManager\VolumeManagerDatabaseHeader.cs" />

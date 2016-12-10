@@ -34,6 +34,12 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Helpers\AddDiskToArrayHelper.cs" />
+    <Compile Include="Helpers\MoveExtentHelper.cs" />
+    <Compile Include="Helpers\MoveHelper.cs" />
+    <Compile Include="Helpers\RAID5ManagerBootRecord\AddDiskOperationBootRecord.cs" />
+    <Compile Include="Helpers\RAID5ManagerBootRecord\MoveExtentOperationBootRecord.cs" />
+    <Compile Include="Helpers\RAID5ManagerBootRecord\RAID5ManagerBootRecord.cs" />
     <Compile Include="OperatingSystemHelper.cs" />
     <Compile Include="Program.AdditionalCommands.cs" />
     <Compile Include="Program.CleanCommand.cs" />
