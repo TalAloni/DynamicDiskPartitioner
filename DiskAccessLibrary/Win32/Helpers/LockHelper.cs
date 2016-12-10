@@ -1,4 +1,4 @@
-/* Copyright (C) 2014 Tal Aloni <tal.aloni.il@gmail.com>. All rights reserved.
+/* Copyright (C) 2014-2016 Tal Aloni <tal.aloni.il@gmail.com>. All rights reserved.
  * 
  * You can redistribute this program and/or modify it under the terms of
  * the GNU Lesser Public License as published by the Free Software Foundation,
@@ -8,9 +8,8 @@ using System;
 using System.Collections.Generic;
 using System.Text;
 using DiskAccessLibrary;
-using DiskAccessLibrary.LogicalDiskManager;
 
-namespace DiskAccessLibrary.LogicalDiskManager
+namespace DiskAccessLibrary
 {
     public enum LockStatus
     {
@@ -19,27 +18,8 @@ namespace DiskAccessLibrary.LogicalDiskManager
         CannotLockVolume,
     }
 
-    public class LockHelper
+    public partial class LockHelper
     {
-        public static LockStatus LockAllOrNone(List<DynamicDisk> disksToLock, List<DynamicVolume> volumesToLock)
-        {
-            bool success = DiskLockHelper.LockAllOrNone(disksToLock);
-            if (!success)
-            {
-                return LockStatus.CannotLockDisk;
-            }
-
-            List<Guid> volumeGuids = DynamicVolumeHelper.GetVolumeGuids(volumesToLock);
-            success = LockAllMountedVolumesOrNone(volumeGuids);
-            if (!success)
-            {
-                DiskLockHelper.ReleaseLock(disksToLock);
-                return LockStatus.CannotLockVolume;
-            }
-
-            return LockStatus.Success;
-        }
-
         /// <summary>
         /// Will lock physical basic disk and all volumes on it.
         /// If the operation is not completed successfully, all locks will be releases.
