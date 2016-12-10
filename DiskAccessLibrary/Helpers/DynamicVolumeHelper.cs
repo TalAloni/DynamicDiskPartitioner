@@ -15,6 +15,16 @@ namespace DiskAccessLibrary
 {
     public partial class DynamicVolumeHelper
     {
+        public static List<Guid> GetVolumeGuids(List<DynamicVolume> volumes)
+        {
+            List<Guid> volumeGuids = new List<Guid>();
+            foreach (DynamicVolume volume in volumes)
+            {
+                volumeGuids.Add(volume.VolumeGuid);
+            }
+            return volumeGuids;
+        }
+
         public static DynamicVolume GetVolumeByGuid(List<DynamicDisk> disks, Guid volumeGuid)
         {
             List<DynamicVolume> volumes = GetDynamicVolumes(disks);

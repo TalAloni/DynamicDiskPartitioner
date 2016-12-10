@@ -13,7 +13,7 @@ using DiskAccessLibrary.LogicalDiskManager;
 namespace DiskAccessLibrary.LogicalDiskManager
 {
     public enum LockStatus
-    { 
+    {
         Success,
         CannotLockDisk,
         CannotLockVolume,
@@ -21,9 +21,6 @@ namespace DiskAccessLibrary.LogicalDiskManager
 
     public class LockHelper
     {
-        private static List<DynamicDisk> m_lockedDisks = new List<DynamicDisk>();
-        private static List<DynamicVolume> m_lockedVolumes = new List<DynamicVolume>();
-
         public static LockStatus LockAllOrNone(List<DynamicDisk> disksToLock, List<DynamicVolume> volumesToLock)
         {
             bool success = DiskLockHelper.LockAllOrNone(disksToLock);
@@ -32,7 +29,8 @@ namespace DiskAccessLibrary.LogicalDiskManager
                 return LockStatus.CannotLockDisk;
             }
 
-            success = WindowsDynamicVolumeHelper.LockAllMountedOrNone(volumesToLock);
+            List<Guid> volumeGuids = DynamicVolumeHelper.GetVolumeGuids(volumesToLock);
+            success = LockAllMountedVolumesOrNone(volumeGuids);
             if (!success)
             {
                 DiskLockHelper.ReleaseLock(disksToLock);
@@ -42,35 +40,30 @@ namespace DiskAccessLibrary.LogicalDiskManager
             return LockStatus.Success;
         }
 
-        public static LockStatus LockAllDynamicDisks(bool lockAllDynamicVolumes)
+        public static bool LockAllMountedVolumesOrNone(List<Guid> volumeGuids)
         {
-            List<DynamicDisk> disksToLock = WindowsDynamicDiskHelper.GetPhysicalDynamicDisks();
-            List<DynamicVolume> volumesToLock = new List<DynamicVolume>();
-
-            if (lockAllDynamicVolumes)
+            bool success = true;
+            int lockIndex;
+            for (lockIndex = 0; lockIndex < volumeGuids.Count; lockIndex++)
             {
-                volumesToLock = WindowsDynamicVolumeHelper.GetLockableDynamicVolumes(disksToLock);
+                // NOTE: The fact that a volume does not have mount points, does not mean it is not mounted and cannot be accessed by Windows
+                success = WindowsVolumeManager.ExclusiveLockIfMounted(volumeGuids[lockIndex]);
+                if (!success)
+                {
+                    break;
+                }
             }
 
-            LockStatus status = LockAllOrNone(disksToLock, volumesToLock);
-            if (status == LockStatus.Success)
+            if (!success)
             {
-                m_lockedDisks.AddRange(disksToLock);
-                m_lockedVolumes.AddRange(volumesToLock);
+                // release the volumes that were locked
+                for (int index = 0; index < lockIndex; index++)
+                {
+                    WindowsVolumeManager.ReleaseLock(volumeGuids[lockIndex]);
+                }
             }
-            return status;
-        }
 
-        public static void UnlockAllDisksAndVolumes()
-        {
-            DiskLockHelper.ReleaseLock(m_lockedDisks);
-
-            foreach (DynamicVolume volumeToUnlock in m_lockedVolumes)
-            {
-                WindowsVolumeManager.ReleaseLock(volumeToUnlock.VolumeGuid);
-            }
-            m_lockedDisks.Clear();
-            m_lockedVolumes.Clear();
+            return success;
         }
     }
 }

@@ -16,7 +16,7 @@ namespace Raid5Manager
             Console.WriteLine("Restarting Logical Disk Manager.");
             StopLogicalDiskManagerServices();
 
-            LockHelper.UnlockAllDisksAndVolumes();
+            LockManager.UnlockAllDisksAndVolumes();
 
             StartLogicalDiskManagerServices(false);
             Console.WriteLine("To re-enable the disk group, you must do one of the following:");

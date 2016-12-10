@@ -168,6 +168,7 @@
     <Compile Include="Win32\Utilities\FileStreamUtils.cs" />
     <Compile Include="Win32\Utilities\HandleUtils.cs" />
     <Compile Include="Win32\Helpers\LockHelper.cs" />
+    <Compile Include="Win32\Helpers\LockManager.cs" />
     <Compile Include="Win32\LogicalDiskManager\DiskGroupDatabase.Win32.cs" />
     <Compile Include="Win32\Helpers\PhysicalDiskHelper.cs" />
     <Compile Include="Win32\Utilities\PhysicalDiskUtils.cs" />
