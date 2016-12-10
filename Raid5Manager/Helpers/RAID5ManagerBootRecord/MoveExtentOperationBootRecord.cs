@@ -9,7 +9,7 @@ using System.Collections.Generic;
 using System.Text;
 using Utilities;
 
-namespace DiskAccessLibrary
+namespace Raid5Manager
 {
     public class MoveExtentOperationBootRecord : RAID5ManagerBootRecord
     {

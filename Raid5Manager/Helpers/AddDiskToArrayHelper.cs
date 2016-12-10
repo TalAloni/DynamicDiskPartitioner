@@ -8,9 +8,10 @@ using System;
 using System.Collections.Generic;
 using System.Text;
 using DiskAccessLibrary;
+using DiskAccessLibrary.LogicalDiskManager;
 using Utilities;
 
-namespace DiskAccessLibrary.LogicalDiskManager
+namespace Raid5Manager
 {
     public class AddDiskToArrayHelper
     {

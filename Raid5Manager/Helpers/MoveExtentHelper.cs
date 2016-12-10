@@ -10,8 +10,9 @@ using System.IO;
 using System.Text;
 using Utilities;
 using DiskAccessLibrary;
+using DiskAccessLibrary.LogicalDiskManager;
 
-namespace DiskAccessLibrary.LogicalDiskManager
+namespace Raid5Manager
 {
     public class MoveExtentHelper
     {
