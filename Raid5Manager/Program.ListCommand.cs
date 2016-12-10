@@ -136,6 +136,10 @@ namespace Raid5Manager
                     volumeID = ((DynamicVolume)volume).VolumeID;
                     name = ((DynamicVolume)volume).Name;
                 }
+                else if (volume is GPTPartition)
+                {
+                    name = ((GPTPartition)volume).PartitionName;
+                }
 
                 string volumeNumber = index.ToString().PadLeft(2);
                 type = type.ToString().PadRight(9);
