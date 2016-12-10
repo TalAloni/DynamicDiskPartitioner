@@ -55,6 +55,24 @@ namespace DiskAccessLibrary
             return LockStatus.Success;
         }
 
+        public static void UnlockBasicDiskAndVolumes(PhysicalDisk disk)
+        {
+            List<Partition> partitions = BasicDiskHelper.GetPartitions(disk);
+            foreach (Partition partition in partitions)
+            {
+                Guid? windowsVolumeGuid = WindowsVolumeHelper.GetWindowsVolumeGuid(partition);
+                if (windowsVolumeGuid.HasValue)
+                {
+                    if (WindowsVolumeManager.IsMounted(windowsVolumeGuid.Value))
+                    {
+                        WindowsVolumeManager.ReleaseLock(windowsVolumeGuid.Value);
+                    }
+                }
+            }
+
+            disk.ReleaseLock();
+        }
+
         public static bool LockAllMountedVolumesOrNone(List<Guid> volumeGuids)
         {
             bool success = true;
