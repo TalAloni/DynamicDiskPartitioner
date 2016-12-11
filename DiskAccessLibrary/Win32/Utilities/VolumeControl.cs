@@ -13,7 +13,7 @@ using Microsoft.Win32.SafeHandles;
 
 namespace DiskAccessLibrary
 {
-    public class VolumeUtils
+    public class VolumeControl
     {
         private const uint FSCTL_IS_VOLUME_MOUNTED = 0x90028;
         private const uint FSCTL_DISMOUNT_VOLUME = 0x90020;
