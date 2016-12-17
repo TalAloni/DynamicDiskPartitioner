@@ -35,7 +35,6 @@
     <Compile Include="BaseClasses\DiskExtent.cs" />
     <Compile Include="BaseClasses\IDiskGeometry.cs" />
     <Compile Include="BaseClasses\Volume.cs" />
-    <Compile Include="DiskExtent\DynamicDiskExtent.cs" />
     <Compile Include="Disks\DiskImage.cs" />
     <Compile Include="Disks\GuidPartitionTable\GuidPartitionEntry.cs" />
     <Compile Include="Disks\GuidPartitionTable\GuidPartitionEntryCollection.cs" />
@@ -113,6 +112,7 @@
     <Compile Include="LogicalDiskManager\DatabaseRecords\VolumeRecord.cs" />
     <Compile Include="LogicalDiskManager\DiskGroupDatabase.cs" />
     <Compile Include="LogicalDiskManager\DynamicDisk.cs" />
+    <Compile Include="LogicalDiskManager\DynamicDiskExtent.cs" />
     <Compile Include="LogicalDiskManager\Enums\DatabaseHeaderUpdateStatus.cs" />
     <Compile Include="LogicalDiskManager\Enums\DatabaseRecordUpdateStatus.cs" />
     <Compile Include="LogicalDiskManager\Enums\ExtentLayoutName.cs" />
