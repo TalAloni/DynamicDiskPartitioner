@@ -1,4 +1,4 @@
-/* Copyright (C) 2014 Tal Aloni <tal.aloni.il@gmail.com>. All rights reserved.
+/* Copyright (C) 2014-2016 Tal Aloni <tal.aloni.il@gmail.com>. All rights reserved.
  * 
  * You can redistribute this program and/or modify it under the terms of
  * the GNU Lesser Public License as published by the Free Software Foundation,
@@ -106,11 +106,13 @@ namespace DiskAccessLibrary.LogicalDiskManager
         {
             privateHeader.UpdateSequenceNumber++;
             tocBlock.UpdateSequenceNumber++;
-            byte[] bytes = tocBlock.GetBytes();
-            disk.WriteSectors((long)(privateHeader.PrivateRegionStartLBA + privateHeader.PreviousPrimaryTocLBA), bytes);
-            disk.WriteSectors((long)(privateHeader.PrivateRegionStartLBA + privateHeader.PreviousSecondaryTocLBA), bytes);
-            privateHeader.PrimaryTocLBA = privateHeader.PreviousPrimaryTocLBA;
-            privateHeader.SecondaryTocLBA = privateHeader.PreviousSecondaryTocLBA;
+            byte[] tocBytes = tocBlock.GetBytes();
+            long alternatePrimaryTOCLBA = PrivateRegionHelper.FindUnusedLBAForPrimaryToc(privateHeader, tocBlock);
+            long alternateSecondaryTOCLBA = PrivateRegionHelper.FindUnusedLBAForSecondaryToc(privateHeader, tocBlock);
+            disk.WriteSectors(alternatePrimaryTOCLBA, tocBytes);
+            disk.WriteSectors(alternateSecondaryTOCLBA, tocBytes);
+            privateHeader.PrimaryTocLBA = (ulong)alternatePrimaryTOCLBA;
+            privateHeader.SecondaryTocLBA = (ulong)alternateSecondaryTOCLBA;
             PrivateHeader.WriteToDisk(disk, privateHeader);
         }
 

@@ -1,4 +1,4 @@
-/* Copyright (C) 2014 Tal Aloni <tal.aloni.il@gmail.com>. All rights reserved.
+/* Copyright (C) 2014-2016 Tal Aloni <tal.aloni.il@gmail.com>. All rights reserved.
  * 
  * You can redistribute this program and/or modify it under the terms of
  * the GNU Lesser Public License as published by the Free Software Foundation,
@@ -81,7 +81,7 @@ namespace Raid5Manager
             DynamicDisk dynamicDisk = DynamicDisk.ReadFromDisk(relocatedExtent.Disk);
             // Note: backupSectorIndex will be from the beginning of the private region while backupBufferStartSector will be from the end
             // so there is no need to allocate them
-            long backupSectorIndex = DynamicDiskHelper.FindUnusedSectorInPrivateRegion(dynamicDisk);
+            long backupSectorIndex = PrivateRegionHelper.FindUnusedSector(dynamicDisk.PrivateHeader, dynamicDisk.TOCBlock);
 
             resumeRecord.VolumeGuid = volume.VolumeGuid;
             resumeRecord.NumberOfCommittedSectors = 0;
@@ -93,7 +93,7 @@ namespace Raid5Manager
             long distanceLBA = (long)Math.Abs((double)resumeRecord.NewStartSector - resumeRecord.OldStartSector);
             if (distanceLBA < MoveHelper.BufferedModeThresholdLBA)
             {
-                long backupBufferStartSector = DynamicDiskHelper.FindUnusedRegionInPrivateRegion(dynamicDisk, BackupBufferSizeLBA);
+                long backupBufferStartSector = PrivateRegionHelper.FindUnusedRegion(dynamicDisk.PrivateHeader, dynamicDisk.TOCBlock, BackupBufferSizeLBA);
                 if (backupBufferStartSector == -1)
                 {
                     throw new Exception("Private region is full");

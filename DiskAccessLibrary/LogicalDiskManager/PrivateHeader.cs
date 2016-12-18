@@ -1,4 +1,4 @@
-/* Copyright (C) 2014 Tal Aloni <tal.aloni.il@gmail.com>. All rights reserved.
+/* Copyright (C) 2014-2016 Tal Aloni <tal.aloni.il@gmail.com>. All rights reserved.
  * 
  * You can redistribute this program and/or modify it under the terms of
  * the GNU Lesser Public License as published by the Free Software Foundation,
@@ -272,40 +272,6 @@ namespace DiskAccessLibrary.LogicalDiskManager
             set
             {
                 this.DiskGroupGuidString = value.ToString();
-            }
-        }
-
-        
-        // I'm not aware of any parameter that will tell us where the previous TOCs are,
-        // I'm assuming it is given that there will be TOCs (in the private region) at Sectors 1,2, PrivateRegionSizeLBA - 2 and PrivateRegionSizeLBA - 1,
-        // And so PrimaryTocLBA, SecondaryTocLBA simply point to the ones being used
-        public ulong PreviousPrimaryTocLBA
-        {
-            get
-            {
-                if (PrimaryTocLBA == 1)
-                {
-                    return PrimaryTocLBA + 1;
-                }
-                else
-                {
-                    return PrimaryTocLBA - 1;
-                }
-            }
-        }
-
-        public ulong PreviousSecondaryTocLBA
-        {
-            get
-            {
-                if (PrimaryTocLBA == 1)
-                {
-                    return SecondaryTocLBA - 1;
-                }
-                else
-                {
-                    return SecondaryTocLBA + 1;
-                }
             }
         }
 
