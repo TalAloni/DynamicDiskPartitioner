@@ -1,4 +1,4 @@
-/* Copyright (C) 2014 Tal Aloni <tal.aloni.il@gmail.com>. All rights reserved.
+/* Copyright (C) 2014-2016 Tal Aloni <tal.aloni.il@gmail.com>. All rights reserved.
  * 
  * You can redistribute this program and/or modify it under the terms of
  * the GNU Lesser Public License as published by the Free Software Foundation,
@@ -14,12 +14,24 @@ namespace DiskAccessLibrary
 {
     public partial class RawDiskImage : DiskImage
     {
+        public int DefaultBytesPerSector = 512;
+
         const FileOptions FILE_FLAG_NO_BUFFERING = (FileOptions)0x20000000;
         private bool m_isExclusiveLock;
         private FileStream m_stream;
+        private int m_bytesPerSector;
+        private long m_size;
 
         public RawDiskImage(string rawDiskImagePath) : base(rawDiskImagePath)
         {
+            m_bytesPerSector = DetectBytesPerSector(rawDiskImagePath);
+            m_size = new FileInfo(rawDiskImagePath).Length;
+        }
+
+        public RawDiskImage(string rawDiskImagePath, int bytesPerSector) : base(rawDiskImagePath)
+        {
+            m_bytesPerSector = bytesPerSector;
+            m_size = new FileInfo(rawDiskImagePath).Length;
         }
 
         /// <exception cref="System.IO.IOException"></exception>
@@ -115,6 +127,7 @@ namespace DiskAccessLibrary
                 m_stream = new FileStream(this.Path, FileMode.Open, FileAccess.ReadWrite, FileShare.Read, 0x1000, FILE_FLAG_NO_BUFFERING | FileOptions.WriteThrough);
             }
             m_stream.SetLength(length + additionalNumberOfBytes);
+            m_size += additionalNumberOfBytes;
             if (!m_isExclusiveLock)
             {
                 m_stream.Close();
@@ -125,18 +138,7 @@ namespace DiskAccessLibrary
         {
             get
             {
-                FileInfo info = new FileInfo(this.Path);
-                string[] components = info.Name.Split('.');
-                if (components.Length >= 3) // file.512.img
-                {
-                    string bytesPerSectorString = components[components.Length - 2];
-                    int bytesPerSector = Conversion.ToInt32(bytesPerSectorString, BytesPerDiskImageSector);
-                    return bytesPerSector;
-                }
-                else
-                {
-                    return BytesPerDiskImageSector;
-                }
+                return m_bytesPerSector;
             }
         }
 
@@ -144,8 +146,23 @@ namespace DiskAccessLibrary
         {
             get
             {
-                FileInfo info = new FileInfo(this.Path);
-                return info.Length;
+                return m_size;
+            }
+        }
+
+        public int DetectBytesPerSector(string path)
+        {
+            FileInfo info = new FileInfo(this.Path);
+            string[] components = info.Name.Split('.');
+            if (components.Length >= 3) // file.512.img
+            {
+                string bytesPerSectorString = components[components.Length - 2];
+                int bytesPerSector = Conversion.ToInt32(bytesPerSectorString, DefaultBytesPerSector);
+                return bytesPerSector;
+            }
+            else
+            {
+                return DefaultBytesPerSector;
             }
         }
     }

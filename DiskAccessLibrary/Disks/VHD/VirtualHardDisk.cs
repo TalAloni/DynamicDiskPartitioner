@@ -1,4 +1,4 @@
-/* Copyright (C) 2014 Tal Aloni <tal.aloni.il@gmail.com>. All rights reserved.
+/* Copyright (C) 2014-2016 Tal Aloni <tal.aloni.il@gmail.com>. All rights reserved.
  * 
  * You can redistribute this program and/or modify it under the terms of
  * the GNU Lesser Public License as published by the Free Software Foundation,
@@ -15,6 +15,9 @@ namespace DiskAccessLibrary
 {
     public partial class VirtualHardDisk : DiskImage, IDiskGeometry
     {
+        // VHD sector size is set to 512 bytes.
+        public const int BytesPerDiskSector = 512;
+
         private RawDiskImage m_file;
         private VHDFooter m_vhdFooter;
         // Dynamic VHD:
@@ -33,7 +36,7 @@ namespace DiskAccessLibrary
         public VirtualHardDisk(string virtualHardDiskPath) : base(virtualHardDiskPath)
         {
             // We can't read the VHD footer using this.ReadSector() because it's out of the disk boundaries
-            m_file = new RawDiskImage(virtualHardDiskPath);
+            m_file = new RawDiskImage(virtualHardDiskPath, BytesPerDiskSector);
             byte[] buffer = m_file.ReadSector(m_file.Size / m_file.BytesPerSector - 1);
             m_vhdFooter = new VHDFooter(buffer);
 
@@ -176,6 +179,14 @@ namespace DiskAccessLibrary
             }
         }
 
+        public override int BytesPerSector
+        {
+            get
+            {
+                return BytesPerDiskSector;
+            }
+        }
+
         public override long Size
         {
             get
@@ -286,7 +297,7 @@ namespace DiskAccessLibrary
             footer.OriginalSize = (ulong)size;
             footer.CurrentSize = (ulong)size;
             footer.SetCurrentTimeStamp();
-            footer.SetDiskGeometry((ulong)size / DiskImage.BytesPerDiskImageSector);
+            footer.SetDiskGeometry((ulong)size / BytesPerDiskSector);
             stream.Seek(size, SeekOrigin.Begin);
             stream.Write(footer.GetBytes(), 0, VHDFooter.Length);
             stream.Close();

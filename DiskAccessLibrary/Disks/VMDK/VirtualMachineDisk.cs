@@ -1,4 +1,4 @@
-/* Copyright (C) 2014 Tal Aloni <tal.aloni.il@gmail.com>. All rights reserved.
+/* Copyright (C) 2014-2016 Tal Aloni <tal.aloni.il@gmail.com>. All rights reserved.
  * 
  * You can redistribute this program and/or modify it under the terms of
  * the GNU Lesser Public License as published by the Free Software Foundation,
@@ -15,6 +15,9 @@ namespace DiskAccessLibrary
 {
     public partial class VirtualMachineDisk : DiskImage, IDiskGeometry
     {
+        // VMDK sector size is set to 512 bytes.
+        public const int BytesPerDiskSector = 512;
+
         private const uint BaseDiskParentCID = 0xffffffff;
 
         private string m_descriptorPath;
@@ -89,7 +92,7 @@ namespace DiskAccessLibrary
             {
                 VirtualMachineDiskExtentEntry entry = m_descriptor.ExtentEntries[0];
                 string directory = System.IO.Path.GetDirectoryName(descriptorPath);
-                DiskImage extent = new RawDiskImage(directory + @"\" + entry.FileName);
+                DiskImage extent = new RawDiskImage(directory + @"\" + entry.FileName, BytesPerDiskSector);
                 m_extent = extent;
             }
         }
@@ -140,7 +143,7 @@ namespace DiskAccessLibrary
         {
             get
             {
-                return DiskImage.BytesPerDiskImageSector;
+                return BytesPerDiskSector;
             }
         }
 
