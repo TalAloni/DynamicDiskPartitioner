@@ -1,4 +1,4 @@
-/* Copyright (C) 2014 Tal Aloni <tal.aloni.il@gmail.com>. All rights reserved.
+/* Copyright (C) 2014-2016 Tal Aloni <tal.aloni.il@gmail.com>. All rights reserved.
  * 
  * You can redistribute this program and/or modify it under the terms of
  * the GNU Lesser Public License as published by the Free Software Foundation,
@@ -182,14 +182,14 @@ namespace DiskAccessLibrary.LogicalDiskManager
             database.UpdateDatabase(records);
         }
 
-        public static void ExtendSimpleVolume(DiskGroupDatabase database, SimpleVolume volume, long additionalNumberOfSectors)
+        public static void ExtendSimpleVolume(DiskGroupDatabase database, SimpleVolume volume, long numberOfAdditionalSectors)
         {
             VolumeRecord volumeRecord = database.FindVolumeByVolumeGuid(volume.VolumeGuid);
             volumeRecord = (VolumeRecord)volumeRecord.Clone();
-            volumeRecord.SizeLBA += (ulong)additionalNumberOfSectors;
+            volumeRecord.SizeLBA += (ulong)numberOfAdditionalSectors;
             ExtentRecord extentRecord = database.FindExtentByExtentID(volume.DiskExtent.ExtentID);
             extentRecord = (ExtentRecord)extentRecord.Clone();
-            extentRecord.SizeLBA += (ulong)additionalNumberOfSectors;
+            extentRecord.SizeLBA += (ulong)numberOfAdditionalSectors;
             DiskRecord diskRecord = database.FindDiskByDiskID(extentRecord.DiskId); // we should update the disk, see Database.cs
             diskRecord = (DiskRecord)diskRecord.Clone();
 
@@ -201,9 +201,9 @@ namespace DiskAccessLibrary.LogicalDiskManager
             database.UpdateDatabase(records);
         }
 
-        public static void ExtendStripedVolume(DiskGroupDatabase database, StripedVolume volume, long additionalNumberOfExtentSectors)
+        public static void ExtendStripedVolume(DiskGroupDatabase database, StripedVolume volume, long numberOfAdditionalExtentSectors)
         {
-            if (additionalNumberOfExtentSectors % volume.SectorsPerStripe > 0)
+            if (numberOfAdditionalExtentSectors % volume.SectorsPerStripe > 0)
             {
                 throw new ArgumentException("Number of additional sectors must be multiple of stripes per sector");
             }
@@ -212,7 +212,7 @@ namespace DiskAccessLibrary.LogicalDiskManager
 
             VolumeRecord volumeRecord = database.FindVolumeByVolumeGuid(volume.VolumeGuid);
             volumeRecord = (VolumeRecord)volumeRecord.Clone();
-            volumeRecord.SizeLBA += (ulong)(additionalNumberOfExtentSectors * volume.NumberOfColumns);
+            volumeRecord.SizeLBA += (ulong)(numberOfAdditionalExtentSectors * volume.NumberOfColumns);
             records.Add(volumeRecord);
 
             // we only want to extend the last extent in each column
@@ -221,7 +221,7 @@ namespace DiskAccessLibrary.LogicalDiskManager
                 DynamicDiskExtent lastExtent = column.Extents[column.Extents.Count - 1];
                 ExtentRecord extentRecord = database.FindExtentByExtentID(lastExtent.ExtentID);
                 extentRecord = (ExtentRecord)extentRecord.Clone();
-                extentRecord.SizeLBA += (ulong)additionalNumberOfExtentSectors;
+                extentRecord.SizeLBA += (ulong)numberOfAdditionalExtentSectors;
                 records.Add(extentRecord);
 
                 DiskRecord diskRecord = database.FindDiskByDiskID(extentRecord.DiskId); // we should update the disk, see Database.cs
@@ -232,9 +232,9 @@ namespace DiskAccessLibrary.LogicalDiskManager
             database.UpdateDatabase(records);
         }
 
-        public static void ExtendRAID5Volume(DiskGroupDatabase database, Raid5Volume volume, long additionalNumberOfExtentSectors)
+        public static void ExtendRAID5Volume(DiskGroupDatabase database, Raid5Volume volume, long numberOfAdditionalExtentSectors)
         {
-            if (additionalNumberOfExtentSectors % volume.SectorsPerStripe > 0)
+            if (numberOfAdditionalExtentSectors % volume.SectorsPerStripe > 0)
             {
                 throw new ArgumentException("Number of additional sectors must be multiple of stripes per sector");
             }
@@ -243,7 +243,7 @@ namespace DiskAccessLibrary.LogicalDiskManager
 
             VolumeRecord volumeRecord = database.FindVolumeByVolumeGuid(volume.VolumeGuid);
             volumeRecord = (VolumeRecord)volumeRecord.Clone();
-            volumeRecord.SizeLBA += (ulong)(additionalNumberOfExtentSectors * (volume.NumberOfColumns - 1));
+            volumeRecord.SizeLBA += (ulong)(numberOfAdditionalExtentSectors * (volume.NumberOfColumns - 1));
             records.Add(volumeRecord);
 
             foreach (DynamicColumn column in volume.Columns)
@@ -251,7 +251,7 @@ namespace DiskAccessLibrary.LogicalDiskManager
                 DynamicDiskExtent lastExtent = column.Extents[column.Extents.Count - 1];
                 ExtentRecord extentRecord = database.FindExtentByExtentID(lastExtent.ExtentID);
                 extentRecord = (ExtentRecord)extentRecord.Clone();
-                extentRecord.SizeLBA += (ulong)additionalNumberOfExtentSectors;
+                extentRecord.SizeLBA += (ulong)numberOfAdditionalExtentSectors;
                 records.Add(extentRecord);
 
                 DiskRecord diskRecord = database.FindDiskByDiskID(extentRecord.DiskId); // we should update the disk, see Database.cs
