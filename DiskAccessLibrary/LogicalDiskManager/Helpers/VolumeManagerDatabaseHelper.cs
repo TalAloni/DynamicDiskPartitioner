@@ -83,7 +83,7 @@ namespace DiskAccessLibrary.LogicalDiskManager
                 throw new MissingDatabaseRecordException("Volume record is missing");
             }
             volumeRecord = (VolumeRecord)volumeRecord.Clone();
-            volumeRecord.SizeLBA += (ulong)newExtent.TotalSectors;
+            volumeRecord.SizeLBA += (ulong)PublicRegionHelper.TranslateToPublicRegionSizeLBA(newExtent.TotalSectors, privateHeader);
             records.Add(volumeRecord);
 
             ComponentRecord componentRecord = database.FindComponentsByVolumeID(volumeRecord.VolumeId)[0];
@@ -108,8 +108,8 @@ namespace DiskAccessLibrary.LogicalDiskManager
             newExtentRecord.Name = GetNextExtentName(database.ExtentRecords, diskRecord.Name);
             newExtentRecord.ComponentId = componentRecord.ComponentId;
             newExtentRecord.DiskId = diskRecord.DiskId;
-            newExtentRecord.DiskOffsetLBA = (ulong)newExtent.FirstSector - privateHeader.PublicRegionStartLBA;
-            newExtentRecord.SizeLBA = (ulong)newExtent.TotalSectors;
+            newExtentRecord.DiskOffsetLBA = (ulong)PublicRegionHelper.TranslateToPublicRegionLBA(newExtent.FirstSector, privateHeader);
+            newExtentRecord.SizeLBA = (ulong)PublicRegionHelper.TranslateToPublicRegionSizeLBA(newExtent.TotalSectors, privateHeader);
             newExtentRecord.HasColumnIndexFlag = true;
             newExtentRecord.ColumnIndex = (uint)volume.Columns.Count; // zero based
                         
@@ -158,7 +158,7 @@ namespace DiskAccessLibrary.LogicalDiskManager
             ExtentRecord sourceExtentRecord = database.FindExtentByExtentID(relocatedExtent.ExtentID);
             ExtentRecord relocatedExtentRecord = (ExtentRecord)sourceExtentRecord.Clone();
             relocatedExtentRecord.DiskId = targetDiskRecord.DiskId;
-            relocatedExtentRecord.DiskOffsetLBA = (ulong)relocatedExtent.FirstSector - privateHeader.PublicRegionStartLBA;
+            relocatedExtentRecord.DiskOffsetLBA = (ulong)PublicRegionHelper.TranslateToPublicRegionLBA(relocatedExtent.FirstSector, privateHeader);
             records.Add(relocatedExtentRecord);
 
             // we should update the disk records
@@ -186,10 +186,10 @@ namespace DiskAccessLibrary.LogicalDiskManager
         {
             VolumeRecord volumeRecord = database.FindVolumeByVolumeGuid(volume.VolumeGuid);
             volumeRecord = (VolumeRecord)volumeRecord.Clone();
-            volumeRecord.SizeLBA += (ulong)numberOfAdditionalSectors;
+            volumeRecord.SizeLBA += (ulong)PublicRegionHelper.TranslateToPublicRegionSizeLBA(numberOfAdditionalSectors, volume.BytesPerSector);
             ExtentRecord extentRecord = database.FindExtentByExtentID(volume.DiskExtent.ExtentID);
             extentRecord = (ExtentRecord)extentRecord.Clone();
-            extentRecord.SizeLBA += (ulong)numberOfAdditionalSectors;
+            extentRecord.SizeLBA += (ulong)PublicRegionHelper.TranslateToPublicRegionSizeLBA(numberOfAdditionalSectors, volume.BytesPerSector);
             DiskRecord diskRecord = database.FindDiskByDiskID(extentRecord.DiskId); // we should update the disk, see Database.cs
             diskRecord = (DiskRecord)diskRecord.Clone();
 
@@ -212,7 +212,7 @@ namespace DiskAccessLibrary.LogicalDiskManager
 
             VolumeRecord volumeRecord = database.FindVolumeByVolumeGuid(volume.VolumeGuid);
             volumeRecord = (VolumeRecord)volumeRecord.Clone();
-            volumeRecord.SizeLBA += (ulong)(numberOfAdditionalExtentSectors * volume.NumberOfColumns);
+            volumeRecord.SizeLBA += (ulong)PublicRegionHelper.TranslateToPublicRegionSizeLBA(numberOfAdditionalExtentSectors * volume.NumberOfColumns, volume.BytesPerSector);
             records.Add(volumeRecord);
 
             // we only want to extend the last extent in each column
@@ -221,7 +221,7 @@ namespace DiskAccessLibrary.LogicalDiskManager
                 DynamicDiskExtent lastExtent = column.Extents[column.Extents.Count - 1];
                 ExtentRecord extentRecord = database.FindExtentByExtentID(lastExtent.ExtentID);
                 extentRecord = (ExtentRecord)extentRecord.Clone();
-                extentRecord.SizeLBA += (ulong)numberOfAdditionalExtentSectors;
+                extentRecord.SizeLBA += (ulong)PublicRegionHelper.TranslateToPublicRegionSizeLBA(numberOfAdditionalExtentSectors, volume.BytesPerSector);
                 records.Add(extentRecord);
 
                 DiskRecord diskRecord = database.FindDiskByDiskID(extentRecord.DiskId); // we should update the disk, see Database.cs
@@ -243,7 +243,7 @@ namespace DiskAccessLibrary.LogicalDiskManager
 
             VolumeRecord volumeRecord = database.FindVolumeByVolumeGuid(volume.VolumeGuid);
             volumeRecord = (VolumeRecord)volumeRecord.Clone();
-            volumeRecord.SizeLBA += (ulong)(numberOfAdditionalExtentSectors * (volume.NumberOfColumns - 1));
+            volumeRecord.SizeLBA += (ulong)PublicRegionHelper.TranslateToPublicRegionSizeLBA(numberOfAdditionalExtentSectors * (volume.NumberOfColumns - 1), volume.BytesPerSector);
             records.Add(volumeRecord);
 
             foreach (DynamicColumn column in volume.Columns)
@@ -251,7 +251,7 @@ namespace DiskAccessLibrary.LogicalDiskManager
                 DynamicDiskExtent lastExtent = column.Extents[column.Extents.Count - 1];
                 ExtentRecord extentRecord = database.FindExtentByExtentID(lastExtent.ExtentID);
                 extentRecord = (ExtentRecord)extentRecord.Clone();
-                extentRecord.SizeLBA += (ulong)numberOfAdditionalExtentSectors;
+                extentRecord.SizeLBA += (ulong)PublicRegionHelper.TranslateToPublicRegionSizeLBA(numberOfAdditionalExtentSectors, volume.BytesPerSector);
                 records.Add(extentRecord);
 
                 DiskRecord diskRecord = database.FindDiskByDiskID(extentRecord.DiskId); // we should update the disk, see Database.cs
@@ -275,7 +275,7 @@ namespace DiskAccessLibrary.LogicalDiskManager
             volumeRecord.VolumeNumber = GetNextVolumeNumber(database.VolumeRecords);
             volumeRecord.VolumeFlags = VolumeFlags.Writeback | VolumeFlags.DefaultUnknown;
             volumeRecord.NumberOfComponents = 1;
-            volumeRecord.SizeLBA = (ulong)(extent.TotalSectors);
+            volumeRecord.SizeLBA = (ulong)PublicRegionHelper.TranslateToPublicRegionSizeLBA(extent.TotalSectors, extent.BytesPerSector);
             volumeRecord.PartitionType = PartitionType.RAW;
             volumeRecord.VolumeGuid = Guid.NewGuid();
             records.Add(volumeRecord);
@@ -299,8 +299,8 @@ namespace DiskAccessLibrary.LogicalDiskManager
 
             ExtentRecord extentRecord = new ExtentRecord();
             extentRecord.Name = GetNextExtentName(database.ExtentRecords, diskRecord.Name);
-            extentRecord.DiskOffsetLBA = (ulong)extent.FirstSector - privateHeader.PublicRegionStartLBA;
-            extentRecord.SizeLBA = (ulong)extent.TotalSectors;
+            extentRecord.DiskOffsetLBA = (ulong)PublicRegionHelper.TranslateToPublicRegionLBA(extent.FirstSector, privateHeader);
+            extentRecord.SizeLBA = volumeRecord.SizeLBA;
             extentRecord.ComponentId = componentRecord.ComponentId;
             extentRecord.DiskId = diskRecord.DiskId;
 
@@ -336,7 +336,7 @@ namespace DiskAccessLibrary.LogicalDiskManager
             volumeRecord.VolumeNumber = GetNextVolumeNumber(database.VolumeRecords);
             volumeRecord.VolumeFlags = VolumeFlags.Writeback | VolumeFlags.Writecopy | VolumeFlags.DefaultUnknown;
             volumeRecord.NumberOfComponents = 1;
-            volumeRecord.SizeLBA = (ulong)(extents[0].TotalSectors * (numberOfColumns - 1));
+            volumeRecord.SizeLBA = (ulong)PublicRegionHelper.TranslateToPublicRegionSizeLBA(extents[0].TotalSectors * (numberOfColumns - 1), extents[0].BytesPerSector);
             volumeRecord.PartitionType = PartitionType.RAW;
             volumeRecord.VolumeGuid = Guid.NewGuid();
             records.Add(volumeRecord);
@@ -365,8 +365,8 @@ namespace DiskAccessLibrary.LogicalDiskManager
 
                 ExtentRecord extentRecord = new ExtentRecord();
                 extentRecord.Name = GetNextExtentName(database.ExtentRecords, diskRecord.Name);
-                extentRecord.DiskOffsetLBA = (ulong)extent.FirstSector - privateHeader.PublicRegionStartLBA;
-                extentRecord.SizeLBA = (ulong)extent.TotalSectors;
+                extentRecord.DiskOffsetLBA = (ulong)PublicRegionHelper.TranslateToPublicRegionLBA(extent.FirstSector, privateHeader);
+                extentRecord.SizeLBA = (ulong)PublicRegionHelper.TranslateToPublicRegionSizeLBA(extent.TotalSectors, extent.BytesPerSector);
                 extentRecord.ComponentId = componentRecord.ComponentId;
                 extentRecord.DiskId = diskRecord.DiskId;
                 
@@ -390,7 +390,7 @@ namespace DiskAccessLibrary.LogicalDiskManager
                 ExtentRecord extentRecord = new ExtentRecord();
                 extentRecord.Name = diskRecord.Name + "-01";
                 extentRecord.ExtentFlags = ExtentFlags.Recover;
-                extentRecord.SizeLBA = (ulong)extents[0].TotalSectors;
+                extentRecord.SizeLBA = (ulong)PublicRegionHelper.TranslateToPublicRegionSizeLBA(extents[0].TotalSectors, extents[0].BytesPerSector);
                 extentRecord.ComponentId = componentRecord.ComponentId;
                 extentRecord.DiskId = diskRecord.DiskId;
                 extentRecord.HasColumnIndexFlag = true;

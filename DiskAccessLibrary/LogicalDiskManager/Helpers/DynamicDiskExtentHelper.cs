@@ -1,4 +1,4 @@
-/* Copyright (C) 2014 Tal Aloni <tal.aloni.il@gmail.com>. All rights reserved.
+/* Copyright (C) 2014-2016 Tal Aloni <tal.aloni.il@gmail.com>. All rights reserved.
  * 
  * You can redistribute this program and/or modify it under the terms of
  * the GNU Lesser Public License as published by the Free Software Foundation,
@@ -38,23 +38,21 @@ namespace DiskAccessLibrary.LogicalDiskManager
             }
         }
 
-
         /// <summary>
         /// Support null disks
         /// </summary>
         public static DynamicDiskExtent GetDiskExtent(DynamicDisk dynamicDisk, ExtentRecord extentRecord)
         {
-            ulong extentStartSector = GetExtentStartSector(dynamicDisk, extentRecord);
-            int bytesPerSector = 512; // default for missing disk
+            long extentStartSector = GetExtentStartSector(dynamicDisk, extentRecord);
+            long extentSize = (long)extentRecord.SizeLBA * PublicRegionHelper.BytesPerPublicRegionSector;
             Disk disk = null;
             Guid diskGuid = Guid.Empty;
             if (dynamicDisk != null)
             {
-                bytesPerSector = dynamicDisk.BytesPerSector;
                 disk = dynamicDisk.Disk;
                 diskGuid = dynamicDisk.DiskGuid;
             }
-            DynamicDiskExtent extent = new DynamicDiskExtent(disk, (long)extentStartSector, (long)extentRecord.SizeLBA * bytesPerSector, extentRecord.ExtentId);
+            DynamicDiskExtent extent = new DynamicDiskExtent(disk, extentStartSector, extentSize, extentRecord.ExtentId);
             extent.Name = extentRecord.Name;
             extent.DiskGuid = diskGuid;
             return extent;
@@ -63,16 +61,17 @@ namespace DiskAccessLibrary.LogicalDiskManager
         /// <summary>
         /// Support null disks
         /// </summary>
-        public static ulong GetExtentStartSector(DynamicDisk disk, ExtentRecord extentRecord)
+        public static long GetExtentStartSector(DynamicDisk disk, ExtentRecord extentRecord)
         {
-            ulong dataStartLBA = 0;
+            long publicRegionStartLBA = 0;
+            int bytesPerDiskSector = DynamicColumn.DefaultBytesPerSector; // default for missing disks
             if (disk != null)
             {
+                bytesPerDiskSector = disk.BytesPerSector;
                 PrivateHeader privateHeader = disk.PrivateHeader;
-                dataStartLBA = privateHeader.PublicRegionStartLBA;
+                publicRegionStartLBA = (long)privateHeader.PublicRegionStartLBA;
             }
-            ulong extentStartSector = dataStartLBA + extentRecord.DiskOffsetLBA;
-            return extentStartSector;
+            return PublicRegionHelper.TranslateFromPublicRegionLBA((long)extentRecord.DiskOffsetLBA, publicRegionStartLBA, bytesPerDiskSector);
         }
 
         /// <param name="targetOffset">in bytes</param>

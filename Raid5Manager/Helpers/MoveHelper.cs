@@ -1,4 +1,4 @@
-/* Copyright (C) 2014 Tal Aloni <tal.aloni.il@gmail.com>. All rights reserved.
+/* Copyright (C) 2014-2016 Tal Aloni <tal.aloni.il@gmail.com>. All rights reserved.
  * 
  * You can redistribute this program and/or modify it under the terms of
  * the GNU Lesser Public License as published by the Free Software Foundation,
@@ -61,14 +61,14 @@ namespace Raid5Manager
                     resumeRecord.RestoreFromBuffer = true;
                     // Note: if the extent we move is the first in the volume, we will write the resume record to
                     // the source extent, which is the one that the database is still referring to
-                    volume.WriteSectors(0, resumeRecord.GetBytes());
+                    volume.WriteSectors(0, resumeRecord.GetBytes(volume.BytesPerSector));
                 }
                 relocatedExtent.WriteSectors(sectorIndex, data);
 
                 // update the resume record
                 resumeRecord.RestoreFromBuffer = false;
                 resumeRecord.NumberOfCommittedSectors += (ulong)sectorsToRead;
-                volume.WriteSectors(0, resumeRecord.GetBytes());
+                volume.WriteSectors(0, resumeRecord.GetBytes(volume.BytesPerSector));
                 bytesCopied = (long)resumeRecord.NumberOfCommittedSectors * sourceExtent.BytesPerSector;
             }
         }
@@ -105,14 +105,14 @@ namespace Raid5Manager
                     // we write the data to the buffer for recovery purposes
                     relocatedExtent.Disk.WriteSectors((long)resumeRecord.BackupBufferStartSector, data);
                     resumeRecord.RestoreFromBuffer = true;
-                    relocatedExtent.WriteSectors(0, resumeRecord.GetBytes());
+                    relocatedExtent.WriteSectors(0, resumeRecord.GetBytes(relocatedExtent.BytesPerSector));
                 }
                 relocatedExtent.WriteSectors(sectorIndex, data);
 
                 // update the resume record
                 resumeRecord.RestoreFromBuffer = false;
                 resumeRecord.NumberOfCommittedSectors += (ulong)sectorsToRead;
-                volume.WriteSectors(0, resumeRecord.GetBytes());
+                volume.WriteSectors(0, resumeRecord.GetBytes(volume.BytesPerSector));
                 bytesCopied = (long)resumeRecord.NumberOfCommittedSectors * sourceExtent.BytesPerSector;
             }
         }

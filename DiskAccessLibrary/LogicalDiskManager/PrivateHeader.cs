@@ -70,6 +70,11 @@ namespace DiskAccessLibrary.LogicalDiskManager
 
         public PrivateHeader(byte[] buffer)
         {
+            if (buffer.Length > Length)
+            {
+                // Checksum only applies to the first 512 bytes (even when the sector size > 512 bytes)
+                buffer = ByteReader.ReadBytes(buffer, 0, 512);
+            }
             Signature = ByteReader.ReadAnsiString(buffer, 0x00, 8);
             uint checksum = BigEndianConverter.ToUInt32(buffer, 0x08);
             MajorVersion = BigEndianConverter.ToUInt16(buffer, 0x0C);
@@ -106,6 +111,9 @@ namespace DiskAccessLibrary.LogicalDiskManager
             m_isChecksumValid = (checksum == CalculateChecksum(buffer));
         }
 
+        /// <summary>
+        /// Private header may need to be padded with zeros in order to fill an entire sector
+        /// </summary>
         public byte[] GetBytes()
         {
             byte[] buffer = new byte[Length];
@@ -236,8 +244,12 @@ namespace DiskAccessLibrary.LogicalDiskManager
         }
 
         public static void WriteToDisk(Disk disk, PrivateHeader privateHeader)
-        { 
+        {
             byte[] bytes = privateHeader.GetBytes();
+            if (disk.BytesPerSector > Length)
+            {
+                bytes = ByteUtils.Concatenate(bytes, new byte[disk.BytesPerSector - PrivateHeader.Length]);
+            }
 
             disk.WriteSectors((long)(privateHeader.PrivateRegionStartLBA +  privateHeader.PrimaryPrivateHeaderLBA), bytes);
             disk.WriteSectors((long)(privateHeader.PrivateRegionStartLBA + privateHeader.SecondaryPrivateHeaderLBA), bytes);

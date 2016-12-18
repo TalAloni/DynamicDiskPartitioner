@@ -113,7 +113,7 @@ namespace Raid5Manager
             relocatedExtent.Disk.WriteSectors(backupSectorIndex, filesystemBootRecord);
 
             // we write the resume record instead of the boot record
-            volume.WriteSectors(0, resumeRecord.GetBytes());
+            volume.WriteSectors(0, resumeRecord.GetBytes(volume.BytesPerSector));
 
             if (sourceExtent.FirstSector < relocatedExtent.FirstSector)
             {
@@ -125,7 +125,7 @@ namespace Raid5Manager
                 // move left
 
                 // we write the resume record at the new location as well (to be able to resume if a power failure will occur immediately after updating the database)
-                relocatedExtent.WriteSectors(0, resumeRecord.GetBytes());
+                relocatedExtent.WriteSectors(0, resumeRecord.GetBytes(relocatedExtent.BytesPerSector));
                 DynamicDiskExtent dynamicRelocatedExtent = new DynamicDiskExtent(relocatedExtent, sourceExtent.ExtentID);
                 dynamicRelocatedExtent.Name = sourceExtent.Name;
                 dynamicRelocatedExtent.DiskGuid = sourceExtent.DiskGuid;

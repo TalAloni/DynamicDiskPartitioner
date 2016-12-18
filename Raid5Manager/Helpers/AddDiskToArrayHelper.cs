@@ -1,4 +1,4 @@
-/* Copyright (C) 2014 Tal Aloni <tal.aloni.il@gmail.com>. All rights reserved.
+/* Copyright (C) 2014-2016 Tal Aloni <tal.aloni.il@gmail.com>. All rights reserved.
  * 
  * You can redistribute this program and/or modify it under the terms of
  * the GNU Lesser Public License as published by the Free Software Foundation,
@@ -40,7 +40,7 @@ namespace Raid5Manager
 
             // we use volume.WriteSectors so that the parity information will be update
             // this way, we could recover the first sector of each extent if a disk will fail
-            volume.WriteSectors(0, resumeRecord.GetBytes());
+            volume.WriteSectors(0, resumeRecord.GetBytes(volume.BytesPerSector));
 
             ResumeAddDiskToRaid5Volume(disks, volume, new DynamicDiskExtent(newExtent, newExtentID), resumeRecord, ref bytesCopied);
         }
@@ -129,7 +129,7 @@ namespace Raid5Manager
                 // update resume record
                 resumeRecord.NumberOfCommittedSectors += (ulong)(numberOfStripesToTransfer * volume.SectorsPerStripe);
                 bytesCopied = (long)resumeRecord.NumberOfCommittedSectors * volume.BytesPerSector;
-                newVolume.WriteSectors(0, resumeRecord.GetBytes());
+                newVolume.WriteSectors(0, resumeRecord.GetBytes(newVolume.BytesPerSector));
 
                 stripeIndexInVolume += numberOfStripesToTransfer;
             }
