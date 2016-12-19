@@ -124,14 +124,36 @@ namespace DiskAccessLibrary
             {
                 throw new ArgumentException("additionalNumberOfBytes must be a multiple of BytesPerSector");
             }
-
-            long length = this.Size;
+#if Win32
+            // calling AdjustTokenPrivileges and then immediately calling SetFileValidData will sometimes result in ERROR_PRIVILEGE_NOT_HELD.
+            // We can work around the issue by obtaining the privilege before obtaining the handle.
+            bool hasManageVolumePrivilege = SecurityUtils.ObtainManageVolumePrivilege();
+#endif
             if (!m_isExclusiveLock)
             {
                 m_stream = new FileStream(this.Path, FileMode.Open, FileAccess.ReadWrite, FileShare.Read, 0x1000, FILE_FLAG_NO_BUFFERING | FileOptions.WriteThrough);
             }
-            m_stream.SetLength(length + additionalNumberOfBytes);
+            else
+            {
+                // Workaround for AdjustTokenPrivileges issue
+                ReleaseLock();
+                ExclusiveLock();
+            }
+
+            m_stream.SetLength(m_size + additionalNumberOfBytes);
             m_size += additionalNumberOfBytes;
+#if Win32
+            if (hasManageVolumePrivilege)
+            {
+                try
+                {
+                    FileStreamUtils.SetValidLength(m_stream, m_size);
+                }
+                catch (IOException)
+                {
+                }
+            }
+#endif
             if (!m_isExclusiveLock)
             {
                 m_stream.Close();
