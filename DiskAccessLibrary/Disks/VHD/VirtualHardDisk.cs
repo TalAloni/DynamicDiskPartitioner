@@ -134,20 +134,20 @@ namespace DiskAccessLibrary
             m_file.WriteSectors(sectorIndex, data);
         }
 
-        public override void Extend(long additionalNumberOfBytes)
+        public override void Extend(long numberOfAdditionalBytes)
         {
-            if (additionalNumberOfBytes % this.BytesPerSector > 0)
+            if (numberOfAdditionalBytes % this.BytesPerSector > 0)
             {
-                throw new ArgumentException("additionalNumberOfBytes must be a multiple of BytesPerSector");
+                throw new ArgumentException("numberOfAdditionalBytes must be a multiple of BytesPerSector");
             }
 
             if (m_vhdFooter.DiskType == VirtualHardDiskType.Fixed)
             {
                 long length = this.Size; // does not include the footer
-                m_file.Extend(additionalNumberOfBytes);
-                m_vhdFooter.CurrentSize += (ulong)additionalNumberOfBytes;
+                m_file.Extend(numberOfAdditionalBytes);
+                m_vhdFooter.CurrentSize += (ulong)numberOfAdditionalBytes;
                 byte[] footerBytes = m_vhdFooter.GetBytes();
-                m_file.WriteSectors((length + additionalNumberOfBytes) / this.BytesPerSector, footerBytes);
+                m_file.WriteSectors((length + numberOfAdditionalBytes) / this.BytesPerSector, footerBytes);
             }
             else
             {

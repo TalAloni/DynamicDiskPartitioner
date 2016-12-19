@@ -118,11 +118,11 @@ namespace DiskAccessLibrary
         }
 
         /// <exception cref="System.IO.IOException"></exception>
-        public override void Extend(long additionalNumberOfBytes)
+        public override void Extend(long numberOfAdditionalBytes)
         {
-            if (additionalNumberOfBytes % this.BytesPerSector > 0)
+            if (numberOfAdditionalBytes % this.BytesPerSector > 0)
             {
-                throw new ArgumentException("additionalNumberOfBytes must be a multiple of BytesPerSector");
+                throw new ArgumentException("numberOfAdditionalBytes must be a multiple of BytesPerSector");
             }
 #if Win32
             // calling AdjustTokenPrivileges and then immediately calling SetFileValidData will sometimes result in ERROR_PRIVILEGE_NOT_HELD.
@@ -140,8 +140,8 @@ namespace DiskAccessLibrary
                 ExclusiveLock();
             }
 
-            m_stream.SetLength(m_size + additionalNumberOfBytes);
-            m_size += additionalNumberOfBytes;
+            m_stream.SetLength(m_size + numberOfAdditionalBytes);
+            m_size += numberOfAdditionalBytes;
 #if Win32
             if (hasManageVolumePrivilege)
             {

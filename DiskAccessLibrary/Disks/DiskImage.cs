@@ -29,7 +29,7 @@ namespace DiskAccessLibrary
             }
         }
 
-        public abstract void Extend(long additionalNumberOfBytes);
+        public abstract void Extend(long numberOfAdditionalBytes);
 
         public abstract bool ExclusiveLock();
 

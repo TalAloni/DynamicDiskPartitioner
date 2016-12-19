@@ -121,17 +121,17 @@ namespace DiskAccessLibrary
             m_extent.WriteSectors(sectorIndex, data);
         }
 
-        public override void Extend(long additionalNumberOfBytes)
+        public override void Extend(long numberOfAdditionalBytes)
         {
             if (m_descriptor.DiskType == VirtualMachineDiskType.MonolithicFlat)
             {
                 // Add updated extent entries
                 List<string> lines = VirtualMachineDiskDescriptor.ReadASCIITextLines(m_descriptorPath);
-                m_descriptor.ExtentEntries[0].SizeInSectors += additionalNumberOfBytes / this.BytesPerSector;
+                m_descriptor.ExtentEntries[0].SizeInSectors += numberOfAdditionalBytes / this.BytesPerSector;
                 m_descriptor.UpdateExtentEntries(lines);
 
                 File.WriteAllLines(m_descriptorPath, lines.ToArray(), Encoding.ASCII);
-                ((DiskImage)m_extent).Extend(additionalNumberOfBytes);
+                ((DiskImage)m_extent).Extend(numberOfAdditionalBytes);
             }
             else
             {

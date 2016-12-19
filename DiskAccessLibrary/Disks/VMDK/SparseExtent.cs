@@ -121,7 +121,7 @@ namespace DiskAccessLibrary.VMDK
             throw new NotImplementedException("The method or operation is not implemented.");
         }
 
-        public override void Extend(long additionalNumberOfBytes)
+        public override void Extend(long numberOfAdditionalBytes)
         {
             throw new NotImplementedException("The method or operation is not implemented.");
         }
