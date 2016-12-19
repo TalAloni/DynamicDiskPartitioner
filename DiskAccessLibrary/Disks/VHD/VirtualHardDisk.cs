@@ -256,51 +256,15 @@ namespace DiskAccessLibrary
         /// <exception cref="System.UnauthorizedAccessException"></exception>
         public static VirtualHardDisk Create(string path, long size)
         {
-#if Win32
-            // calling AdjustTokenPrivileges and then immediately calling SetFileValidData will sometimes result in ERROR_PRIVILEGE_NOT_HELD.
-            // We can work around the issue by obtaining the privilege before obtaining the handle.
-            bool hasManageVolumePrivilege = SecurityUtils.ObtainManageVolumePrivilege();
-#endif
-            FileStream stream = new FileStream(path, FileMode.Create, FileAccess.Write, FileShare.None);
-            try
-            {
-                stream.SetLength(size + 512); // VHD footer is 512 bytes
-            }
-            catch (IOException)
-            {
-                stream.Close();
-                try
-                {
-                    // Delete the incomplete file
-                    File.Delete(path);
-                }
-                catch (IOException)
-                {
-                }
-                throw;
-            }
-
-#if Win32
-            if (hasManageVolumePrivilege)
-            {
-                try
-                {
-                    FileStreamUtils.SetValidLength(stream, size + 512);
-                }
-                catch (IOException)
-                {
-                }
-            }
-#endif
-
             VHDFooter footer = new VHDFooter();
             footer.OriginalSize = (ulong)size;
             footer.CurrentSize = (ulong)size;
             footer.SetCurrentTimeStamp();
             footer.SetDiskGeometry((ulong)size / BytesPerDiskSector);
-            stream.Seek(size, SeekOrigin.Begin);
-            stream.Write(footer.GetBytes(), 0, VHDFooter.Length);
-            stream.Close();
+
+            RawDiskImage diskImage = RawDiskImage.Create(path, size + VHDFooter.Length, BytesPerDiskSector);
+            diskImage.WriteSectors(size / BytesPerDiskSector, footer.GetBytes());
+
             return new VirtualHardDisk(path);
         }
     }

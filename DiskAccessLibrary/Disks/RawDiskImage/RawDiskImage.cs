@@ -154,6 +154,63 @@ namespace DiskAccessLibrary
             }
         }
 
+        /// <param name="size">In bytes</param>
+        /// <exception cref="System.IO.IOException"></exception>
+        /// <exception cref="System.UnauthorizedAccessException"></exception>
+        public static RawDiskImage Create(string path, long size)
+        {
+            int bytesPerSector = DetectBytesPerSector(path);
+            return Create(path, size, bytesPerSector);
+        }
+
+        /// <param name="size">In bytes</param>
+        /// <exception cref="System.IO.IOException"></exception>
+        /// <exception cref="System.UnauthorizedAccessException"></exception>
+        internal static RawDiskImage Create(string path, long size, int bytesPerSector)
+        {
+            if (size % bytesPerSector > 0)
+            {
+                throw new ArgumentException("size must be a multiple of bytesPerSector");
+            }
+#if Win32
+            // calling AdjustTokenPrivileges and then immediately calling SetFileValidData will sometimes result in ERROR_PRIVILEGE_NOT_HELD.
+            // We can work around the issue by obtaining the privilege before obtaining the handle.
+            bool hasManageVolumePrivilege = SecurityUtils.ObtainManageVolumePrivilege();
+#endif
+            FileStream stream = new FileStream(path, FileMode.Create, FileAccess.Write, FileShare.None);
+            try
+            {
+                stream.SetLength(size);
+            }
+            catch (IOException)
+            {
+                stream.Close();
+                try
+                {
+                    // Delete the incomplete file
+                    File.Delete(path);
+                }
+                catch (IOException)
+                {
+                }
+                throw;
+            }
+#if Win32
+            if (hasManageVolumePrivilege)
+            {
+                try
+                {
+                    FileStreamUtils.SetValidLength(stream, size);
+                }
+                catch (IOException)
+                {
+                }
+            }
+#endif
+            stream.Close();
+            return new RawDiskImage(path, bytesPerSector);
+        }
+
         public static int DetectBytesPerSector(string path)
         {
             FileInfo info = new FileInfo(path);
