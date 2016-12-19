@@ -22,12 +22,16 @@ namespace DiskAccessLibrary
         private int m_bytesPerSector;
         private long m_size;
 
+        /// <exception cref="System.IO.IOException"></exception>
+        /// <exception cref="System.UnauthorizedAccessException"></exception>
         public RawDiskImage(string rawDiskImagePath) : base(rawDiskImagePath)
         {
             m_bytesPerSector = DetectBytesPerSector(rawDiskImagePath);
             m_size = new FileInfo(rawDiskImagePath).Length;
         }
 
+        /// <exception cref="System.IO.IOException"></exception>
+        /// <exception cref="System.UnauthorizedAccessException"></exception>
         public RawDiskImage(string rawDiskImagePath, int bytesPerSector) : base(rawDiskImagePath)
         {
             m_bytesPerSector = bytesPerSector;
