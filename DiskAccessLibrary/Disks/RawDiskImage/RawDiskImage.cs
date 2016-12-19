@@ -14,7 +14,7 @@ namespace DiskAccessLibrary
 {
     public partial class RawDiskImage : DiskImage
     {
-        public int DefaultBytesPerSector = 512;
+        public const int DefaultBytesPerSector = 512;
 
         const FileOptions FILE_FLAG_NO_BUFFERING = (FileOptions)0x20000000;
         private bool m_isExclusiveLock;
@@ -150,9 +150,9 @@ namespace DiskAccessLibrary
             }
         }
 
-        public int DetectBytesPerSector(string path)
+        public static int DetectBytesPerSector(string path)
         {
-            FileInfo info = new FileInfo(this.Path);
+            FileInfo info = new FileInfo(path);
             string[] components = info.Name.Split('.');
             if (components.Length >= 3) // file.512.img
             {
