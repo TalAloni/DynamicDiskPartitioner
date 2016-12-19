@@ -251,7 +251,7 @@ namespace DiskAccessLibrary
             cylinders = (ushort)(cylindersTimesHeads / heads);
         }
 
-        /// <param name="length">In bytes</param>
+        /// <param name="size">In bytes</param>
         /// <exception cref="System.IO.IOException"></exception>
         /// <exception cref="System.UnauthorizedAccessException"></exception>
         public static VirtualHardDisk Create(string path, long size)
