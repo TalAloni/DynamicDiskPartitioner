@@ -54,9 +54,9 @@ namespace Raid5Manager
         /// <summary>
         /// Move extent to a new location on the same disk
         /// </summary>
-        public static void MoveExtentWithinSameDisk(List<DynamicDisk> disks, DynamicVolume volume, DynamicDiskExtent sourceExtent, DiskExtent relocatedExtent, ref long bytesCopied)
+        public static void MoveExtentWithinSameDisk(List<DynamicDisk> diskGroup, DynamicVolume volume, DynamicDiskExtent sourceExtent, DiskExtent relocatedExtent, ref long bytesCopied)
         {
-            DiskGroupDatabase database = DiskGroupDatabase.ReadFromDisks(disks, volume.DiskGroupGuid);
+            DiskGroupDatabase database = DiskGroupDatabase.ReadFromDisks(diskGroup, volume.DiskGroupGuid);
             if (database == null)
             {
                 throw new DatabaseNotFoundException();
@@ -118,7 +118,7 @@ namespace Raid5Manager
             if (sourceExtent.FirstSector < relocatedExtent.FirstSector)
             {
                 // move right
-                MoveExtentRight(disks, volume, resumeRecord, ref bytesCopied);
+                MoveExtentRight(diskGroup, volume, resumeRecord, ref bytesCopied);
             }
             else
             { 
@@ -132,12 +132,12 @@ namespace Raid5Manager
                 VolumeManagerDatabaseHelper.UpdateExtentLocation(database, volume, dynamicRelocatedExtent);
                 int extentIndex = DynamicDiskExtentHelper.GetIndexOfExtentID(volume.DynamicExtents, sourceExtent.ExtentID);
                 // get the updated volume (we just moved an extent)
-                volume = DynamicVolumeHelper.GetVolumeByGuid(disks, volume.VolumeGuid);
-                MoveExtentLeft(disks, volume, resumeRecord, ref bytesCopied);
+                volume = DynamicVolumeHelper.GetVolumeByGuid(diskGroup, volume.VolumeGuid);
+                MoveExtentLeft(diskGroup, volume, resumeRecord, ref bytesCopied);
             }
         }
 
-        public static void ResumeMoveExtent(List<DynamicDisk> disks, DynamicVolume volume, MoveExtentOperationBootRecord resumeRecord, ref long bytesCopied)
+        public static void ResumeMoveExtent(List<DynamicDisk> diskGroup, DynamicVolume volume, MoveExtentOperationBootRecord resumeRecord, ref long bytesCopied)
         {
             if (resumeRecord.OldStartSector == resumeRecord.NewStartSector)
             {
@@ -173,17 +173,17 @@ namespace Raid5Manager
 
             if (resumeRecord.OldStartSector < resumeRecord.NewStartSector)
             {
-                MoveExtentRight(disks, volume, resumeRecord, ref bytesCopied);
+                MoveExtentRight(diskGroup, volume, resumeRecord, ref bytesCopied);
             }
             else
             {
-                MoveExtentLeft(disks, volume, resumeRecord, ref bytesCopied);
+                MoveExtentLeft(diskGroup, volume, resumeRecord, ref bytesCopied);
             }
         }
 
-        private static void MoveExtentRight(List<DynamicDisk> disks, DynamicVolume volume, MoveExtentOperationBootRecord resumeRecord, ref long bytesCopied)
+        private static void MoveExtentRight(List<DynamicDisk> diskGroup, DynamicVolume volume, MoveExtentOperationBootRecord resumeRecord, ref long bytesCopied)
         {
-            DiskGroupDatabase database = DiskGroupDatabase.ReadFromDisks(disks, volume.DiskGroupGuid);
+            DiskGroupDatabase database = DiskGroupDatabase.ReadFromDisks(diskGroup, volume.DiskGroupGuid);
             if (database == null)
             {
                 throw new DatabaseNotFoundException();
@@ -209,7 +209,7 @@ namespace Raid5Manager
                 VolumeManagerDatabaseHelper.ConvertStripedVolumeToRaid(database, volume.VolumeGuid);
             }
             // get the updated volume (we moved an extent and possibly reconverted to RAID-5)
-            volume = DynamicVolumeHelper.GetVolumeByGuid(disks, volume.VolumeGuid);
+            volume = DynamicVolumeHelper.GetVolumeByGuid(diskGroup, volume.VolumeGuid);
 
             // restore the filesystem boot sector
             byte[] filesystemBootRecord = relocatedExtent.Disk.ReadSector((long)resumeRecord.BootRecordBackupSector);
@@ -218,9 +218,9 @@ namespace Raid5Manager
             ClearBackupData(relocatedExtent.Disk, resumeRecord);
         }
 
-        private static void MoveExtentLeft(List<DynamicDisk> disks, DynamicVolume volume, MoveExtentOperationBootRecord resumeRecord, ref long bytesCopied)
+        private static void MoveExtentLeft(List<DynamicDisk> diskGroup, DynamicVolume volume, MoveExtentOperationBootRecord resumeRecord, ref long bytesCopied)
         {
-            DiskGroupDatabase database = DiskGroupDatabase.ReadFromDisks(disks, volume.DiskGroupGuid);
+            DiskGroupDatabase database = DiskGroupDatabase.ReadFromDisks(diskGroup, volume.DiskGroupGuid);
             if (database == null)
             {
                 throw new DatabaseNotFoundException();
@@ -243,7 +243,7 @@ namespace Raid5Manager
             {
                 VolumeManagerDatabaseHelper.ConvertStripedVolumeToRaid(database, volume.VolumeGuid);
                 // get the updated volume (we just reconverted to RAID-5)
-                volume = DynamicVolumeHelper.GetVolumeByGuid(disks, volume.VolumeGuid);
+                volume = DynamicVolumeHelper.GetVolumeByGuid(diskGroup, volume.VolumeGuid);
             }
             
             // restore the filesystem boot sector
