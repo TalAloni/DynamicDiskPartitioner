@@ -97,3 +97,5 @@ Revision History:
 1.4.0 - Minor improvements.
 
 1.4.1 - Minor improvements.
+
+1.4.2 - Minor improvements.
