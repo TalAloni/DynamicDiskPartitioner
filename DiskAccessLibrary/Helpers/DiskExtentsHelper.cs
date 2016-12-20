@@ -12,6 +12,7 @@ namespace DiskAccessLibrary
 {
     public class DiskExtentsHelper
     {
+        /// <param name="dataRegionSize">In bytes</param>
         internal static List<DiskExtent> GetUnallocatedExtents(Disk disk, long dataRegionStartSector, long dataRegionSize, List<DiskExtent> usedExtents)
         {
             List<DiskExtent> result = new List<DiskExtent>();
