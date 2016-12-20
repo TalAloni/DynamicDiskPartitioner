@@ -14,7 +14,7 @@ namespace DiskAccessLibrary.LogicalDiskManager
 {
     public partial class DiskGroupDatabase : VolumeManagerDatabase
     {
-        List<DynamicDisk> m_disks = new List<DynamicDisk>(); // when updating the database, all dynamic disks in the system should be added
+        List<DynamicDisk> m_disks = new List<DynamicDisk>(); // when updating the database, all dynamic disks in the group should be added
 
         public DiskGroupDatabase(List<DynamicDisk> disks, VolumeManagerDatabaseHeader databaseHeader, List<DatabaseRecord> databaseRecords, KernelUpdateLog kernelUpdateLog)
             : base(disks[0], databaseHeader, databaseRecords, kernelUpdateLog)
