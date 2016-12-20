@@ -157,46 +157,29 @@ namespace DiskAccessLibrary.LogicalDiskManager
             {
                 return false;
             }
+            long targetSector = targetOffset / disk.BytesPerSector;
+            DiskExtent targetExtent = new DiskExtent(disk.Disk, targetSector, sourceExtent.Size);
 
-            int index = DynamicDiskExtentHelper.GetIndexOfExtentID(extents, sourceExtent.ExtentID);
-            extents.RemoveAt(index);
-
-            long targetStartSector = targetOffset / disk.BytesPerSector;
+            List<DiskExtent> usedExtents = new List<DiskExtent>();
+            foreach (DynamicDiskExtent usedExtent in usedExtents)
+            {
+                if (usedExtent.FirstSector != sourceExtent.FirstSector)
+                {
+                    usedExtents.Add(usedExtent);
+                }
+            }
 
             long publicRegionStartSector = (long)privateHeader.PublicRegionStartLBA;
-            long startSector = publicRegionStartSector;
-            long publicRegionSizeLBA = (long)privateHeader.PublicRegionSizeLBA;
-
-            if (targetStartSector < publicRegionStartSector)
+            long publicRegionSize = (long)privateHeader.PublicRegionSizeLBA * disk.BytesPerSector;
+            List<DiskExtent> unallocatedExtents = DiskExtentsHelper.GetUnallocatedExtents(disk.Disk, publicRegionStartSector, publicRegionSize, usedExtents);
+            foreach (DiskExtent extent in unallocatedExtents)
             {
-                return false;
-            }
-
-            if (targetStartSector + sourceExtent.TotalSectors > publicRegionStartSector + publicRegionSizeLBA)
-            {
-                return false;
-            }
-
-            foreach (DynamicDiskExtent extent in extents)
-            {
-                long extentStartSector = extent.FirstSector;
-                long extentEndSector = extent.FirstSector + extent.Size / disk.BytesPerSector - 1;
-                if (extentStartSector >= targetStartSector &&
-                    extentStartSector <= targetStartSector + sourceExtent.TotalSectors)
+                if (extent.FirstSector <= targetExtent.FirstSector && targetExtent.LastSector <= extent.LastSector)
                 {
-                    // extent start within the requested region
-                    return false;
-                }
-
-                if (extentEndSector >= targetStartSector &&
-                    extentEndSector <= targetStartSector + sourceExtent.TotalSectors)
-                {
-                    // extent end within the requested region
-                    return false;
+                    return true;
                 }
             }
-
-            return true;
+            return false;
         }
     }
 }
