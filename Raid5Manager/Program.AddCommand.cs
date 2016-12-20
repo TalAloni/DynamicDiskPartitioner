@@ -161,8 +161,9 @@ namespace Raid5Manager
             long bytesCopied = 0;
             Thread thread = new Thread(delegate()
             {
-                List<DynamicDisk> disks = WindowsDynamicDiskHelper.GetPhysicalDynamicDisks();
-                AddDiskToArrayHelper.AddDiskToRaid5Volume(disks, raid5Volume, newExtent, ref bytesCopied);
+                List<DynamicDisk> diskGroup = WindowsDynamicDiskHelper.GetPhysicalDynamicDisks(raid5Volume.DiskGroupGuid);
+                DiskGroupDatabase database = DiskGroupDatabase.ReadFromDisks(diskGroup, raid5Volume.DiskGroupGuid);
+                AddDiskToArrayHelper.AddDiskToRaid5Volume(database, raid5Volume, newExtent, ref bytesCopied);
             });
             thread.Start();
 

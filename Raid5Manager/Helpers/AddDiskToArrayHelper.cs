@@ -15,13 +15,8 @@ namespace Raid5Manager
 {
     public class AddDiskToArrayHelper
     {
-        public static void AddDiskToRaid5Volume(List<DynamicDisk> disks, Raid5Volume volume, DiskExtent newExtent, ref long bytesCopied)
+        public static void AddDiskToRaid5Volume(DiskGroupDatabase database, Raid5Volume volume, DiskExtent newExtent, ref long bytesCopied)
         {
-            DiskGroupDatabase database = DiskGroupDatabase.ReadFromDisks(disks, volume.DiskGroupGuid);
-            if (database == null)
-            {
-                throw new DatabaseNotFoundException();
-            }
             // If there will be a power failure during the conversion, our RAID volume will resync during boot,
             // To prevent destruction of the data, we temporarily convert the array to striped volume
             VolumeManagerDatabaseHelper.ConvertRaidToStripedVolume(database, volume.VolumeGuid);
@@ -42,10 +37,10 @@ namespace Raid5Manager
             // this way, we could recover the first sector of each extent if a disk will fail
             volume.WriteSectors(0, resumeRecord.GetBytes(volume.BytesPerSector));
 
-            ResumeAddDiskToRaid5Volume(disks, volume, new DynamicDiskExtent(newExtent, newExtentID), resumeRecord, ref bytesCopied);
+            ResumeAddDiskToRaid5Volume(database, volume, new DynamicDiskExtent(newExtent, newExtentID), resumeRecord, ref bytesCopied);
         }
 
-        public static void ResumeAddDiskToRaid5Volume(List<DynamicDisk> disks, StripedVolume stripedVolume, AddDiskOperationBootRecord resumeRecord, ref long bytesCopied)
+        public static void ResumeAddDiskToRaid5Volume(DiskGroupDatabase database, StripedVolume stripedVolume, AddDiskOperationBootRecord resumeRecord, ref long bytesCopied)
         {
             List<DynamicColumn> columns = stripedVolume.Columns;
             DynamicDiskExtent newExtent = columns[columns.Count - 1].Extents[0];
@@ -55,10 +50,10 @@ namespace Raid5Manager
             volume.VolumeID = stripedVolume.VolumeID;
             volume.Name = stripedVolume.Name;
             volume.DiskGroupName = stripedVolume.DiskGroupName;
-            ResumeAddDiskToRaid5Volume(disks, volume, newExtent, resumeRecord, ref bytesCopied);
+            ResumeAddDiskToRaid5Volume(database, volume, newExtent, resumeRecord, ref bytesCopied);
         }
 
-        private static void ResumeAddDiskToRaid5Volume(List<DynamicDisk> disks, Raid5Volume volume, DynamicDiskExtent newExtent, AddDiskOperationBootRecord resumeRecord, ref long bytesCopied)
+        private static void ResumeAddDiskToRaid5Volume(DiskGroupDatabase database, Raid5Volume volume, DynamicDiskExtent newExtent, AddDiskOperationBootRecord resumeRecord, ref long bytesCopied)
         {
             // When reading from the volume, we must use the old volume (without the new disk)
             // However, when writing the boot sector to the volume, we must use the new volume or otherwise parity information will be invalid
@@ -137,7 +132,6 @@ namespace Raid5Manager
             // we're done, let's restore the filesystem boot record
             byte[] filesystemBootRecord = newExtent.ReadSector(newExtent.TotalSectors - 1);
             newVolume.WriteSectors(0, filesystemBootRecord);
-            DiskGroupDatabase database = DiskGroupDatabase.ReadFromDisks(disks, volume.DiskGroupGuid);
             VolumeManagerDatabaseHelper.ConvertStripedVolumeToRaid(database, volume.VolumeGuid);
         }
 
