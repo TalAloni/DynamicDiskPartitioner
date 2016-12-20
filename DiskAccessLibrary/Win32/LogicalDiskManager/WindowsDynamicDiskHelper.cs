@@ -1,4 +1,4 @@
-/* Copyright (C) 2014 Tal Aloni <tal.aloni.il@gmail.com>. All rights reserved.
+/* Copyright (C) 2014-2016 Tal Aloni <tal.aloni.il@gmail.com>. All rights reserved.
  * 
  * You can redistribute this program and/or modify it under the terms of
  * the GNU Lesser Public License as published by the Free Software Foundation,
@@ -22,6 +22,21 @@ namespace DiskAccessLibrary.LogicalDiskManager
             {
                 DynamicDisk dynamicDisk = DynamicDisk.ReadFromDisk(disk);
                 if (dynamicDisk != null)
+                {
+                    result.Add(dynamicDisk);
+                }
+            }
+            return result;
+        }
+
+        public static List<DynamicDisk> GetPhysicalDynamicDisks(Guid diskGroupGuide)
+        {
+            List<PhysicalDisk> disks = PhysicalDiskHelper.GetPhysicalDisks();
+            List<DynamicDisk> result = new List<DynamicDisk>();
+            foreach (PhysicalDisk disk in disks)
+            {
+                DynamicDisk dynamicDisk = DynamicDisk.ReadFromDisk(disk);
+                if (dynamicDisk != null && dynamicDisk.DiskGroupGuid == diskGroupGuide)
                 {
                     result.Add(dynamicDisk);
                 }
