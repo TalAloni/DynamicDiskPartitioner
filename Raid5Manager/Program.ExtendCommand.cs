@@ -124,9 +124,10 @@ namespace Raid5Manager
 
                 if (m_selectedVolume is DynamicVolume)
                 {
+                    Guid diskGroupGuid = ((DynamicVolume)m_selectedVolume).DiskGroupGuid;
                     // Lock disks and volumes
                     Console.WriteLine("Locking disks and volumes");
-                    LockStatus status = LockManager.LockAllDynamicDisks(true);
+                    LockStatus status = LockManager.LockDynamicDiskGroup(diskGroupGuid, true);
                     if (status != LockStatus.Success)
                     {
                         if (status == LockStatus.CannotLockDisk)
@@ -142,7 +143,7 @@ namespace Raid5Manager
 
                     if (Environment.OSVersion.Version.Major >= 6)
                     {
-                        if (!DiskOfflineHelper.AreDynamicDisksOnlineAndWriteable())
+                        if (!DiskOfflineHelper.IsDiskGroupOnlineAndWritable(diskGroupGuid))
                         {
                             Console.WriteLine("Error: One or more dynamic disks are offline or set to readonly.");
                             LockManager.UnlockAllDisksAndVolumes();
@@ -150,7 +151,7 @@ namespace Raid5Manager
                         }
 
                         Console.WriteLine("Taking dynamic disks offline.");
-                        bool success = DiskOfflineHelper.OfflineAllDynamicDisks();
+                        bool success = DiskOfflineHelper.OfflineDiskGroup(diskGroupGuid);
                         if (!success)
                         {
                             Console.WriteLine("Failed to take all dynamic disks offline!");
@@ -159,14 +160,14 @@ namespace Raid5Manager
                         }
                     }
 
-                    DiskGroupDatabase database = DiskGroupDatabase.ReadFromPhysicalDisks(((DynamicVolume)m_selectedVolume).DiskGroupGuid);
+                    DiskGroupDatabase database = DiskGroupDatabase.ReadFromPhysicalDisks(diskGroupGuid);
                     ExtendHelper.ExtendDynamicVolume((DynamicVolume)m_selectedVolume, additionalNumberOfExtentSectors, database);
                     Console.WriteLine("Operation completed.");
 
                     if (Environment.OSVersion.Version.Major >= 6)
                     {
                         Console.WriteLine("Taking dynamic disks online.");
-                        DiskOfflineHelper.OnlineAllDynamicDisks();
+                        DiskOfflineHelper.OnlineDiskGroup(diskGroupGuid);
                         LockManager.UnlockAllDisksAndVolumes();
                     }
                     else
@@ -323,14 +324,15 @@ namespace Raid5Manager
                 // http://msdn.microsoft.com/en-us/library/ff551353%28v=vs.85%29.aspx
                 if (Environment.OSVersion.Version.Major >= 6 && m_selectedVolume is DynamicVolume)
                 {
-                    if (!DiskOfflineHelper.AreDynamicDisksOnlineAndWriteable())
+                    Guid diskGroupGuid = ((DynamicVolume)m_selectedVolume).DiskGroupGuid;
+                    if (!DiskOfflineHelper.IsDiskGroupOnlineAndWritable(diskGroupGuid))
                     {
                         Console.WriteLine("Error: One or more dynamic disks are offline or set to readonly.");
                         return;
                     }
 
                     Console.WriteLine("Taking dynamic disks offline.");
-                    bool success = DiskOfflineHelper.OfflineAllDynamicDisks();
+                    bool success = DiskOfflineHelper.OfflineDiskGroup(diskGroupGuid);
                     if (!success)
                     {
                         Console.WriteLine("Failed to take all dynamic disks offline!");
@@ -349,7 +351,7 @@ namespace Raid5Manager
                 if (Environment.OSVersion.Version.Major >= 6 && m_selectedVolume is DynamicVolume)
                 {
                     Console.WriteLine("Taking dynamic disks online.");
-                    DiskOfflineHelper.OnlineAllDynamicDisks();
+                    DiskOfflineHelper.OnlineDiskGroup(((DynamicVolume)m_selectedVolume).DiskGroupGuid);
                 }
             }
         }

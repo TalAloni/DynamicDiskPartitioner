@@ -136,7 +136,7 @@ namespace Raid5Manager
 
             // Lock disks and volumes
             Console.WriteLine("Locking disks and volumes");
-            LockStatus status = LockManager.LockAllDynamicDisks(true);
+            LockStatus status = LockManager.LockDynamicDiskGroup(dynamicVolume.DiskGroupGuid, true);
             if (status != LockStatus.Success)
             {
                 if (status == LockStatus.CannotLockDisk)
@@ -152,7 +152,7 @@ namespace Raid5Manager
 
             if (Environment.OSVersion.Version.Major >= 6)
             {
-                if (!DiskOfflineHelper.AreDynamicDisksOnlineAndWriteable())
+                if (!DiskOfflineHelper.IsDiskGroupOnlineAndWritable(dynamicVolume.DiskGroupGuid))
                 {
                     Console.WriteLine("Error: One or more dynamic disks are offline or set to readonly.");
                     LockManager.UnlockAllDisksAndVolumes();
@@ -160,7 +160,7 @@ namespace Raid5Manager
                 }
 
                 Console.WriteLine("Taking dynamic disks offline.");
-                bool success = DiskOfflineHelper.OfflineAllDynamicDisks();
+                bool success = DiskOfflineHelper.OfflineDiskGroup(dynamicVolume.DiskGroupGuid);
                 if (!success)
                 {
                     Console.WriteLine("Failed to take all dynamic disks offline!");
@@ -181,14 +181,14 @@ namespace Raid5Manager
             long bytesCopied = 0;
             Thread thread = new Thread(delegate()
             {
-                List<DynamicDisk> disks = WindowsDynamicDiskHelper.GetPhysicalDynamicDisks();
+                List<DynamicDisk> diskGroup = WindowsDynamicDiskHelper.GetPhysicalDynamicDisks(dynamicVolume.DiskGroupGuid);
                 if (isSameDisk)
                 {
-                    MoveExtentHelper.MoveExtentWithinSameDisk(disks, dynamicVolume, sourceExtent, relocatedExtent, ref bytesCopied);
+                    MoveExtentHelper.MoveExtentWithinSameDisk(diskGroup, dynamicVolume, sourceExtent, relocatedExtent, ref bytesCopied);
                 }
                 else
                 {
-                    MoveExtentHelper.MoveExtentToAnotherDisk(disks, dynamicVolume, sourceExtent, relocatedExtent, ref bytesCopied);
+                    MoveExtentHelper.MoveExtentToAnotherDisk(diskGroup, dynamicVolume, sourceExtent, relocatedExtent, ref bytesCopied);
                 }
             });
             thread.Start();
@@ -207,7 +207,7 @@ namespace Raid5Manager
             if (Environment.OSVersion.Version.Major >= 6)
             {
                 Console.WriteLine("Taking dynamic disks online.");
-                DiskOfflineHelper.OnlineAllDynamicDisks();
+                DiskOfflineHelper.OnlineDiskGroup(dynamicVolume.DiskGroupGuid);
                 LockManager.UnlockAllDisksAndVolumes();
             }
             else

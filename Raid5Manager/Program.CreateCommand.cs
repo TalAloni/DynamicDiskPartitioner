@@ -138,7 +138,7 @@ namespace Raid5Manager
             Console.WriteLine("Locking disks and volumes");
             // We want to lock the volumes as well or otherwise dmio will report the following error:
             // "The system failed to flush data to the transaction log. Corruption may occur."
-            LockStatus status = LockManager.LockAllDynamicDisks(true);
+            LockStatus status = LockManager.LockDynamicDiskGroup(diskGroupGuid, true);
             if (status != LockStatus.Success)
             {
                 if (status == LockStatus.CannotLockDisk)
@@ -154,7 +154,7 @@ namespace Raid5Manager
 
             if (Environment.OSVersion.Version.Major >= 6)
             {
-                if (!DiskOfflineHelper.AreDynamicDisksOnlineAndWriteable())
+                if (!DiskOfflineHelper.IsDiskGroupOnlineAndWritable(diskGroupGuid))
                 {
                     Console.WriteLine("Error: One or more dynamic disks are offline or set to readonly.");
                     LockManager.UnlockAllDisksAndVolumes();
@@ -162,7 +162,7 @@ namespace Raid5Manager
                 }
 
                 Console.WriteLine("Taking dynamic disks offline.");
-                bool success = DiskOfflineHelper.OfflineAllDynamicDisks();
+                bool success = DiskOfflineHelper.OfflineDiskGroup(diskGroupGuid);
                 if (!success)
                 {
                     Console.WriteLine("Failed to take all dynamic disks offline!");
@@ -179,7 +179,7 @@ namespace Raid5Manager
             if (Environment.OSVersion.Version.Major >= 6)
             {
                 Console.WriteLine("Taking dynamic disks online.");
-                DiskOfflineHelper.OnlineAllDynamicDisks();
+                DiskOfflineHelper.OnlineDiskGroup(diskGroupGuid);
                 LockManager.UnlockAllDisksAndVolumes();
             }
             else
@@ -331,7 +331,7 @@ namespace Raid5Manager
             Console.WriteLine("Locking disks and volumes");
             // We want to lock the volumes as well or otherwise dmio will report the following error:
             // "The system failed to flush data to the transaction log. Corruption may occur."
-            LockStatus status = LockManager.LockAllDynamicDisks(true);
+            LockStatus status = LockManager.LockDynamicDiskGroup(diskGroupGuid, true);
             if (status != LockStatus.Success)
             {
                 if (status == LockStatus.CannotLockDisk)
@@ -347,7 +347,7 @@ namespace Raid5Manager
 
             if (Environment.OSVersion.Version.Major >= 6)
             {
-                if (!DiskOfflineHelper.AreDynamicDisksOnlineAndWriteable())
+                if (!DiskOfflineHelper.IsDiskGroupOnlineAndWritable(diskGroupGuid))
                 {
                     Console.WriteLine("Error: One or more dynamic disks are offline or set to readonly.");
                     LockManager.UnlockAllDisksAndVolumes();
@@ -355,7 +355,7 @@ namespace Raid5Manager
                 }
 
                 Console.WriteLine("Taking dynamic disks offline.");
-                bool success = DiskOfflineHelper.OfflineAllDynamicDisks();
+                bool success = DiskOfflineHelper.OfflineDiskGroup(diskGroupGuid);
                 if (!success)
                 {
                     Console.WriteLine("Failed to take all dynamic disks offline!");
@@ -371,7 +371,7 @@ namespace Raid5Manager
             if (Environment.OSVersion.Version.Major >= 6)
             {
                 Console.WriteLine("Taking dynamic disks online.");
-                DiskOfflineHelper.OnlineAllDynamicDisks();
+                DiskOfflineHelper.OnlineDiskGroup(diskGroupGuid);
                 LockManager.UnlockAllDisksAndVolumes();
             }
             else

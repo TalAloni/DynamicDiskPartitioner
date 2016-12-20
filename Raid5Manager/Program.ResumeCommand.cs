@@ -49,7 +49,7 @@ namespace Raid5Manager
 
                     // Lock disks and volumes
                     Console.WriteLine("Locking disks and volumes");
-                    LockStatus status = LockManager.LockAllDynamicDisks(true);
+                    LockStatus status = LockManager.LockDynamicDiskGroup(stripedVolume.DiskGroupGuid, true);
                     if (status != LockStatus.Success)
                     {
                         if (status == LockStatus.CannotLockDisk)
@@ -65,7 +65,7 @@ namespace Raid5Manager
 
                     if (Environment.OSVersion.Version.Major >= 6)
                     {
-                        if (!DiskOfflineHelper.AreDynamicDisksOnlineAndWriteable())
+                        if (!DiskOfflineHelper.IsDiskGroupOnlineAndWritable(stripedVolume.DiskGroupGuid))
                         {
                             Console.WriteLine("Error: One or more dynamic disks are offline or set to readonly.");
                             LockManager.UnlockAllDisksAndVolumes();
@@ -73,7 +73,7 @@ namespace Raid5Manager
                         }
 
                         Console.WriteLine("Taking dynamic disks offline.");
-                        bool success = DiskOfflineHelper.OfflineAllDynamicDisks();
+                        bool success = DiskOfflineHelper.OfflineDiskGroup(stripedVolume.DiskGroupGuid);
                         if (!success)
                         {
                             Console.WriteLine("Failed to take all dynamic disks offline!");
@@ -109,7 +109,7 @@ namespace Raid5Manager
                     if (Environment.OSVersion.Version.Major >= 6)
                     {
                         Console.WriteLine("Taking dynamic disks online.");
-                        DiskOfflineHelper.OnlineAllDynamicDisks();
+                        DiskOfflineHelper.OnlineDiskGroup(stripedVolume.DiskGroupGuid);
                         LockManager.UnlockAllDisksAndVolumes();
                     }
                     else
@@ -129,7 +129,7 @@ namespace Raid5Manager
 
                     // Lock disks and volumes
                     Console.WriteLine("Locking disks and volumes");
-                    LockStatus status = LockManager.LockAllDynamicDisks(true);
+                    LockStatus status = LockManager.LockDynamicDiskGroup(dynamicVolume.DiskGroupGuid, true);
                     if (status != LockStatus.Success)
                     {
                         if (status == LockStatus.CannotLockDisk)
@@ -145,7 +145,7 @@ namespace Raid5Manager
 
                     if (Environment.OSVersion.Version.Major >= 6)
                     {
-                        if (!DiskOfflineHelper.AreDynamicDisksOnlineAndWriteable())
+                        if (!DiskOfflineHelper.IsDiskGroupOnlineAndWritable(dynamicVolume.DiskGroupGuid))
                         {
                             Console.WriteLine("Error: One or more dynamic disks are offline or set to readonly.");
                             LockManager.UnlockAllDisksAndVolumes();
@@ -153,7 +153,7 @@ namespace Raid5Manager
                         }
 
                         Console.WriteLine("Taking dynamic disks offline.");
-                        bool success = DiskOfflineHelper.OfflineAllDynamicDisks();
+                        bool success = DiskOfflineHelper.OfflineDiskGroup(dynamicVolume.DiskGroupGuid);
                         if (!success)
                         {
                             Console.WriteLine("Failed to take all dynamic disks offline!");
@@ -172,7 +172,7 @@ namespace Raid5Manager
                     long bytesCopied = 0;
                     Thread thread = new Thread(delegate()
                     {
-                        List<DynamicDisk> disks = WindowsDynamicDiskHelper.GetPhysicalDynamicDisks();
+                        List<DynamicDisk> disks = WindowsDynamicDiskHelper.GetPhysicalDynamicDisks(dynamicVolume.DiskGroupGuid);
                         MoveExtentHelper.ResumeMoveExtent(disks, dynamicVolume, (MoveExtentOperationBootRecord)resumeRecord, ref bytesCopied);
                     });
                     thread.Start();
@@ -191,7 +191,7 @@ namespace Raid5Manager
                     if (Environment.OSVersion.Version.Major >= 6)
                     {
                         Console.WriteLine("Taking dynamic disks online.");
-                        DiskOfflineHelper.OnlineAllDynamicDisks();
+                        DiskOfflineHelper.OnlineDiskGroup(dynamicVolume.DiskGroupGuid);
                         LockManager.UnlockAllDisksAndVolumes();
                     }
                     else
