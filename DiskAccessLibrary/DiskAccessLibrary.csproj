@@ -118,6 +118,7 @@
     <Compile Include="LogicalDiskManager\Helpers\DynamicDiskExtentHelper.cs" />
     <Compile Include="LogicalDiskManager\Helpers\DynamicDiskExtentsHelper.cs" />
     <Compile Include="LogicalDiskManager\Helpers\DynamicDiskHelper.cs" />
+    <Compile Include="LogicalDiskManager\Helpers\DynamicDiskHelper.Extents.cs" />
     <Compile Include="LogicalDiskManager\Helpers\DynamicVolumeHelper.cs" />
     <Compile Include="LogicalDiskManager\Helpers\PublicRegionHelper.cs" />
     <Compile Include="LogicalDiskManager\Helpers\PrivateRegionHelper.cs" />

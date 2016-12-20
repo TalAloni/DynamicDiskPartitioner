@@ -118,7 +118,7 @@ namespace Raid5Manager
             }
             else // size was not specified
             {
-                sizeInBytes = DynamicDiskExtentHelper.GetMaxNewExtentLength(dynamicDisk, alignInSectors);
+                sizeInBytes = DynamicDiskHelper.GetMaxNewExtentLength(dynamicDisk, alignInSectors);
 
                 if (sizeInBytes < 1024 * 1024)
                 {
@@ -127,7 +127,7 @@ namespace Raid5Manager
                 }
             }
 
-            DiskExtent extent = DynamicDiskExtentHelper.AllocateNewExtent(dynamicDisk, sizeInBytes, alignInSectors);
+            DiskExtent extent = DynamicDiskHelper.FindExtentAllocation(dynamicDisk, sizeInBytes, alignInSectors);
             if (extent == null)
             {
                 Console.WriteLine("Disk {0} does not contain enough free space.", diskIndex);
@@ -297,7 +297,7 @@ namespace Raid5Manager
                 foreach (DynamicDisk disk in dynamicDisks)
                 {
                     long alignInSectors = alignInBytes / disk.BytesPerSector;
-                    long freeSpaceInExtent = DynamicDiskExtentHelper.GetMaxNewExtentLength(disk, alignInSectors);
+                    long freeSpaceInExtent = DynamicDiskHelper.GetMaxNewExtentLength(disk, alignInSectors);
                     if (freeSpaceInExtent < sizeInBytes)
                     {
                         sizeInBytes = freeSpaceInExtent;
@@ -318,7 +318,7 @@ namespace Raid5Manager
             foreach(DynamicDisk disk in dynamicDisks)
             {
                 long alignInSectors = alignInBytes / disk.BytesPerSector;
-                DiskExtent extent = DynamicDiskExtentHelper.AllocateNewExtent(disk, sizeInBytes, alignInSectors);
+                DiskExtent extent = DynamicDiskHelper.FindExtentAllocation(disk, sizeInBytes, alignInSectors);
                 if (extent == null)
                 {
                     Console.WriteLine("Disk {0} does not contain enough free space.", ((PhysicalDisk)disk.Disk).PhysicalDiskIndex);

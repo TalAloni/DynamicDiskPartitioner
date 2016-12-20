@@ -110,7 +110,7 @@ namespace Raid5Manager
             }
 
             Raid5Volume raid5Volume = (Raid5Volume)m_selectedVolume;
-            DiskExtent newExtent = DynamicDiskExtentHelper.AllocateNewExtent(targetDynamicDisk, raid5Volume.ColumnSize);
+            DiskExtent newExtent = DynamicDiskHelper.FindExtentAllocation(targetDynamicDisk, raid5Volume.ColumnSize);
             if (newExtent == null)
             {
                 Console.WriteLine("The disk specified does not contain enough free space.");

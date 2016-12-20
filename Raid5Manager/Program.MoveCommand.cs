@@ -86,7 +86,7 @@ namespace Raid5Manager
             {
                 long offset = FormattingHelper.ParseStandardSizeString(parameters.ValueOf("offset"));
                 DynamicDisk dynamicDisk = DynamicDisk.ReadFromDisk(sourceExtent.Disk);
-                if (!DynamicDiskExtentHelper.IsMoveLocationValid(dynamicDisk, sourceExtent, offset))
+                if (!DynamicDiskHelper.IsMoveLocationValid(dynamicDisk, sourceExtent, offset))
                 {
                     Console.WriteLine("Error: Invalid offset specified.");
                     Console.WriteLine("The following conditions must be met:");
@@ -126,7 +126,7 @@ namespace Raid5Manager
                     Console.WriteLine("Error: Disk specified is not a dynamic disk.");
                     return;
                 }
-                relocatedExtent = DynamicDiskExtentHelper.AllocateNewExtent(dynamicDisk, sourceExtent.Size);
+                relocatedExtent = DynamicDiskHelper.FindExtentAllocation(dynamicDisk, sourceExtent.Size);
                 if (relocatedExtent == null)
                 {
                     Console.WriteLine("Disk {0} does not contain enough free space.", targetDiskIndex);

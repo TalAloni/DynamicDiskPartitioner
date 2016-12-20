@@ -133,7 +133,7 @@ namespace DiskAccessLibrary
         {
             DynamicDisk disk = DynamicDisk.ReadFromDisk(targetExtent.Disk);
             PrivateHeader privateHeader = disk.PrivateHeader;
-            List<DynamicDiskExtent> extents = DynamicDiskExtentHelper.GetDiskExtents(disk);
+            List<DynamicDiskExtent> extents = DynamicDiskHelper.GetDiskExtents(disk);
             if (extents == null)
             {
                 throw new InvalidDataException("Cannot read extents information from disk");
