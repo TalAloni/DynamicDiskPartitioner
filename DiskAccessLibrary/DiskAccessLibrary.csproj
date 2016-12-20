@@ -92,6 +92,7 @@
     <Compile Include="FileSystems\NTFS\Structures\MftSegmentReference.cs" />
     <Compile Include="Helpers\BasicDiskHelper.cs" />
     <Compile Include="Helpers\DiskExtentHelper.cs" />
+    <Compile Include="Helpers\DiskExtentsHelper.cs" />
     <Compile Include="Helpers\ExtendHelper.Volume.cs" />
     <Compile Include="Helpers\Settings.cs" />
     <Compile Include="Helpers\VolumeHelper.cs" />
@@ -115,6 +116,7 @@
     <Compile Include="LogicalDiskManager\Exceptions\DatabaseNotFoundException.cs" />
     <Compile Include="LogicalDiskManager\Exceptions\MissingDatabaseRecordException.cs" />
     <Compile Include="LogicalDiskManager\Helpers\DynamicDiskExtentHelper.cs" />
+    <Compile Include="LogicalDiskManager\Helpers\DynamicDiskExtentsHelper.cs" />
     <Compile Include="LogicalDiskManager\Helpers\DynamicDiskHelper.cs" />
     <Compile Include="LogicalDiskManager\Helpers\DynamicVolumeHelper.cs" />
     <Compile Include="LogicalDiskManager\Helpers\PublicRegionHelper.cs" />

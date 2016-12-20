@@ -141,7 +141,7 @@ namespace DiskAccessLibrary.LogicalDiskManager
         /// <returns>Allocated DiskExtent or null if there is not enough free disk space</returns>
         public static DiskExtent AllocateNewExtent(DynamicDisk disk, long allocationLength, long alignInSectors)
         {
-            List<DiskExtent> unallocatedExtents = GetUnallocatedSpace(disk);
+            List<DiskExtent> unallocatedExtents = GetUnallocatedExtents(disk);
             if (unallocatedExtents == null)
             {
                 return null;
@@ -170,7 +170,7 @@ namespace DiskAccessLibrary.LogicalDiskManager
         /// <returns>In bytes</returns>
         public static long GetMaxNewExtentLength(DynamicDisk disk, long alignInSectors)
         {
-            List<DiskExtent> unallocatedExtents = GetUnallocatedSpace(disk);
+            List<DiskExtent> unallocatedExtents = GetUnallocatedExtents(disk);
             if (unallocatedExtents == null)
             {
                 return -1;
@@ -192,7 +192,7 @@ namespace DiskAccessLibrary.LogicalDiskManager
             return result;
         }
 
-        private static List<DiskExtent> GetUnallocatedSpace(DynamicDisk disk)
+        private static List<DiskExtent> GetUnallocatedExtents(DynamicDisk disk)
         {
             List<DynamicDiskExtent> extents = GetDiskExtents(disk);
             // extents are sorted by first sector
@@ -200,36 +200,18 @@ namespace DiskAccessLibrary.LogicalDiskManager
             {
                 return null;
             }
+            List<DiskExtent> usedExtents = new List<DiskExtent>();
+            foreach (DynamicDiskExtent usedExtent in usedExtents)
+            {
+                usedExtents.Add(usedExtent);
+            }
 
             List<DiskExtent> result = new List<DiskExtent>();
 
             PrivateHeader privateHeader = disk.PrivateHeader;
             long publicRegionStartSector = (long)privateHeader.PublicRegionStartLBA;
-            long startSector = publicRegionStartSector;
             long publicRegionSize = (long)privateHeader.PublicRegionSizeLBA * disk.Disk.BytesPerSector;
-
-            // see if there is room before each extent
-            foreach (DynamicDiskExtent extent in extents)
-            {
-                long extentStartSector = extent.FirstSector;
-                long nextStartSector = extent.FirstSector + extent.Size / disk.BytesPerSector;
-                long freeSpaceInBytes = (extentStartSector - startSector) * disk.BytesPerSector;
-                if (freeSpaceInBytes > 0)
-                {
-                    result.Add(new DiskExtent(disk.Disk, startSector, freeSpaceInBytes));
-                }
-
-                startSector = nextStartSector;
-            }
-
-            // see if there is room after the last extent
-            long spaceInBytes = publicRegionSize - (startSector - publicRegionStartSector) * disk.Disk.BytesPerSector;
-            if (spaceInBytes > 0)
-            {
-                result.Add(new DiskExtent(disk.Disk, startSector, spaceInBytes));
-            }
-
-            return result;
+            return DiskExtentsHelper.GetUnallocatedExtents(disk.Disk, publicRegionStartSector, publicRegionSize, usedExtents);
         }
 
         /// <summary>
@@ -252,29 +234,11 @@ namespace DiskAccessLibrary.LogicalDiskManager
                         DynamicDiskExtent extent = GetDiskExtent(disk, extentRecord);
                         result.Add(extent);
                     }
-                    SortExtentsByFirstSector(result);
+                    DynamicDiskExtentsHelper.SortExtentsByFirstSector(result);
                     return result;
                 }
             }
             return null;
-        }
-
-        /// <summary>
-        /// Sort (in-place) extents by first sector
-        /// </summary>
-        public static void SortExtentsByFirstSector(List<DynamicDiskExtent> extents)
-        {
-            SortedList<long, DynamicDiskExtent> list = new SortedList<long, DynamicDiskExtent>();
-            foreach (DynamicDiskExtent extent in extents)
-            {
-                list.Add(extent.FirstSector, extent);
-            }
-
-            extents.Clear();
-            foreach (DynamicDiskExtent extent in list.Values)
-            {
-                extents.Add(extent);
-            }
         }
     }
 }
