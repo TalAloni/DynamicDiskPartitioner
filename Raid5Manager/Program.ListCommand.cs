@@ -119,8 +119,8 @@ namespace Raid5Manager
         public static void ListVolumes()
         {
             List<Volume> volumes = WindowsVolumeHelper.GetVolumes();
-            Console.WriteLine("Volume ##  ID    Name          Type       Size     Status   ");
-            Console.WriteLine("---------  ----  ------------  ---------  -------  ---------");
+            Console.WriteLine("Volume ##  ID    Name                  Type       Size     Status   ");
+            Console.WriteLine("---------  ----  --------------------  ---------  -------  ---------");
 
             for (int index = 0; index < volumes.Count; index++)
             {
@@ -141,9 +141,14 @@ namespace Raid5Manager
                     name = ((GPTPartition)volume).PartitionName;
                 }
 
+                if (name.Length > 20)
+                {
+                    name = name.Remove(20);
+                }
+
                 string volumeNumber = index.ToString().PadLeft(2);
                 type = type.ToString().PadRight(9);
-                name = name.ToString().PadRight(12);
+                name = name.ToString().PadRight(20);
                 status = status.ToString().PadRight(9);
 
                 string volumeIDString = String.Empty;
