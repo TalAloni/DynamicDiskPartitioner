@@ -29,19 +29,10 @@ namespace DiskAccessLibrary.LogicalDiskManager
             return result;
         }
 
-        public static List<DynamicDisk> GetPhysicalDynamicDisks(Guid diskGroupGuide)
+        public static List<DynamicDisk> GetPhysicalDynamicDisks(Guid diskGroupGuid)
         {
-            List<PhysicalDisk> disks = PhysicalDiskHelper.GetPhysicalDisks();
-            List<DynamicDisk> result = new List<DynamicDisk>();
-            foreach (PhysicalDisk disk in disks)
-            {
-                DynamicDisk dynamicDisk = DynamicDisk.ReadFromDisk(disk);
-                if (dynamicDisk != null && dynamicDisk.DiskGroupGuid == diskGroupGuide)
-                {
-                    result.Add(dynamicDisk);
-                }
-            }
-            return result;
+            List<DynamicDisk> dynamicDisks = GetPhysicalDynamicDisks();
+            return DynamicDiskHelper.FindDiskGroup(dynamicDisks, diskGroupGuid);
         }
 
         public static PrivateHeader FindDiskPrivateHeader(Guid diskGuid)
