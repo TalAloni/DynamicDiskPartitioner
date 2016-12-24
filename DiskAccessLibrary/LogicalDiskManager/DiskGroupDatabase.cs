@@ -131,6 +131,22 @@ namespace DiskAccessLibrary.LogicalDiskManager
             }
         }
 
+        public bool AreDisksMissing
+        {
+            get
+            {
+                List<DiskRecord> diskRecords = this.DiskRecords;
+                foreach (DiskRecord diskRecord in diskRecords)
+                {
+                    if (DynamicDiskHelper.FindDisk(m_disks, diskRecord.DiskGuid) == null)
+                    {
+                        return true;
+                    }
+                }
+                return false;
+            }
+        }
+
         public List<DynamicDisk> Disks
         {
             get
