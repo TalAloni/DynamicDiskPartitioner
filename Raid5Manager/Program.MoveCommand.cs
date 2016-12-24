@@ -182,13 +182,14 @@ namespace Raid5Manager
             Thread thread = new Thread(delegate()
             {
                 List<DynamicDisk> diskGroup = WindowsDynamicDiskHelper.GetPhysicalDynamicDisks(dynamicVolume.DiskGroupGuid);
+                DiskGroupDatabase database = DiskGroupDatabase.ReadFromDisks(diskGroup, dynamicVolume.DiskGroupGuid);
                 if (isSameDisk)
                 {
-                    MoveExtentHelper.MoveExtentWithinSameDisk(diskGroup, dynamicVolume, sourceExtent, relocatedExtent, ref bytesCopied);
+                    MoveExtentHelper.MoveExtentWithinSameDisk(database, dynamicVolume, sourceExtent, relocatedExtent, ref bytesCopied);
                 }
                 else
                 {
-                    MoveExtentHelper.MoveExtentToAnotherDisk(diskGroup, dynamicVolume, sourceExtent, relocatedExtent, ref bytesCopied);
+                    MoveExtentHelper.MoveExtentToAnotherDisk(database, dynamicVolume, sourceExtent, relocatedExtent, ref bytesCopied);
                 }
             });
             thread.Start();
