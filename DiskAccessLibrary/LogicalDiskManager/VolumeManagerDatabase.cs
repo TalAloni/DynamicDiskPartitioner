@@ -579,6 +579,48 @@ namespace DiskAccessLibrary.LogicalDiskManager
             return null;
         }
 
+        /// <summary>
+        /// Will read all VBLK blocks and assemble the database records
+        /// </summary>
+        /// <param name="numberOfFragments">number of fragments excluding the database header</param>
+        private static List<DatabaseRecord> ReadDatabaseRecords(byte[] databaseBytes, int headerSize, int fragmentSize, int numberOfFragments)
+        {
+            // Note: fragments are not necessarily contiguous!
+            Dictionary<uint, List<DatabaseRecordFragment>> fragments = new Dictionary<uint, List<DatabaseRecordFragment>>();
+            for (uint index = 0; index < numberOfFragments; index++)
+            {
+                byte[] fragmentBytes = new byte[fragmentSize];
+                int fragmentOffset = (int)(headerSize + index * fragmentSize);
+                Array.Copy(databaseBytes, fragmentOffset, fragmentBytes, 0, fragmentSize);
+                DatabaseRecordFragment fragment = DatabaseRecordFragment.GetDatabaseRecordFragment(fragmentBytes);
+
+                if (fragment != null) // null fragment means VBLK is empty
+                {
+                    if (fragments.ContainsKey(fragment.GroupNumber))
+                    {
+                        fragments[fragment.GroupNumber].Add(fragment);
+                    }
+                    else
+                    {
+                        List<DatabaseRecordFragment> recordFragments = new List<DatabaseRecordFragment>();
+                        recordFragments.Add(fragment);
+                        fragments.Add(fragment.GroupNumber, recordFragments);
+                    }
+                }
+            }
+
+            // We have all the fragments and we can now assemble the records:
+            // We assume that fragments with lower FragmentNumber appear in the database before fragments
+            // of the same group with higher FragmentNumber.
+            List<DatabaseRecord> databaseRecords = new List<DatabaseRecord>();
+            foreach (List<DatabaseRecordFragment> recordFragments in fragments.Values)
+            {
+                DatabaseRecord databaseRecord = DatabaseRecord.GetDatabaseRecord(recordFragments);
+                databaseRecords.Add(databaseRecord);
+            }
+            return databaseRecords;
+        }
+
         public static VolumeManagerDatabase ReadFromDisk(DynamicDisk disk)
         {
             return ReadFromDisk(disk.Disk, disk.PrivateHeader, disk.TOCBlock);
@@ -614,7 +656,6 @@ namespace DiskAccessLibrary.LogicalDiskManager
             {
                 return null;
             }
-            List<DatabaseRecord> databaseRecords = new List<DatabaseRecord>();
 
             // The first VBLK entry is the subsequent entry to the VMDB header.
             // Note: On a disk with 4KB sectors, VBLKs will reside in the same sector as the VMDB header.
@@ -622,40 +663,8 @@ namespace DiskAccessLibrary.LogicalDiskManager
             int databaseLength = (int)(databaseHeader.HeaderSize + databaseHeader.NumberOfVBlks * databaseHeader.BlockSize);
             int sectorCount = (int)Math.Ceiling(databaseLength / (double)disk.BytesPerSector);
             byte[] databaseBytes = disk.ReadSectors((long)firstSector, sectorCount);
-
-            // read all VBLK blocks:
-            // Note: fragments are not necessarily contiguous!
-            Dictionary<uint, List<DatabaseRecordFragment>> fragments = new Dictionary<uint, List<DatabaseRecordFragment>>();
-            for (uint index = 0; index < databaseHeader.NumberOfVBlks - 4; index++)
-            {
-                byte[] fragmentBytes = new byte[databaseHeader.BlockSize];
-                int fragmentOffset = (int)(databaseHeader.HeaderSize + index * databaseHeader.BlockSize);
-                Array.Copy(databaseBytes, fragmentOffset, fragmentBytes, 0, databaseHeader.BlockSize);
-                DatabaseRecordFragment fragment = DatabaseRecordFragment.GetDatabaseRecordFragment(fragmentBytes);
-
-                if (fragment != null) // null fragment means VBLK is empty
-                {
-                    if (fragments.ContainsKey(fragment.GroupNumber))
-                    {
-                        fragments[fragment.GroupNumber].Add(fragment);
-                    }
-                    else
-                    {
-                        List<DatabaseRecordFragment> recordFragments = new List<DatabaseRecordFragment>();
-                        recordFragments.Add(fragment);
-                        fragments.Add(fragment.GroupNumber, recordFragments);
-                    }
-                }
-            }
-
-            // We have all the fragments and we can now assemble the records:
-            // We assume that fragments with lower FragmentNumber appear in the database before fragments
-            // of the same group with higher FragmentNumber.
-            foreach (List<DatabaseRecordFragment> recordFragments in fragments.Values)
-            {
-                DatabaseRecord databaseRecord = DatabaseRecord.GetDatabaseRecord(recordFragments);
-                databaseRecords.Add(databaseRecord);
-            }
+            int numberOfFragments = (int)(databaseHeader.NumberOfVBlks - FirstSequenceNumber);
+            List<DatabaseRecord> databaseRecords = ReadDatabaseRecords(databaseBytes, (int)databaseHeader.HeaderSize, (int)databaseHeader.BlockSize, numberOfFragments);
 
             // read all KLog blocks
             KernelUpdateLog kernelUpdateLog = KernelUpdateLog.ReadFromDisk(disk, privateHeader, tocBlock);
