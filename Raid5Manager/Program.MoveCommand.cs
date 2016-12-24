@@ -86,7 +86,7 @@ namespace Raid5Manager
             {
                 long offset = FormattingHelper.ParseStandardSizeString(parameters.ValueOf("offset"));
                 DynamicDisk dynamicDisk = DynamicDisk.ReadFromDisk(sourceExtent.Disk);
-                if (!DynamicDiskHelper.IsMoveLocationValid(dynamicDisk, sourceExtent, offset))
+                if (!DynamicDiskHelper.IsMoveLocationValid(sourceExtent, dynamicDisk, offset))
                 {
                     Console.WriteLine("Error: Invalid offset specified.");
                     Console.WriteLine("The following conditions must be met:");
