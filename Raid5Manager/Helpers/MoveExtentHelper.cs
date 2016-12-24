@@ -135,9 +135,7 @@ namespace Raid5Manager
             if (resumeRecord.RestoreFromBuffer)
             {
                 // we need to use the backup buffer to restore the data that may have been overwritten
-                int extentIndex = DynamicDiskExtentHelper.GetIndexOfExtentID(volume.DynamicExtents, resumeRecord.ExtentID);
-                DynamicDiskExtent sourceExtent = volume.DynamicExtents[extentIndex];
-
+                DynamicDiskExtent sourceExtent = GetVolumeExtent(volume, resumeRecord.ExtentID);
                 byte[] backupBuffer = sourceExtent.Disk.ReadSectors((long)resumeRecord.BackupBufferStartSector, BackupBufferSizeLBA);
                 if (resumeRecord.OldStartSector < resumeRecord.NewStartSector)
                 {
@@ -171,8 +169,7 @@ namespace Raid5Manager
 
         private static void MoveExtentRight(DiskGroupDatabase database, DynamicVolume volume, MoveExtentOperationBootRecord resumeRecord, ref long bytesCopied)
         {
-            int extentIndex = DynamicDiskExtentHelper.GetIndexOfExtentID(volume.DynamicExtents, resumeRecord.ExtentID);
-            DynamicDiskExtent sourceExtent = volume.DynamicExtents[extentIndex];
+            DynamicDiskExtent sourceExtent = GetVolumeExtent(volume, resumeRecord.ExtentID);
             DiskExtent relocatedExtent = new DiskExtent(sourceExtent.Disk, (long)resumeRecord.NewStartSector, sourceExtent.Size);
 
             MoveHelper.MoveExtentDataRight(volume, sourceExtent, relocatedExtent, resumeRecord, ref bytesCopied);
@@ -238,6 +235,30 @@ namespace Raid5Manager
                 byte[] emptyRegion = new byte[resumeRecord.BackupBufferSizeLBA * relocatedExtentDisk.BytesPerSector];
                 relocatedExtentDisk.WriteSectors((long)resumeRecord.BackupBufferStartSector, emptyRegion);
             }
+        }
+
+        private static DynamicDiskExtent GetVolumeExtent(DynamicVolume volume, ulong extentID)
+        {
+            if (volume is MirroredVolume)
+            {
+                foreach (DynamicVolume component in ((MirroredVolume)volume).Components)
+                {
+                    int extentIndex = DynamicDiskExtentHelper.GetIndexOfExtentID(component.DynamicExtents, extentID);
+                    if (extentIndex >= 0)
+                    {
+                        return volume.DynamicExtents[extentIndex];
+                    }
+                }
+            }
+            else
+            {
+                int extentIndex = DynamicDiskExtentHelper.GetIndexOfExtentID(volume.DynamicExtents, extentID);
+                if (extentIndex >= 0)
+                {
+                    return volume.DynamicExtents[extentIndex];
+                }
+            }
+            throw new ArgumentException("Volume does not have an extent with given ExtentID");
         }
     }
 }
