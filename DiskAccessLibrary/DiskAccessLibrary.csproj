@@ -130,6 +130,7 @@
     <Compile Include="LogicalDiskManager\TOCBlock\TOCBlock.cs" />
     <Compile Include="LogicalDiskManager\TOCBlock\TOCRegion.cs" />
     <Compile Include="LogicalDiskManager\VolumeManagerDatabase.cs" />
+    <Compile Include="LogicalDiskManager\VolumeManagerDatabaseCopy.cs" />
     <Compile Include="LogicalDiskManager\VolumeManagerDatabaseHeader.cs" />
     <Compile Include="LogicalDiskManager\Volumes\DynamicColumn.cs" />
     <Compile Include="LogicalDiskManager\Volumes\DynamicVolume.cs" />
