@@ -70,10 +70,6 @@ namespace DiskAccessLibrary.LogicalDiskManager
                     }
                 }
             }
-            if (!this.IsVersionSupported)
-            {
-                throw new NotImplementedException("Database version is not supported");
-            }
             if (this.IsDirty)
             {
                 throw new Exception("Database is in inconsistent state");
@@ -487,14 +483,6 @@ namespace DiskAccessLibrary.LogicalDiskManager
             }
         }
 
-        public bool IsVersionSupported
-        {
-            get
-            {
-                return (m_databaseHeader.MajorVersion == 4 && m_databaseHeader.MinorVersion == 10);
-            }
-        }
-
         public virtual bool IsDirty
         {
             get
@@ -652,7 +640,7 @@ namespace DiskAccessLibrary.LogicalDiskManager
         public static VolumeManagerDatabase ReadFromDisk(Disk disk, PrivateHeader privateHeader, TOCBlock tocBlock)
         {
             VolumeManagerDatabaseHeader databaseHeader = VolumeManagerDatabaseHeader.ReadFromDisk(disk, privateHeader, tocBlock);
-            if (databaseHeader == null)
+            if (databaseHeader == null || !databaseHeader.IsVersionSupported)
             {
                 return null;
             }

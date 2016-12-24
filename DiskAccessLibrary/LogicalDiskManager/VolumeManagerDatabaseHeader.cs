@@ -122,6 +122,14 @@ namespace DiskAccessLibrary.LogicalDiskManager
             }
         }
 
+        public bool IsVersionSupported
+        {
+            get
+            {
+                return (MajorVersion == 4 && (MinorVersion == 10 || MinorVersion == 12));
+            }
+        }
+
         public static VolumeManagerDatabaseHeader ReadFromDisk(Disk disk, PrivateHeader privateHeader, TOCBlock tocBlock)
         {
             ulong sectorIndex = privateHeader.PrivateRegionStartLBA + tocBlock.ConfigStart;

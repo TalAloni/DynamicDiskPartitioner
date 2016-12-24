@@ -81,7 +81,7 @@ namespace DiskAccessLibrary.LogicalDiskManager
             foreach (List<DynamicDisk> groupDisks in groups.Values)
             {
                 VolumeManagerDatabase database = VolumeManagerDatabase.ReadFromDisk(groupDisks[0]);
-                if (database != null && database.IsVersionSupported && !database.IsDirty)
+                if (database != null && !database.IsDirty)
                 {
                     DiskGroupDatabase groupDatabase = new DiskGroupDatabase(groupDisks, database.DatabaseHeader, database.DatabaseRecords, database.KernelUpdateLog);
                     // if there is issue with one disk we skip the group entirely
