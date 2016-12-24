@@ -167,11 +167,11 @@ namespace DiskAccessLibrary.LogicalDiskManager
             DiskExtent targetExtent = new DiskExtent(targetDisk.Disk, targetSector, sourceExtent.Size);
 
             List<DiskExtent> usedExtents = new List<DiskExtent>();
-            foreach (DynamicDiskExtent usedExtent in usedExtents)
+            foreach (DynamicDiskExtent extent in extents)
             {
-                if (!isSameDisk || usedExtent.FirstSector != sourceExtent.FirstSector)
+                if (!isSameDisk || extent.FirstSector != sourceExtent.FirstSector)
                 {
-                    usedExtents.Add(usedExtent);
+                    usedExtents.Add(extent);
                 }
             }
 
