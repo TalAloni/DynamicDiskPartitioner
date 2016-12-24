@@ -99,3 +99,6 @@ Revision History:
 1.4.1 - Minor improvements.
 
 1.4.2 - Minor improvements.
+
+1.4.3 - List Volume command: Limited volume name to 20 characters.
+        Now only the disks from the relevant disk group will be locked / taken offline during an operation.
