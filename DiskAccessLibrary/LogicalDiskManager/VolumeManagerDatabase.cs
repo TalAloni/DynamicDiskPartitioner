@@ -251,7 +251,7 @@ namespace DiskAccessLibrary.LogicalDiskManager
         }
 
         /// <param name="startFromSequenceNumber">We use startSequenceNumber to avoid using the same SequenceNumber twice</param>
-        public uint GetAvailableFragmentSequenceNumber(uint startFromSequenceNumber)
+        private uint GetAvailableFragmentSequenceNumber(uint startFromSequenceNumber)
         {
             uint? sequenceNumber = GetAvailableFragmentSequenceNumber(m_databaseRecords, startFromSequenceNumber, m_databaseHeader.NumberOfVBlks);
             if (!sequenceNumber.HasValue)
@@ -262,7 +262,7 @@ namespace DiskAccessLibrary.LogicalDiskManager
         }
 
         /// <param name="startFromGroupNumber">We use startFromGroupNumber to avoid using the same GroupNumber twice</param>
-        public uint GetAvailableFragmentGroupNumber(uint startFromGroupNumber)
+        private uint GetAvailableFragmentGroupNumber(uint startFromGroupNumber)
         {
             uint? groupNumber = GetAvailableFragmentGroupNumber(m_databaseRecords, startFromGroupNumber, m_databaseHeader.NumberOfVBlks);
             if (!groupNumber.HasValue)
@@ -272,7 +272,7 @@ namespace DiskAccessLibrary.LogicalDiskManager
             return groupNumber.Value;
         }
 
-        public List<T> GetRecords<T>() where T : DatabaseRecord
+        private List<T> GetRecords<T>() where T : DatabaseRecord
         {
             List<T> result = new List<T>();
             foreach (DatabaseRecord record in m_databaseRecords)
@@ -285,7 +285,7 @@ namespace DiskAccessLibrary.LogicalDiskManager
             return result;
         }
 
-        public List<T> GetActiveRecords<T>() where T : DatabaseRecord
+        private List<T> GetActiveRecords<T>() where T : DatabaseRecord
         {
             List<T> result = new List<T>();
             foreach (DatabaseRecord record in m_databaseRecords)
@@ -298,7 +298,7 @@ namespace DiskAccessLibrary.LogicalDiskManager
             return result;
         }
 
-        public uint GetPendingTotalNumberOfRecords<T>() where T : DatabaseRecord
+        private uint GetPendingTotalNumberOfRecords<T>() where T : DatabaseRecord
         {
             uint result = 0;
             foreach (DatabaseRecord record in m_databaseRecords)
