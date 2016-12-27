@@ -292,6 +292,8 @@ namespace Raid5Manager
                         Console.WriteLine("Error: non-operational volume!");
                         return;
                     }
+                    // We must call FSCTL_IS_VOLUME_MOUNTED before calling FSCTL_LOCK_VOLUME (The NTFS file system treats a locked volume as a dismounted volume)
+                    bool isMounted = WindowsVolumeManager.IsMounted(windowsVolumeGuid.Value);
                     // Lock volume
                     Console.WriteLine("Locking volume");
                     // Windows XP / 2003: It's acceptable to request a volume handle with just FileAccess.Read when locking a volume.
@@ -306,7 +308,7 @@ namespace Raid5Manager
                         return;
                     }
                     
-                    if (WindowsVolumeManager.IsMounted(windowsVolumeGuid.Value))
+                    if (isMounted)
                     {
                         // Dismounting the volume will make sure the OS have the correct filesystem size. (locking the volume is not enough)
                         success = WindowsVolumeManager.DismountVolume(windowsVolumeGuid.Value);
