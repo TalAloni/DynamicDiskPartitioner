@@ -18,7 +18,7 @@ namespace Raid5Manager
         AddDiskToArray = 0x0200,
     }
 
-    public abstract class RAID5ManagerBootRecord
+    public abstract class RAID5ManagerResumeRecord
     {
         public const int Length = 512;
         public const string ValidSignature = "RAID5MGR";
@@ -28,12 +28,12 @@ namespace Raid5Manager
         protected RAID5ManagerOperation Operation; // 2 bytes
         // reserved 5 bytes
 
-        public RAID5ManagerBootRecord()
+        public RAID5ManagerResumeRecord()
         { 
 
         }
 
-        public RAID5ManagerBootRecord(byte[] buffer)
+        public RAID5ManagerResumeRecord(byte[] buffer)
         {
             Signature = ByteReader.ReadAnsiString(buffer, 0, 8);
             RecordRevision = ByteReader.ReadByte(buffer, 8);
@@ -66,7 +66,7 @@ namespace Raid5Manager
             }
         }
 
-        public static RAID5ManagerBootRecord FromBytes(byte[] buffer)
+        public static RAID5ManagerResumeRecord FromBytes(byte[] buffer)
         {
             string signature = ByteReader.ReadAnsiString(buffer, 0, 8);
             byte recordRevision = ByteReader.ReadByte(buffer, 8);
@@ -75,11 +75,11 @@ namespace Raid5Manager
             {
                 if (operation == RAID5ManagerOperation.AddDiskToArray)
                 {
-                    return new AddDiskOperationBootRecord(buffer);
+                    return new AddDiskOperationResumeRecord(buffer);
                 }
                 else if (operation == RAID5ManagerOperation.MoveExtent)
                 {
-                    return new MoveExtentOperationBootRecord(buffer);
+                    return new MoveExtentOperationResumeRecord(buffer);
                 }
             }
             return null;

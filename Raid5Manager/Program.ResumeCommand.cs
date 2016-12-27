@@ -28,19 +28,19 @@ namespace Raid5Manager
             }
 
             byte[] bootRecord = m_selectedVolume.ReadSector(0);
-            if (!RAID5ManagerBootRecord.HasValidSignature(bootRecord))
+            if (!RAID5ManagerResumeRecord.HasValidSignature(bootRecord))
             {
                 Console.WriteLine("Nothing to resume (resume boot record is not present).");
                 return;
             }
-            RAID5ManagerBootRecord resumeRecord = RAID5ManagerBootRecord.FromBytes(bootRecord);
+            RAID5ManagerResumeRecord resumeRecord = RAID5ManagerResumeRecord.FromBytes(bootRecord);
             if (resumeRecord == null)
             {
                 Console.WriteLine("Resume boot record version is not supported.");
                 return;
             }
             
-            if (resumeRecord is AddDiskOperationBootRecord)
+            if (resumeRecord is AddDiskOperationResumeRecord)
             {
                 // the RAID-5 volume was temporarily converted to striped volume
                 if (m_selectedVolume is StripedVolume)
@@ -91,7 +91,7 @@ namespace Raid5Manager
                     {
                         List<DynamicDisk> diskGroup = WindowsDynamicDiskHelper.GetPhysicalDynamicDisks(stripedVolume.DiskGroupGuid);
                         DiskGroupDatabase database = DiskGroupDatabase.ReadFromDisks(diskGroup, stripedVolume.DiskGroupGuid);
-                        AddDiskToArrayHelper.ResumeAddDiskToRaid5Volume(database, stripedVolume, (AddDiskOperationBootRecord)resumeRecord, ref bytesCopied);
+                        AddDiskToArrayHelper.ResumeAddDiskToRaid5Volume(database, stripedVolume, (AddDiskOperationResumeRecord)resumeRecord, ref bytesCopied);
                     });
                     thread.Start();
 
@@ -121,7 +121,7 @@ namespace Raid5Manager
                     m_selectedVolume = WindowsVolumeHelper.GetVolumeByGuid(stripedVolume.VolumeGuid);
                 }
             }
-            else if (resumeRecord is MoveExtentOperationBootRecord)
+            else if (resumeRecord is MoveExtentOperationResumeRecord)
             {
                 if (m_selectedVolume is DynamicVolume)
                 {
@@ -165,7 +165,7 @@ namespace Raid5Manager
                     // Perform the operation
                     Console.WriteLine("Resuming the operation");
 
-                    int extentIndex = DynamicDiskExtentHelper.GetIndexOfExtentID(dynamicVolume.DynamicExtents, ((MoveExtentOperationBootRecord)resumeRecord).ExtentID);
+                    int extentIndex = DynamicDiskExtentHelper.GetIndexOfExtentID(dynamicVolume.DynamicExtents, ((MoveExtentOperationResumeRecord)resumeRecord).ExtentID);
                     DynamicDiskExtent sourceExtent = dynamicVolume.DynamicExtents[extentIndex];
 
                     long bytesTotal = sourceExtent.Size;
@@ -174,7 +174,7 @@ namespace Raid5Manager
                     {
                         List<DynamicDisk> diskGroup = WindowsDynamicDiskHelper.GetPhysicalDynamicDisks(dynamicVolume.DiskGroupGuid);
                         DiskGroupDatabase database = DiskGroupDatabase.ReadFromDisks(diskGroup, dynamicVolume.DiskGroupGuid);
-                        MoveExtentHelper.ResumeMoveExtent(database, dynamicVolume, (MoveExtentOperationBootRecord)resumeRecord, ref bytesCopied);
+                        MoveExtentHelper.ResumeMoveExtent(database, dynamicVolume, (MoveExtentOperationResumeRecord)resumeRecord, ref bytesCopied);
                     });
                     thread.Start();
 

@@ -23,7 +23,7 @@ namespace Raid5Manager
         /// </summary>
         public const int BufferedModeThresholdLBA = 64;
 
-        public static void MoveExtentDataRight(Volume volume, DiskExtent sourceExtent, DiskExtent relocatedExtent, MoveExtentOperationBootRecord resumeRecord, ref long bytesCopied)
+        public static void MoveExtentDataRight(Volume volume, DiskExtent sourceExtent, DiskExtent relocatedExtent, MoveExtentOperationResumeRecord resumeRecord, ref long bytesCopied)
         {
             // we make sure no data will be overwritten too soon:
             long distanceLBA = (long)(resumeRecord.NewStartSector - resumeRecord.OldStartSector);
@@ -73,7 +73,7 @@ namespace Raid5Manager
             }
         }
 
-        public static void MoveExtentDataLeft(Volume volume, DiskExtent sourceExtent, DiskExtent relocatedExtent, MoveExtentOperationBootRecord resumeRecord, ref long bytesCopied)
+        public static void MoveExtentDataLeft(Volume volume, DiskExtent sourceExtent, DiskExtent relocatedExtent, MoveExtentOperationResumeRecord resumeRecord, ref long bytesCopied)
         {
             // we make sure no data will be overwritten too soon:
             long distanceLBA = (long)(resumeRecord.OldStartSector - resumeRecord.NewStartSector);

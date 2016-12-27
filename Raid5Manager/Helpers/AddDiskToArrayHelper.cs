@@ -27,7 +27,7 @@ namespace Raid5Manager
             byte[] filesystemBootRecord = volume.Extents[0].ReadSector(0);
             newExtent.WriteSectors(newExtent.TotalSectors - 1, filesystemBootRecord);
 
-            AddDiskOperationBootRecord resumeRecord = new AddDiskOperationBootRecord();
+            AddDiskOperationResumeRecord resumeRecord = new AddDiskOperationResumeRecord();
             resumeRecord.VolumeGuid = volume.VolumeGuid;
             PrivateHeader privateHeader = PrivateHeader.ReadFromDisk(newExtent.Disk);
             // privateHeader cannot be null at this point
@@ -40,7 +40,7 @@ namespace Raid5Manager
             ResumeAddDiskToRaid5Volume(database, volume, new DynamicDiskExtent(newExtent, newExtentID), resumeRecord, ref bytesCopied);
         }
 
-        public static void ResumeAddDiskToRaid5Volume(DiskGroupDatabase database, StripedVolume stripedVolume, AddDiskOperationBootRecord resumeRecord, ref long bytesCopied)
+        public static void ResumeAddDiskToRaid5Volume(DiskGroupDatabase database, StripedVolume stripedVolume, AddDiskOperationResumeRecord resumeRecord, ref long bytesCopied)
         {
             List<DynamicColumn> columns = stripedVolume.Columns;
             DynamicDiskExtent newExtent = columns[columns.Count - 1].Extents[0];
@@ -53,7 +53,7 @@ namespace Raid5Manager
             ResumeAddDiskToRaid5Volume(database, volume, newExtent, resumeRecord, ref bytesCopied);
         }
 
-        private static void ResumeAddDiskToRaid5Volume(DiskGroupDatabase database, Raid5Volume volume, DynamicDiskExtent newExtent, AddDiskOperationBootRecord resumeRecord, ref long bytesCopied)
+        private static void ResumeAddDiskToRaid5Volume(DiskGroupDatabase database, Raid5Volume volume, DynamicDiskExtent newExtent, AddDiskOperationResumeRecord resumeRecord, ref long bytesCopied)
         {
             // When reading from the volume, we must use the old volume (without the new disk)
             // However, when writing the boot sector to the volume, we must use the new volume or otherwise parity information will be invalid

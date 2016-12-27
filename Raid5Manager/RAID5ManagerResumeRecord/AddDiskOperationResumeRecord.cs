@@ -11,17 +11,17 @@ using Utilities;
 
 namespace Raid5Manager
 {
-    public class AddDiskOperationBootRecord : RAID5ManagerBootRecord
+    public class AddDiskOperationResumeRecord : RAID5ManagerResumeRecord
     {
         public Guid VolumeGuid; // offset 16
         public ulong NumberOfCommittedSectors; // for an array, this would be the total of all sectors that can be now read from the new array
 
-        public AddDiskOperationBootRecord()
+        public AddDiskOperationResumeRecord()
         {
             Operation = RAID5ManagerOperation.AddDiskToArray;
         }
 
-        public AddDiskOperationBootRecord(byte[] buffer) : base(buffer)
+        public AddDiskOperationResumeRecord(byte[] buffer) : base(buffer)
         { 
         }
 

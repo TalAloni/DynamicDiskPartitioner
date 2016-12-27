@@ -50,7 +50,7 @@ namespace Raid5Manager
         /// </summary>
         public static void MoveExtentWithinSameDisk(DiskGroupDatabase database, DynamicVolume volume, DynamicDiskExtent sourceExtent, DiskExtent relocatedExtent, ref long bytesCopied)
         {
-            MoveExtentOperationBootRecord resumeRecord = new MoveExtentOperationBootRecord();
+            MoveExtentOperationResumeRecord resumeRecord = new MoveExtentOperationResumeRecord();
             // If there will be a power failure during the move, a RAID volume will resync during boot,
             // To prevent destruction of the data, we temporarily convert the array to striped volume
             if (volume is Raid5Volume)
@@ -125,7 +125,7 @@ namespace Raid5Manager
             }
         }
 
-        public static void ResumeMoveExtent(DiskGroupDatabase database, DynamicVolume volume, MoveExtentOperationBootRecord resumeRecord, ref long bytesCopied)
+        public static void ResumeMoveExtent(DiskGroupDatabase database, DynamicVolume volume, MoveExtentOperationResumeRecord resumeRecord, ref long bytesCopied)
         {
             if (resumeRecord.OldStartSector == resumeRecord.NewStartSector)
             {
@@ -167,7 +167,7 @@ namespace Raid5Manager
             }
         }
 
-        private static void MoveExtentRight(DiskGroupDatabase database, DynamicVolume volume, MoveExtentOperationBootRecord resumeRecord, ref long bytesCopied)
+        private static void MoveExtentRight(DiskGroupDatabase database, DynamicVolume volume, MoveExtentOperationResumeRecord resumeRecord, ref long bytesCopied)
         {
             DynamicDiskExtent sourceExtent = GetVolumeExtent(volume, resumeRecord.ExtentID);
             DiskExtent relocatedExtent = new DiskExtent(sourceExtent.Disk, (long)resumeRecord.NewStartSector, sourceExtent.Size);
@@ -197,7 +197,7 @@ namespace Raid5Manager
             ClearBackupData(relocatedExtent.Disk, resumeRecord);
         }
 
-        private static void MoveExtentLeft(DiskGroupDatabase database, DynamicVolume volume, MoveExtentOperationBootRecord resumeRecord, ref long bytesCopied)
+        private static void MoveExtentLeft(DiskGroupDatabase database, DynamicVolume volume, MoveExtentOperationResumeRecord resumeRecord, ref long bytesCopied)
         {
             DynamicDiskExtent relocatedExtent = DynamicDiskExtentHelper.GetByExtentID(volume.DynamicExtents, resumeRecord.ExtentID);
             if (resumeRecord.OldStartSector == (ulong)relocatedExtent.FirstSector)
@@ -226,7 +226,7 @@ namespace Raid5Manager
             ClearBackupData(relocatedExtent.Disk, resumeRecord);
         }
 
-        private static void ClearBackupData(Disk relocatedExtentDisk, MoveExtentOperationBootRecord resumeRecord)
+        private static void ClearBackupData(Disk relocatedExtentDisk, MoveExtentOperationResumeRecord resumeRecord)
         {
             byte[] emptySector = new byte[relocatedExtentDisk.BytesPerSector];
             relocatedExtentDisk.WriteSectors((long)resumeRecord.BootRecordBackupSector, emptySector);

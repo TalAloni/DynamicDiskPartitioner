@@ -11,7 +11,7 @@ using Utilities;
 
 namespace Raid5Manager
 {
-    public class MoveExtentOperationBootRecord : RAID5ManagerBootRecord
+    public class MoveExtentOperationResumeRecord : RAID5ManagerResumeRecord
     {
         public Guid VolumeGuid; // offset 16
         public ulong NumberOfCommittedSectors; // for an array, this would be the total of all sectors that can be now read from the new array
@@ -24,12 +24,12 @@ namespace Raid5Manager
         public bool RestoreFromBuffer;
         public bool RestoreRAID5;
 
-        public MoveExtentOperationBootRecord()
+        public MoveExtentOperationResumeRecord()
         {
             Operation = RAID5ManagerOperation.MoveExtent;
         }
 
-        public MoveExtentOperationBootRecord(byte[] buffer) : base(buffer)
+        public MoveExtentOperationResumeRecord(byte[] buffer) : base(buffer)
         { 
 
         }

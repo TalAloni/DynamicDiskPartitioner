@@ -48,7 +48,7 @@ namespace Raid5Manager
                 return;
             }
 
-            if (RAID5ManagerBootRecord.HasValidSignature(m_selectedVolume.ReadSector(0)))
+            if (RAID5ManagerResumeRecord.HasValidSignature(m_selectedVolume.ReadSector(0)))
             {
                 Console.WriteLine("There is already an operation in progress");
                 Console.WriteLine("Use the RESUME command to resume the operation");

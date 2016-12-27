@@ -39,9 +39,6 @@
     <Compile Include="Helpers\FormattingHelper.cs" />
     <Compile Include="Helpers\MoveExtentHelper.cs" />
     <Compile Include="Helpers\MoveHelper.cs" />
-    <Compile Include="Helpers\RAID5ManagerBootRecord\AddDiskOperationBootRecord.cs" />
-    <Compile Include="Helpers\RAID5ManagerBootRecord\MoveExtentOperationBootRecord.cs" />
-    <Compile Include="Helpers\RAID5ManagerBootRecord\RAID5ManagerBootRecord.cs" />
     <Compile Include="OperatingSystemHelper.cs" />
     <Compile Include="Program.AdditionalCommands.cs" />
     <Compile Include="Program.CleanCommand.cs" />
@@ -63,6 +60,9 @@
     <Compile Include="Program.SelectCommand.cs" />
     <Compile Include="Program.SetCommand.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="RAID5ManagerResumeRecord\AddDiskOperationResumeRecord.cs" />
+    <Compile Include="RAID5ManagerResumeRecord\MoveExtentOperationResumeRecord.cs" />
+    <Compile Include="RAID5ManagerResumeRecord\RAID5ManagerResumeRecord.cs" />
     <Compile Include="TestHelper.cs" />
   </ItemGroup>
   <ItemGroup>
