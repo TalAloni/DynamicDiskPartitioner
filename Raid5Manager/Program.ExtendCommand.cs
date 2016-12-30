@@ -113,47 +113,32 @@ namespace Raid5Manager
                 }
 
                 long numberOfAdditionalExtentSectors = numberOfAvailablelExtentBytes / m_selectedVolume.BytesPerSector;
-                if (m_selectedVolume is StripedVolume)
-                {
-                    numberOfAdditionalExtentSectors -= numberOfAdditionalExtentSectors % ((StripedVolume)m_selectedVolume).SectorsPerStripe;
-                }
-                if (m_selectedVolume is Raid5Volume)
-                { 
-                    numberOfAdditionalExtentSectors -= numberOfAdditionalExtentSectors % ((Raid5Volume)m_selectedVolume).SectorsPerStripe;
-                }
-
                 if (m_selectedVolume is DynamicVolume)
                 {
-                    Guid diskGroupGuid = ((DynamicVolume)m_selectedVolume).DiskGroupGuid;
+                    DynamicVolume dynamicVolume = ((DynamicVolume)m_selectedVolume);
+                    List<DynamicDisk> diskGroup = WindowsDynamicDiskHelper.GetPhysicalDynamicDisks(dynamicVolume.DiskGroupGuid);
                     // Lock disks and volumes
                     Console.WriteLine("Locking disks and volumes");
-                    List<DynamicDisk> disksToLock = WindowsDynamicDiskHelper.GetPhysicalDynamicDisks(diskGroupGuid);
-                    DiskGroupLockResult lockResult = DiskGroupHelper.LockDiskGroup(disksToLock);
-                    if (lockResult == DiskGroupLockResult.CannotLockDisk)
+                    DiskGroupLockResult result = ExtendVolumeHelper.ExtendDynamicVolume(diskGroup, dynamicVolume, numberOfAdditionalExtentSectors);
+                    if (result == DiskGroupLockResult.CannotLockDisk)
                     {
                         Console.WriteLine("Unable to lock all disks!");
                     }
-                    else if (lockResult == DiskGroupLockResult.CannotLockVolume)
+                    else if (result == DiskGroupLockResult.CannotLockVolume)
                     {
                         Console.WriteLine("Unable to lock all volumes!");
                     }
-                    else if (lockResult == DiskGroupLockResult.OneOrMoreDisksAreOfflineOrReadonly)
+                    else if (result == DiskGroupLockResult.OneOrMoreDisksAreOfflineOrReadonly)
                     {
                         Console.WriteLine("Error: One or more dynamic disks are offline or set to readonly.");
                     }
-                    else if (lockResult == DiskGroupLockResult.CannotTakeDiskOffline)
+                    else if (result == DiskGroupLockResult.CannotTakeDiskOffline)
                     {
                         Console.WriteLine("Failed to take all dynamic disks offline!");
                     }
-                    else if (lockResult == DiskGroupLockResult.Success)
+                    else if (result == DiskGroupLockResult.Success)
                     {
-
-                        DiskGroupDatabase database = DiskGroupDatabase.ReadFromPhysicalDisks(diskGroupGuid);
-                        ExtendHelper.ExtendDynamicVolume((DynamicVolume)m_selectedVolume, numberOfAdditionalExtentSectors, database);
                         Console.WriteLine("Operation completed.");
-
-                        DiskGroupHelper.UnlockDiskGroup(disksToLock);
-
                         // volume has been modified and must be reselected
                         m_selectedVolume = WindowsVolumeHelper.GetVolumeByGuid(((DynamicVolume)m_selectedVolume).VolumeGuid);
                     }
@@ -161,54 +146,36 @@ namespace Raid5Manager
                 else if (m_selectedVolume is Partition)
                 {
                     Partition partition = (Partition)m_selectedVolume;
-                    if (partition.Disk is PhysicalDisk)
+                    DiskGroupLockResult result = ExtendVolumeHelper.ExtendPartition(partition, numberOfAdditionalExtentSectors);
+                    if (result == DiskGroupLockResult.CannotLockDisk)
                     {
-                        if (Environment.OSVersion.Version.Major >= 6)
+                        Console.WriteLine("Unable to lock all disks!");
+                    }
+                    else if (result == DiskGroupLockResult.CannotLockVolume)
+                    {
+                        Console.WriteLine("Unable to lock all volumes!");
+                    }
+                    else if (result == DiskGroupLockResult.OneOrMoreDisksAreOfflineOrReadonly)
+                    {
+                        Console.WriteLine("Error: One or more dynamic disks are offline or set to readonly.");
+                    }
+                    else if (result == DiskGroupLockResult.CannotTakeDiskOffline)
+                    {
+                        Console.WriteLine("Failed to take all dynamic disks offline!");
+                    }
+                    else if (result == DiskGroupLockResult.Success)
+                    {
+                        Console.WriteLine("Operation completed.");
+                        // volume has been modified and must be reselected
+                        if (partition.Disk is PhysicalDisk)
                         {
-                            Console.WriteLine("Taking the disk offline.");
-                            bool success = ((PhysicalDisk)partition.Disk).SetOnlineStatus(false, false);
-                            if (!success)
-                            {
-                                Console.WriteLine("Failed to take the disk offline.");
-                                return;
-                            }
+                            Guid? windowsVolumeGuid = WindowsVolumeHelper.GetWindowsVolumeGuid(m_selectedVolume);
+                            m_selectedVolume = WindowsVolumeHelper.GetVolumeByGuid(windowsVolumeGuid.Value);
                         }
                         else
                         {
-                            Console.WriteLine("Locking disk");
-                            bool success = ((PhysicalDisk)partition.Disk).ExclusiveLock();
-                            if (!success)
-                            {
-                                Console.WriteLine("Failed to lock the disk.");
-                                return;
-                            }
+                            m_selectedVolume = BasicDiskHelper.GetPartitionByStartOffset(partition.Disk, partition.FirstSector);
                         }
-                    }
-
-                    ExtendHelper.ExtendPartition((Partition)m_selectedVolume, numberOfAdditionalExtentSectors);
-                    Console.WriteLine("Operation completed.");
-                    if (partition.Disk is PhysicalDisk)
-                    {
-                        if (Environment.OSVersion.Version.Major >= 6)
-                        {
-                            Console.WriteLine("Taking the disk online.");
-                            ((PhysicalDisk)partition.Disk).SetOnlineStatus(true, false);
-                        }
-                        else
-                        {
-                            ((PhysicalDisk)partition.Disk).ReleaseLock();
-                        }
-                        ((PhysicalDisk)partition.Disk).UpdateProperties();
-                    }
-                    // volume has been modified and must be reselected
-                    if (partition.Disk is PhysicalDisk)
-                    {
-                        Guid? windowsVolumeGuid = WindowsVolumeHelper.GetWindowsVolumeGuid(m_selectedVolume);
-                        m_selectedVolume = WindowsVolumeHelper.GetVolumeByGuid(windowsVolumeGuid.Value);
-                    }
-                    else
-                    {
-                        m_selectedVolume = BasicDiskHelper.GetPartitionByStartOffset(partition.Disk, partition.FirstSector);
                     }
                 }
             }
