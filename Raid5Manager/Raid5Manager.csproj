@@ -37,6 +37,7 @@
     <Compile Include="Exceptions\DatabaseNotFoundException.cs" />
     <Compile Include="Helpers\AddDiskToArrayHelper.cs" />
     <Compile Include="Helpers\DiskGroupHelper.cs" />
+    <Compile Include="Helpers\ExtendFileSystemHelper.cs" />
     <Compile Include="Helpers\ExtendVolumeHelper.cs" />
     <Compile Include="Helpers\FormattingHelper.cs" />
     <Compile Include="Helpers\MoveExtentHelper.cs" />

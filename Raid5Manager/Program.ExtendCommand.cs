@@ -230,77 +230,44 @@ namespace Raid5Manager
                 }
 
                 long numberOfAdditionalSectors = numberOfAvailableBytes / m_selectedVolume.BytesPerSector;
-
-                Guid? windowsVolumeGuid = WindowsVolumeHelper.GetWindowsVolumeGuid(m_selectedVolume);
-                if (windowsVolumeGuid.HasValue)
+                List<DynamicDisk> diskGroup = null;
+                if (m_selectedVolume is DynamicVolume)
                 {
-                    if (m_selectedVolume is DynamicVolume && !((DynamicVolume)m_selectedVolume).IsOperational)
-                    {
-                        Console.WriteLine("Error: non-operational volume!");
-                        return;
-                    }
-                    // We must call FSCTL_IS_VOLUME_MOUNTED before calling FSCTL_LOCK_VOLUME (The NTFS file system treats a locked volume as a dismounted volume)
-                    bool isMounted = WindowsVolumeManager.IsMounted(windowsVolumeGuid.Value);
-                    // Lock volume
-                    Console.WriteLine("Locking volume");
-                    // Windows XP / 2003: It's acceptable to request a volume handle with just FileAccess.Read when locking a volume.
-                    // Windows Vista / 7: We MUST request a volume handle with just FileAccess.Read when locking a volume on a basic disk.
-                    // http://stackoverflow.com/questions/8694713/createfile-direct-write-operation-to-raw-disk-access-is-denied-vista-win7
-                    // Windows Vista / 7: We MUST request a volume handle with FileAccess.ReadWrite when locking dynamic volumes.
-                    FileAccess fileAccess = (m_selectedVolume is DynamicVolume) ? FileAccess.ReadWrite : FileAccess.Read;
-                    bool success = WindowsVolumeManager.ExclusiveLock(windowsVolumeGuid.Value, fileAccess);
-                    if (!success)
-                    {
-                        Console.WriteLine("Unable to lock the volume!");
-                        return;
-                    }
-                    
-                    if (isMounted)
-                    {
-                        // Dismounting the volume will make sure the OS have the correct filesystem size. (locking the volume is not enough)
-                        success = WindowsVolumeManager.DismountVolume(windowsVolumeGuid.Value);
-                        if (!success)
-                        {
-                            Console.WriteLine("Unable to dismount the volume!");
-                            return;
-                        }
-                    }
+                    DynamicVolume dynamicVolume = (DynamicVolume)m_selectedVolume;
+                    diskGroup = WindowsDynamicDiskHelper.GetPhysicalDynamicDisks(dynamicVolume.DiskGroupGuid);
                 }
-
-                // Windows Vista / 7 enforce various limitations on direct write operations to volumes and disks.
-                // I tried performing the steps necessary, but could only get them to work with basic disks,
-                // so in the case of dynamic volume we take the disk(s) offline.
-                // http://msdn.microsoft.com/en-us/library/ff551353%28v=vs.85%29.aspx
-                if (Environment.OSVersion.Version.Major >= 6 && m_selectedVolume is DynamicVolume)
+                ExtendFileSystemResult result = ExtendFileSystemHelper.ExtendFileSystem(diskGroup, m_selectedVolume, numberOfAdditionalSectors);
+                if (result == ExtendFileSystemResult.UnsupportedFileSystem)
                 {
-                    Guid diskGroupGuid = ((DynamicVolume)m_selectedVolume).DiskGroupGuid;
-                    if (!DiskOfflineHelper.IsDiskGroupOnlineAndWritable(diskGroupGuid))
-                    {
-                        Console.WriteLine("Error: One or more dynamic disks are offline or set to readonly.");
-                        return;
-                    }
-
-                    Console.WriteLine("Taking dynamic disks offline.");
-                    bool success = DiskOfflineHelper.OfflineDiskGroup(diskGroupGuid);
-                    if (!success)
-                    {
-                        Console.WriteLine("Failed to take all dynamic disks offline!");
-                        return;
-                    }
+                    Console.WriteLine("Unsupported File System");
                 }
-
-                ((IExtendableFileSystem)fileSystem).Extend(numberOfAdditionalSectors);
-                Console.WriteLine("Operation completed.");
-
-                if (windowsVolumeGuid.HasValue)
+                else if (result == ExtendFileSystemResult.NonOperationalVolume)
                 {
-                    WindowsVolumeManager.ReleaseLock(windowsVolumeGuid.Value);
+                    Console.WriteLine("Error: non-operational volume!");
                 }
-
-                if (Environment.OSVersion.Version.Major >= 6 && m_selectedVolume is DynamicVolume)
+                else if (result == ExtendFileSystemResult.CannotLockDisk)
                 {
-                    Console.WriteLine("Taking dynamic disks online.");
-                    DiskOfflineHelper.OnlineDiskGroup(((DynamicVolume)m_selectedVolume).DiskGroupGuid);
+                    Console.WriteLine("Unable to lock all disks!");
+                }
+                else if (result == ExtendFileSystemResult.CannotLockVolume)
+                {
+                    Console.WriteLine("Unable to lock all volumes!");
+                }
+                else if (result == ExtendFileSystemResult.CannotDismountVolume)
+                {
+                    Console.WriteLine("Unable to dismount the volume!");
+                }
+                else if (result == ExtendFileSystemResult.OneOrMoreDisksAreOfflineOrReadonly)
+                {
+                    Console.WriteLine("Error: One or more dynamic disks are offline or set to readonly.");
+                }
+                else if (result == ExtendFileSystemResult.CannotTakeDiskOffline)
+                {
+                    Console.WriteLine("Failed to take all dynamic disks offline!");
+                }
+                else if (result == ExtendFileSystemResult.Success)
+                {
+                    Console.WriteLine("Operation completed.");
                 }
             }
         }
