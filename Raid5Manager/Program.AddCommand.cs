@@ -119,78 +119,57 @@ namespace Raid5Manager
 
             // Lock disks and volumes
             Console.WriteLine("Locking disks and volumes");
-            LockStatus status = LockManager.LockDynamicDiskGroup(raid5Volume.DiskGroupGuid, true);
-            if (status != LockStatus.Success)
+            List<DynamicDisk> disksToLock = WindowsDynamicDiskHelper.GetPhysicalDynamicDisks(raid5Volume.DiskGroupGuid);
+            DiskGroupLockResult lockResult = DiskGroupHelper.LockDiskGroup(disksToLock);
+            if (lockResult == DiskGroupLockResult.CannotLockDisk)
             {
-                if (status == LockStatus.CannotLockDisk)
+                Console.WriteLine("Unable to lock all disks!");
+            }
+            else if (lockResult == DiskGroupLockResult.CannotLockVolume)
+            {
+                Console.WriteLine("Unable to lock all volumes!");
+            }
+            else if (lockResult == DiskGroupLockResult.OneOrMoreDisksAreOfflineOrReadonly)
+            {
+                Console.WriteLine("Error: One or more dynamic disks are offline or set to readonly.");
+            }
+            else if (lockResult == DiskGroupLockResult.CannotTakeDiskOffline)
+            {
+                Console.WriteLine("Failed to take all dynamic disks offline!");
+            }
+            else if (lockResult == DiskGroupLockResult.Success)
+            {
+                // Perform the operation
+                Console.WriteLine("Starting the operation");
+                Console.WriteLine("[This program was designed to recover from a power failure, but not from");
+                Console.WriteLine("user intervention, Do not abort or close this program during operation!]");
+
+                long bytesTotal = raid5Volume.Size;
+                long bytesCopied = 0;
+                Thread thread = new Thread(delegate()
                 {
-                    Console.WriteLine("Unable to lock all disks!");
-                }
-                else if (status == LockStatus.CannotLockVolume)
+                    List<DynamicDisk> diskGroup = WindowsDynamicDiskHelper.GetPhysicalDynamicDisks(raid5Volume.DiskGroupGuid);
+                    DiskGroupDatabase database = DiskGroupDatabase.ReadFromDisks(diskGroup, raid5Volume.DiskGroupGuid);
+                    AddDiskToArrayHelper.AddDiskToRaid5Volume(database, raid5Volume, newExtent, ref bytesCopied);
+                });
+                thread.Start();
+
+                while (thread.IsAlive)
                 {
-                    Console.WriteLine("Unable to lock all volumes!");
-                }
-                return;
-            }
-
-            if (Environment.OSVersion.Version.Major >= 6)
-            {
-                if (!DiskOfflineHelper.IsDiskGroupOnlineAndWritable(raid5Volume.DiskGroupGuid))
-                {
-                    Console.WriteLine("Error: One or more dynamic disks are offline or set to readonly.");
-                    LockManager.UnlockAllDisksAndVolumes();
-                    return;
+                    Thread.Sleep(1000);
+                    Console.SetCursorPosition(0, Console.CursorTop);
+                    Console.Write("Committed: {0} / {1}", FormattingHelper.GetStandardSizeString(bytesCopied), FormattingHelper.GetStandardSizeString(bytesTotal));
                 }
 
-                Console.WriteLine("Taking dynamic disks offline.");
-                bool success = DiskOfflineHelper.OfflineDiskGroup(raid5Volume.DiskGroupGuid);
-                if (!success)
-                {
-                    Console.WriteLine("Failed to take all dynamic disks offline!");
-                    LockManager.UnlockAllDisksAndVolumes();
-                    return;
-                }
+                Console.WriteLine();
+                Console.WriteLine();
+                Console.WriteLine("Operation completed.");
+
+                DiskGroupHelper.UnlockDiskGroup(disksToLock);
+
+                // volume has been modified and must be reselected
+                m_selectedVolume = WindowsVolumeHelper.GetVolumeByGuid(raid5Volume.VolumeGuid);
             }
-
-            // Perform the operation
-            Console.WriteLine("Starting the operation");
-            Console.WriteLine("[This program was designed to recover from a power failure, but not from");
-            Console.WriteLine("user intervention, Do not abort or close this program during operation!]");
-
-            long bytesTotal = raid5Volume.Size;
-            long bytesCopied = 0;
-            Thread thread = new Thread(delegate()
-            {
-                List<DynamicDisk> diskGroup = WindowsDynamicDiskHelper.GetPhysicalDynamicDisks(raid5Volume.DiskGroupGuid);
-                DiskGroupDatabase database = DiskGroupDatabase.ReadFromDisks(diskGroup, raid5Volume.DiskGroupGuid);
-                AddDiskToArrayHelper.AddDiskToRaid5Volume(database, raid5Volume, newExtent, ref bytesCopied);
-            });
-            thread.Start();
-
-            while (thread.IsAlive)
-            {
-                Thread.Sleep(1000);
-                Console.SetCursorPosition(0, Console.CursorTop);
-                Console.Write("Committed: {0} / {1}", FormattingHelper.GetStandardSizeString(bytesCopied), FormattingHelper.GetStandardSizeString(bytesTotal));
-            }
-
-            Console.WriteLine();
-            Console.WriteLine();
-            Console.WriteLine("Operation completed.");
-
-            if (Environment.OSVersion.Version.Major >= 6)
-            {
-                Console.WriteLine("Taking dynamic disks online.");
-                DiskOfflineHelper.OnlineDiskGroup(raid5Volume.DiskGroupGuid);
-                LockManager.UnlockAllDisksAndVolumes();
-            }
-            else
-            {
-                OperatingSystemHelper.RestartLDMAndUnlockDisksAndVolumes();
-            }
-
-            // volume has been modified and must be reselected
-            m_selectedVolume = WindowsVolumeHelper.GetVolumeByGuid(raid5Volume.VolumeGuid);
         }
 
         public static void HelpAdd()

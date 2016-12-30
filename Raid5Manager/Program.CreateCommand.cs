@@ -138,53 +138,31 @@ namespace Raid5Manager
             Console.WriteLine("Locking disks and volumes");
             // We want to lock the volumes as well or otherwise dmio will report the following error:
             // "The system failed to flush data to the transaction log. Corruption may occur."
-            LockStatus status = LockManager.LockDynamicDiskGroup(diskGroupGuid, true);
-            if (status != LockStatus.Success)
+            List<DynamicDisk> disksToLock = WindowsDynamicDiskHelper.GetPhysicalDynamicDisks(diskGroupGuid);
+            DiskGroupLockResult lockResult = DiskGroupHelper.LockDiskGroup(disksToLock);
+            if (lockResult == DiskGroupLockResult.CannotLockDisk)
             {
-                if (status == LockStatus.CannotLockDisk)
-                {
-                    Console.WriteLine("Unable to lock all disks!");
-                }
-                else if (status == LockStatus.CannotLockVolume)
-                {
-                    Console.WriteLine("Unable to lock all volumes!");
-                }
-                return;
+                Console.WriteLine("Unable to lock all disks!");
             }
-
-            if (Environment.OSVersion.Version.Major >= 6)
+            else if (lockResult == DiskGroupLockResult.CannotLockVolume)
             {
-                if (!DiskOfflineHelper.IsDiskGroupOnlineAndWritable(diskGroupGuid))
-                {
-                    Console.WriteLine("Error: One or more dynamic disks are offline or set to readonly.");
-                    LockManager.UnlockAllDisksAndVolumes();
-                    return;
-                }
-
-                Console.WriteLine("Taking dynamic disks offline.");
-                bool success = DiskOfflineHelper.OfflineDiskGroup(diskGroupGuid);
-                if (!success)
-                {
-                    Console.WriteLine("Failed to take all dynamic disks offline!");
-                    LockManager.UnlockAllDisksAndVolumes();
-                    return;
-                }
+                Console.WriteLine("Unable to lock all volumes!");
             }
-
-            DiskGroupDatabase database = DiskGroupDatabase.ReadFromPhysicalDisks(diskGroupGuid);
-            VolumeManagerDatabaseHelper.CreateSimpleVolume(database, extent);
-
-            Console.WriteLine("Operation completed.");
-
-            if (Environment.OSVersion.Version.Major >= 6)
+            else if (lockResult == DiskGroupLockResult.OneOrMoreDisksAreOfflineOrReadonly)
             {
-                Console.WriteLine("Taking dynamic disks online.");
-                DiskOfflineHelper.OnlineDiskGroup(diskGroupGuid);
-                LockManager.UnlockAllDisksAndVolumes();
+                Console.WriteLine("Error: One or more dynamic disks are offline or set to readonly.");
             }
-            else
+            else if (lockResult == DiskGroupLockResult.CannotTakeDiskOffline)
             {
-                OperatingSystemHelper.RestartLDMAndUnlockDisksAndVolumes();
+                Console.WriteLine("Failed to take all dynamic disks offline!");
+            }
+            else if (lockResult == DiskGroupLockResult.Success)
+            {
+                DiskGroupDatabase database = DiskGroupDatabase.ReadFromPhysicalDisks(diskGroupGuid);
+                VolumeManagerDatabaseHelper.CreateSimpleVolume(database, extent);
+
+                Console.WriteLine("Operation completed.");
+                DiskGroupHelper.UnlockDiskGroup(disksToLock);
             }
         }
 
@@ -331,52 +309,31 @@ namespace Raid5Manager
             Console.WriteLine("Locking disks and volumes");
             // We want to lock the volumes as well or otherwise dmio will report the following error:
             // "The system failed to flush data to the transaction log. Corruption may occur."
-            LockStatus status = LockManager.LockDynamicDiskGroup(diskGroupGuid, true);
-            if (status != LockStatus.Success)
+            List<DynamicDisk> disksToLock = WindowsDynamicDiskHelper.GetPhysicalDynamicDisks(diskGroupGuid);
+            DiskGroupLockResult lockResult = DiskGroupHelper.LockDiskGroup(disksToLock);
+            if (lockResult == DiskGroupLockResult.CannotLockDisk)
             {
-                if (status == LockStatus.CannotLockDisk)
-                {
-                    Console.WriteLine("Unable to lock all disks!");
-                }
-                else if (status == LockStatus.CannotLockVolume)
-                {
-                    Console.WriteLine("Unable to lock all volumes!");
-                }
-                return;
+                Console.WriteLine("Unable to lock all disks!");
             }
-
-            if (Environment.OSVersion.Version.Major >= 6)
+            else if (lockResult == DiskGroupLockResult.CannotLockVolume)
             {
-                if (!DiskOfflineHelper.IsDiskGroupOnlineAndWritable(diskGroupGuid))
-                {
-                    Console.WriteLine("Error: One or more dynamic disks are offline or set to readonly.");
-                    LockManager.UnlockAllDisksAndVolumes();
-                    return;
-                }
-
-                Console.WriteLine("Taking dynamic disks offline.");
-                bool success = DiskOfflineHelper.OfflineDiskGroup(diskGroupGuid);
-                if (!success)
-                {
-                    Console.WriteLine("Failed to take all dynamic disks offline!");
-                    LockManager.UnlockAllDisksAndVolumes();
-                    return;
-                }
+                Console.WriteLine("Unable to lock all volumes!");
             }
-
-            DiskGroupDatabase database = DiskGroupDatabase.ReadFromPhysicalDisks(diskGroupGuid);
-            VolumeManagerDatabaseHelper.CreateRAID5Volume(database, extents, isDegraded);
-
-            Console.WriteLine("Operation completed.");
-            if (Environment.OSVersion.Version.Major >= 6)
+            else if (lockResult == DiskGroupLockResult.OneOrMoreDisksAreOfflineOrReadonly)
             {
-                Console.WriteLine("Taking dynamic disks online.");
-                DiskOfflineHelper.OnlineDiskGroup(diskGroupGuid);
-                LockManager.UnlockAllDisksAndVolumes();
+                Console.WriteLine("Error: One or more dynamic disks are offline or set to readonly.");
             }
-            else
+            else if (lockResult == DiskGroupLockResult.CannotTakeDiskOffline)
             {
-                OperatingSystemHelper.RestartLDMAndUnlockDisksAndVolumes();
+                Console.WriteLine("Failed to take all dynamic disks offline!");
+            }
+            else if (lockResult == DiskGroupLockResult.Success)
+            {
+                DiskGroupDatabase database = DiskGroupDatabase.ReadFromPhysicalDisks(diskGroupGuid);
+                VolumeManagerDatabaseHelper.CreateRAID5Volume(database, extents, isDegraded);
+
+                Console.WriteLine("Operation completed.");
+                DiskGroupHelper.UnlockDiskGroup(disksToLock);
             }
         }
 

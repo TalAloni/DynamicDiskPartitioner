@@ -127,56 +127,36 @@ namespace Raid5Manager
                     Guid diskGroupGuid = ((DynamicVolume)m_selectedVolume).DiskGroupGuid;
                     // Lock disks and volumes
                     Console.WriteLine("Locking disks and volumes");
-                    LockStatus status = LockManager.LockDynamicDiskGroup(diskGroupGuid, true);
-                    if (status != LockStatus.Success)
+                    List<DynamicDisk> disksToLock = WindowsDynamicDiskHelper.GetPhysicalDynamicDisks(diskGroupGuid);
+                    DiskGroupLockResult lockResult = DiskGroupHelper.LockDiskGroup(disksToLock);
+                    if (lockResult == DiskGroupLockResult.CannotLockDisk)
                     {
-                        if (status == LockStatus.CannotLockDisk)
-                        {
-                            Console.WriteLine("Unable to lock all disks!");
-                        }
-                        else if (status == LockStatus.CannotLockVolume)
-                        {
-                            Console.WriteLine("Unable to lock all volumes!");
-                        }
-                        return;
+                        Console.WriteLine("Unable to lock all disks!");
                     }
-
-                    if (Environment.OSVersion.Version.Major >= 6)
+                    else if (lockResult == DiskGroupLockResult.CannotLockVolume)
                     {
-                        if (!DiskOfflineHelper.IsDiskGroupOnlineAndWritable(diskGroupGuid))
-                        {
-                            Console.WriteLine("Error: One or more dynamic disks are offline or set to readonly.");
-                            LockManager.UnlockAllDisksAndVolumes();
-                            return;
-                        }
-
-                        Console.WriteLine("Taking dynamic disks offline.");
-                        bool success = DiskOfflineHelper.OfflineDiskGroup(diskGroupGuid);
-                        if (!success)
-                        {
-                            Console.WriteLine("Failed to take all dynamic disks offline!");
-                            LockManager.UnlockAllDisksAndVolumes();
-                            return;
-                        }
+                        Console.WriteLine("Unable to lock all volumes!");
                     }
-
-                    DiskGroupDatabase database = DiskGroupDatabase.ReadFromPhysicalDisks(diskGroupGuid);
-                    ExtendHelper.ExtendDynamicVolume((DynamicVolume)m_selectedVolume, additionalNumberOfExtentSectors, database);
-                    Console.WriteLine("Operation completed.");
-
-                    if (Environment.OSVersion.Version.Major >= 6)
+                    else if (lockResult == DiskGroupLockResult.OneOrMoreDisksAreOfflineOrReadonly)
                     {
-                        Console.WriteLine("Taking dynamic disks online.");
-                        DiskOfflineHelper.OnlineDiskGroup(diskGroupGuid);
-                        LockManager.UnlockAllDisksAndVolumes();
+                        Console.WriteLine("Error: One or more dynamic disks are offline or set to readonly.");
                     }
-                    else
+                    else if (lockResult == DiskGroupLockResult.CannotTakeDiskOffline)
                     {
-                        OperatingSystemHelper.RestartLDMAndUnlockDisksAndVolumes();
+                        Console.WriteLine("Failed to take all dynamic disks offline!");
                     }
-                    
-                    // volume has been modified and must be reselected
-                    m_selectedVolume = WindowsVolumeHelper.GetVolumeByGuid(((DynamicVolume)m_selectedVolume).VolumeGuid);
+                    else if (lockResult == DiskGroupLockResult.Success)
+                    {
+
+                        DiskGroupDatabase database = DiskGroupDatabase.ReadFromPhysicalDisks(diskGroupGuid);
+                        ExtendHelper.ExtendDynamicVolume((DynamicVolume)m_selectedVolume, additionalNumberOfExtentSectors, database);
+                        Console.WriteLine("Operation completed.");
+
+                        DiskGroupHelper.UnlockDiskGroup(disksToLock);
+
+                        // volume has been modified and must be reselected
+                        m_selectedVolume = WindowsVolumeHelper.GetVolumeByGuid(((DynamicVolume)m_selectedVolume).VolumeGuid);
+                    }
                 }
                 else if (m_selectedVolume is Partition)
                 {
