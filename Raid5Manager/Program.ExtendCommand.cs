@@ -74,10 +74,10 @@ namespace Raid5Manager
 
         public static void ExtendVolume(KeyValuePairList<string, string> parameters)
         {
-            long availablelNumberOfExtentBytes = ExtendHelper.GetMaximumSizeToExtendVolume(m_selectedVolume);
+            long numberOfAvailablelExtentBytes = ExtendHelper.GetMaximumSizeToExtendVolume(m_selectedVolume);
             if (parameters.ContainsKey("querymax"))
             {
-                Console.Write("Max extend: {0}", FormattingHelper.GetStandardSizeString(availablelNumberOfExtentBytes));
+                Console.Write("Max extend: {0}", FormattingHelper.GetStandardSizeString(numberOfAvailablelExtentBytes));
                 if (m_selectedVolume is Raid5Volume || m_selectedVolume is StripedVolume)
                 {
                     Console.Write(" (Per column)");
@@ -96,9 +96,9 @@ namespace Raid5Manager
                     }
 
                     long requestedSizeInBytes = requestedSizeInMB * 1024 * 1024;
-                    if (requestedSizeInBytes <= availablelNumberOfExtentBytes)
+                    if (requestedSizeInBytes <= numberOfAvailablelExtentBytes)
                     {
-                        availablelNumberOfExtentBytes = requestedSizeInBytes;
+                        numberOfAvailablelExtentBytes = requestedSizeInBytes;
                     }
                     else
                     {
@@ -106,20 +106,20 @@ namespace Raid5Manager
                         return;
                     }
                 }
-                else if (availablelNumberOfExtentBytes == 0)
+                else if (numberOfAvailablelExtentBytes == 0)
                 {
                     Console.WriteLine("There is no space available after the volume.");
                     return;
                 }
 
-                long additionalNumberOfExtentSectors = availablelNumberOfExtentBytes / m_selectedVolume.BytesPerSector;
+                long numberOfAdditionalExtentSectors = numberOfAvailablelExtentBytes / m_selectedVolume.BytesPerSector;
                 if (m_selectedVolume is StripedVolume)
                 {
-                    additionalNumberOfExtentSectors -= additionalNumberOfExtentSectors % ((StripedVolume)m_selectedVolume).SectorsPerStripe;
+                    numberOfAdditionalExtentSectors -= numberOfAdditionalExtentSectors % ((StripedVolume)m_selectedVolume).SectorsPerStripe;
                 }
                 if (m_selectedVolume is Raid5Volume)
                 { 
-                    additionalNumberOfExtentSectors -= additionalNumberOfExtentSectors % ((Raid5Volume)m_selectedVolume).SectorsPerStripe;
+                    numberOfAdditionalExtentSectors -= numberOfAdditionalExtentSectors % ((Raid5Volume)m_selectedVolume).SectorsPerStripe;
                 }
 
                 if (m_selectedVolume is DynamicVolume)
@@ -149,7 +149,7 @@ namespace Raid5Manager
                     {
 
                         DiskGroupDatabase database = DiskGroupDatabase.ReadFromPhysicalDisks(diskGroupGuid);
-                        ExtendHelper.ExtendDynamicVolume((DynamicVolume)m_selectedVolume, additionalNumberOfExtentSectors, database);
+                        ExtendHelper.ExtendDynamicVolume((DynamicVolume)m_selectedVolume, numberOfAdditionalExtentSectors, database);
                         Console.WriteLine("Operation completed.");
 
                         DiskGroupHelper.UnlockDiskGroup(disksToLock);
@@ -185,7 +185,7 @@ namespace Raid5Manager
                         }
                     }
 
-                    ExtendHelper.ExtendPartition((Partition)m_selectedVolume, additionalNumberOfExtentSectors);
+                    ExtendHelper.ExtendPartition((Partition)m_selectedVolume, numberOfAdditionalExtentSectors);
                     Console.WriteLine("Operation completed.");
                     if (partition.Disk is PhysicalDisk)
                     {
@@ -229,10 +229,10 @@ namespace Raid5Manager
                 return;
             }
 
-            long availableNumberOfBytes = ((IExtendableFileSystem)fileSystem).GetMaximumSizeToExtend();
+            long numberOfAvailableBytes = ((IExtendableFileSystem)fileSystem).GetMaximumSizeToExtend();
             if (parameters.ContainsKey("querymax"))
             {
-                Console.WriteLine("Max extend: {0}", FormattingHelper.GetStandardSizeString(availableNumberOfBytes));
+                Console.WriteLine("Max extend: {0}", FormattingHelper.GetStandardSizeString(numberOfAvailableBytes));
             }
             else
             {
@@ -246,9 +246,9 @@ namespace Raid5Manager
                     }
 
                     long requestedSizeInBytes = requestedSizeInMB * 1024 * 1024;
-                    if (requestedSizeInBytes <= availableNumberOfBytes)
+                    if (requestedSizeInBytes <= numberOfAvailableBytes)
                     {
-                        availableNumberOfBytes = requestedSizeInBytes;
+                        numberOfAvailableBytes = requestedSizeInBytes;
                     }
                     else
                     {
@@ -256,13 +256,13 @@ namespace Raid5Manager
                         return;
                     }
                 }
-                else if (availableNumberOfBytes == 0)
+                else if (numberOfAvailableBytes == 0)
                 {
                     Console.WriteLine("There is no space available after the volume.");
                     return;
                 }
 
-                long additionalNumberOfSectors = availableNumberOfBytes / m_selectedVolume.BytesPerSector;
+                long numberOfAdditionalSectors = numberOfAvailableBytes / m_selectedVolume.BytesPerSector;
 
                 Guid? windowsVolumeGuid = WindowsVolumeHelper.GetWindowsVolumeGuid(m_selectedVolume);
                 if (windowsVolumeGuid.HasValue)
@@ -322,7 +322,7 @@ namespace Raid5Manager
                     }
                 }
 
-                ((IExtendableFileSystem)fileSystem).Extend(additionalNumberOfSectors);
+                ((IExtendableFileSystem)fileSystem).Extend(numberOfAdditionalSectors);
                 Console.WriteLine("Operation completed.");
 
                 if (windowsVolumeGuid.HasValue)
