@@ -72,6 +72,8 @@ namespace DynamicDiskPartitioner
                 chkDisk.Location = new Point(0, locationY);
                 chkDisk.Width = DiskButtonWidth;
                 chkDisk.Height = DiskHeight;
+                chkDisk.Padding = new Padding(0, ExtentBannerHeight + ExtentPaddingTop, 0, 0);
+                chkDisk.TextAlign = ContentAlignment.TopLeft;
                 chkDisk.Tag = disk;
                 chkDisk.Click += new EventHandler(Disk_Click);
                 chkDisk.MouseUp += new MouseEventHandler(Disk_MouseUp);
@@ -117,9 +119,9 @@ namespace DynamicDiskPartitioner
                     chkExtent.Location = extentRect.Location;
                     chkExtent.Width = extentRect.Width;
                     chkExtent.Height = extentRect.Height;
-                    chkExtent.Tag = extent;
                     chkExtent.Padding = new Padding(0, ExtentBannerHeight + ExtentPaddingTop, 0, 0);
                     chkExtent.TextAlign = ContentAlignment.TopLeft;
+                    chkExtent.Tag = extent;
                     chkExtent.Click += new EventHandler(Extent_Click);
                     chkExtent.MouseUp += new MouseEventHandler(Extent_MouseUp);
                     chkExtent.Paint += new PaintEventHandler(Extent_Paint);
