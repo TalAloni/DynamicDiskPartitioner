@@ -49,10 +49,42 @@ namespace DiskAccessLibrary
         public string DevicePath;
     }
 
+    public class DeviceInfo
+    {
+        public string DevicePath;
+        public string DeviceDescription;
+        public string FriendlyName;
+
+        /// <summary>
+        /// Device manager shows the friendly name if it exists and the device description otherwise.
+        /// </summary>
+        public string DeviceName
+        {
+            get
+            {
+                if (!String.IsNullOrEmpty(FriendlyName))
+                {
+                    return FriendlyName;
+                }
+                else
+                {
+                    return DeviceDescription;
+                }
+            }
+        }
+    }
+
     public class DeviceInterfaceUtils // SetupDi functions
     {
         public static readonly Guid DiskClassGuid = new Guid("53F56307-B6BF-11D0-94F2-00A0C91EFB8B");
+        public static readonly Guid MediumChangerClassGuid = new Guid("53F56310-B6BF-11D0-94F2-00A0C91EFB8B");
+        public static readonly Guid StoragePortClassGuid = new Guid("2ACCFE60-C130-11D2-B082-00A0C91EFB8B");
+        public static readonly Guid TapeClassGuid = new Guid("53F5630B-B6BF-11D0-94F2-00A0C91EFB8B");
+
         private const Int64 INVALID_HANDLE_VALUE = -1;
+
+        private const uint SPDRP_DEVICEDESC = 0x00000000;
+        private const uint SPDRP_FRIENDLYNAME = 0x0000000C;
 
         [DllImport("setupapi.dll", CharSet = CharSet.Auto)]
         private static extern IntPtr SetupDiGetClassDevs(           // 1st form using a ClassGUID only, with null Enumerator
@@ -251,6 +283,86 @@ namespace DiskAccessLibrary
 
                 SP_DEVICE_INTERFACE_DETAIL_DATA deviceInterfaceDetailData = GetDeviceInterfaceDetail(deviceInfoSet, deviceInterfaceData);
                 result.Add(deviceInterfaceDetailData.DevicePath);
+                index++;
+            }
+
+            DestroyDeviceInfoList(deviceInfoSet);
+
+            return result;
+        }
+
+        private static string GetDeviceStringProperty(IntPtr deviceInfoSet, SP_DEVINFO_DATA deviceInfoData, uint property)
+        {
+            uint propertyRegDataType;
+            byte[] propertyBuffer = new byte[128];
+            uint requiredSize;
+            bool success = SetupDiGetDeviceRegistryProperty(deviceInfoSet, ref deviceInfoData, property, out propertyRegDataType, propertyBuffer, (uint)propertyBuffer.Length, out requiredSize);
+            if (!success)
+            {
+                int errorCode = Marshal.GetLastWin32Error();
+                if (errorCode == (int)Win32Error.ERROR_INSUFFICIENT_BUFFER)
+                {
+                    propertyBuffer = new byte[requiredSize];
+                    success = SetupDiGetDeviceRegistryProperty(deviceInfoSet, ref deviceInfoData, property, out propertyRegDataType, propertyBuffer, (uint)propertyBuffer.Length, out requiredSize);
+                }
+                else if (errorCode == (int)Win32Error.ERROR_INVALID_DATA)
+                {
+                    return null;
+                }
+                
+                if (!success)
+                {
+                    string message = String.Format("Unable to retrieve property, Win32 Error: {0}", errorCode);
+                    throw new IOException(message);
+                }
+            }
+            string value = UnicodeEncoding.Unicode.GetString(propertyBuffer, 0, (int)requiredSize);
+            value = value.TrimEnd(new char[] { '\0' });
+            return value;
+        }
+
+        // https://msdn.microsoft.com/windows/hardware/drivers/install/device-information-sets
+        public static List<DeviceInfo> GetDeviceList(Guid deviceClassGuid)
+        {
+            IntPtr deviceInfoSet = GetClassDevices(deviceClassGuid);
+            SP_DEVINFO_DATA deviceInfoData = new SP_DEVINFO_DATA();
+            deviceInfoData.cbSize = (uint)Marshal.SizeOf(typeof(SP_DEVINFO_DATA));
+            SP_DEVICE_INTERFACE_DATA deviceInterfaceData = new SP_DEVICE_INTERFACE_DATA();
+            deviceInterfaceData.cbSize = (uint)Marshal.SizeOf(typeof(SP_DEVICE_INTERFACE_DATA));
+            uint index = 0;
+
+            List<DeviceInfo> result = new List<DeviceInfo>();
+            while (true)
+            {
+                bool success = SetupDiEnumDeviceInfo(deviceInfoSet, index, ref deviceInfoData);
+                if (!success)
+                {
+                    int errorCode = Marshal.GetLastWin32Error();
+                    if (errorCode == (int)Win32Error.ERROR_NO_MORE_ITEMS)
+                    {
+                        break;
+                    }
+                    else
+                    {
+                        string message = String.Format("Unable to enumerate devices, Win32 Error: {0}", errorCode);
+                        throw new IOException(message);
+                    }
+                }
+
+                success = SetupDiEnumDeviceInterfaces(deviceInfoSet, ref deviceInfoData, ref deviceClassGuid, 0, ref deviceInterfaceData);
+                if (!success)
+                {
+                    int errorCode = Marshal.GetLastWin32Error();
+                    string message = String.Format("Unable to enumerate device interfaces, Win32 Error: {0}", errorCode);
+                    throw new IOException(message);
+                }
+
+                SP_DEVICE_INTERFACE_DETAIL_DATA deviceInterfaceDetailData = GetDeviceInterfaceDetail(deviceInfoSet, deviceInterfaceData);
+                DeviceInfo deviceInfo = new DeviceInfo();
+                deviceInfo.DevicePath = deviceInterfaceDetailData.DevicePath;
+                deviceInfo.DeviceDescription = GetDeviceStringProperty(deviceInfoSet, deviceInfoData, SPDRP_DEVICEDESC);
+                deviceInfo.FriendlyName = GetDeviceStringProperty(deviceInfoSet, deviceInfoData, SPDRP_FRIENDLYNAME);
+                result.Add(deviceInfo);
                 index++;
             }
 
