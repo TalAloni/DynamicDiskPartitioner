@@ -157,7 +157,7 @@ namespace DynamicDiskPartitioner
 
         private void CopyFile(string fileSystemPath, string destinationPath)
         {
-            Stream sourceStream = m_fileSystem.OpenFile(fileSystemPath, FileMode.Open, FileAccess.Read, FileShare.Read);
+            Stream sourceStream = m_fileSystem.OpenFile(fileSystemPath, FileMode.Open, FileAccess.Read, FileShare.Read, FileOptions.SequentialScan);
             FileStream destinationStream = File.Open(destinationPath, FileMode.Create, FileAccess.ReadWrite, FileShare.Read);
             ByteUtils.CopyStream(sourceStream, destinationStream);
             sourceStream.Close();
