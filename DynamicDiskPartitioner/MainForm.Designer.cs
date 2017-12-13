@@ -158,6 +158,7 @@ namespace DynamicDiskPartitioner
             this.resumeOperationMenuItem.Name = "resumeOperationMenuItem";
             this.resumeOperationMenuItem.Size = new System.Drawing.Size(144, 22);
             this.resumeOperationMenuItem.Text = "Resume";
+            this.resumeOperationMenuItem.Click += new System.EventHandler(this.resumeOperationMenuItem_Click);
             // 
             // volumePropertiesMenuItem
             // 

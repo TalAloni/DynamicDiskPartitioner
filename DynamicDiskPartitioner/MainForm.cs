@@ -296,6 +296,31 @@ namespace DynamicDiskPartitioner
             }
         }
 
+        private void resumeOperationMenuItem_Click(object sender, EventArgs e)
+        {
+            DynamicVolume volume = (DynamicVolume)((KeyValuePair<Volume, DiskExtent>)extentContextMenu.Tag).Key;
+            DynamicDiskExtent extent = (DynamicDiskExtent)((KeyValuePair<Volume, DiskExtent>)extentContextMenu.Tag).Value;
+            
+            List<DynamicDisk> dynamicDisks = GetDynamicDisks();
+            List<DynamicDisk> diskGroup = DynamicDiskHelper.FindDiskGroup(dynamicDisks, volume.DiskGroupGuid);
+
+            ResumeForm resumeForm = new ResumeForm(diskGroup, volume, extent);
+            DialogResult result = resumeForm.ShowDialog();
+            if (result == DialogResult.OK)
+            {
+                UpdateView();
+                if (Environment.OSVersion.Version.Major >= 6)
+                {
+                    MessageBox.Show("Click OK to Continue", "Operation completed successfully");
+                }
+                else
+                {
+                    string message = OperatingSystemHelper.GetUpdateMessage();
+                    MessageBox.Show(message, "Operation completed successfully");
+                }
+            }
+        }
+
         private void extendFileSystemMenuItem_Click(object sender, EventArgs e)
         {
             Volume volume = ((KeyValuePair<Volume, DiskExtent>)extentContextMenu.Tag).Key;
