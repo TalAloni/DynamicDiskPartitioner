@@ -106,3 +106,6 @@ Revision History:
 1.4.4 - Improved implementation for extending a filesystem.
 
 1.4.5 - Replaced the command-line interface with a GUI.
+
+1.4.6 - Bugfix: Unhandled exception when right clicking on a failed volume extent.
+        Bugfix: Clicking on resume now works.

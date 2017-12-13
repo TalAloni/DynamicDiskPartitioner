@@ -10,7 +10,7 @@ using System.Runtime.InteropServices;
 [assembly: AssemblyConfiguration("")]
 [assembly: AssemblyCompany("Tal Aloni")]
 [assembly: AssemblyProduct("Dynamic Disk Partitioner")]
-[assembly: AssemblyCopyright("Copyright © Tal Aloni 2012-2016")]
+[assembly: AssemblyCopyright("Copyright © Tal Aloni 2012-2017")]
 [assembly: AssemblyTrademark("")]
 [assembly: AssemblyCulture("")]
 
@@ -29,5 +29,5 @@ using System.Runtime.InteropServices;
 //      Build Number
 //      Revision
 //
-[assembly: AssemblyVersion("1.4.5.1")]
-[assembly: AssemblyFileVersion("1.4.5.1")]
+[assembly: AssemblyVersion("1.4.6.0")]
+[assembly: AssemblyFileVersion("1.4.6.0")]

@@ -95,3 +95,9 @@ Revision History:
         NTFS: Return empty byte array when trying to read from offset larger than file length.
         LockHelper.LockAllVolumesOrNone will attempt to lock only mounted volumes.
         API improvements.
+
+1.4.6 - DeviceInterfaceUtils: Minor improvements.
+        DeviceInterfaceUtils: Added GetDeviceList method.
+        Win32Errors enum: Added ERROR_INVALID_DATA
+        Bugfix: The second KLOG page was not read.
+        Corrected documentation.
