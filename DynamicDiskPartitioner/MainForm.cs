@@ -49,7 +49,10 @@ namespace DynamicDiskPartitioner
             try
             {
                 isDynamicDisk = DynamicDisk.IsDynamicDisk(e.Extent.Disk);
-                hasResumeRecord = e.Volume != null && DynamicDiskPartitionerResumeRecord.HasValidSignature(e.Volume.ReadSector(0));
+                if (e.Volume != null && (!(e.Volume is DynamicVolume) || ((DynamicVolume)e.Volume).IsOperational))
+                {
+                    hasResumeRecord = DynamicDiskPartitionerResumeRecord.HasValidSignature(e.Volume.ReadSector(0));
+                }
             }
             catch (IOException)
             {
@@ -67,6 +70,7 @@ namespace DynamicDiskPartitioner
             bool isMirroredVolume = (e.Volume != null && e.Volume is MirroredVolume);
             extendVolumeMenuItem.Enabled = isHealthy && !isMirroredVolume;
             moveExtentMenuItem.Enabled = isOperational;
+            fileSystemMenuItem.Enabled = isOperational;
             addDiskToVolumeMenuItem.Enabled = isHealthy;
 
             extentContextMenu.Tag = new KeyValuePair<Volume, DiskExtent>(e.Volume, e.Extent);
