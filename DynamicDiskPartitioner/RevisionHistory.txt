@@ -109,3 +109,5 @@ Revision History:
 
 1.4.6 - Bugfix: Unhandled exception when right clicking on a failed volume extent.
         Bugfix: Clicking on resume now works.
+
+1.4.7 - Bugfix: Extending NTFS volumes repeatedly may have resulted in corrupted Bitmap file record.

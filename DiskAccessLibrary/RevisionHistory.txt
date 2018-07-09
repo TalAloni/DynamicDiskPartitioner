@@ -101,3 +101,6 @@ Revision History:
         Win32Errors enum: Added ERROR_INVALID_DATA
         Bugfix: The second KLOG page was not read.
         Corrected documentation.
+
+1.4.7 - Bugfix: NTFS File Records that exceeded 511 bytes were corrupted during write.
+        Minor improvements to NTFS Data Run record implementation.
