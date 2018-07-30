@@ -275,6 +275,16 @@ namespace DiskAccessLibrary.FileSystems.NTFS
         }
 
         /// <summary>
+        /// This method should only be used for informational purposes.
+        /// </summary>
+        public KeyValuePairList<long, int> GetClustersInUse()
+        {
+            long clusterCount = HighestVCN - LowestVCN + 1;
+            KeyValuePairList<long, int> sequence = m_dataRunSequence.TranslateToLCN(0, (int)clusterCount);
+            return sequence;
+        }
+
+        /// <summary>
         /// When reading attributes, they may contain additional padding,
         /// so we should use StoredRecordLength to advance the buffer position instead.
         /// </summary>
