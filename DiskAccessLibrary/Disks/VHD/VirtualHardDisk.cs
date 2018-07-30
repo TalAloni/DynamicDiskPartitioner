@@ -58,8 +58,6 @@ namespace DiskAccessLibrary
                 buffer = m_file.ReadSectors(1, 2);
                 m_dynamicHeader = new DynamicDiskHeader(buffer);
                 m_blockAllocationTable = BlockAllocationTable.ReadBlockAllocationTable(virtualHardDiskPath, m_dynamicHeader);
-
-                this.IsReadOnly = true;
             }
             else
             {
@@ -128,16 +126,25 @@ namespace DiskAccessLibrary
 
             if (m_vhdFooter.DiskType == VirtualHardDiskType.Fixed)
             {
-                long length = this.Size; // does not include the footer
-                m_file.Extend(numberOfAdditionalBytes);
                 m_vhdFooter.CurrentSize += (ulong)numberOfAdditionalBytes;
-                byte[] footerBytes = m_vhdFooter.GetBytes();
-                m_file.WriteSectors((length + numberOfAdditionalBytes) / BytesPerDiskSector, footerBytes);
+                ExtendFile(numberOfAdditionalBytes);
             }
             else
             {
                 throw new NotImplementedException();
             }
+        }
+
+        private void ExtendFile(long numberOfAdditionalBytes)
+        {
+            long footerOffset = m_file.Size - VHDFooter.Length;
+            m_file.Extend(numberOfAdditionalBytes);
+            byte[] footerBytes = m_vhdFooter.GetBytes();
+            if (m_vhdFooter.DiskType != VirtualHardDiskType.Fixed)
+            {
+                m_file.WriteSectors(0, footerBytes);
+            }
+            m_file.WriteSectors((footerOffset + numberOfAdditionalBytes) / BytesPerDiskSector, footerBytes);
         }
 
         public long Cylinders
