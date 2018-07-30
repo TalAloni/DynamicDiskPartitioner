@@ -9,7 +9,6 @@ using System.Threading;
 using System.Windows.Forms;
 using DiskAccessLibrary;
 using DiskAccessLibrary.FileSystems;
-using DiskAccessLibrary.FileSystems.NTFS;
 using Utilities;
 
 namespace DynamicDiskPartitioner
@@ -177,21 +176,21 @@ namespace DynamicDiskPartitioner
             directories.Enqueue(searchRootEntry);
             while (directories.Count > 0)
             {
-                FileSystemEntry entry = directories.Dequeue();
-                List<FileSystemEntry> directoryEntries = m_fileSystem.ListEntriesInDirectory(entry.FullName);
-                if (directoryEntries.Count == 0) // Empty directory
+                FileSystemEntry currentDirectory = directories.Dequeue();
+                List<FileSystemEntry> entries = m_fileSystem.ListEntriesInDirectory(currentDirectory.FullName);
+                if (entries.Count == 0) // Empty directory
                 {
-                    result.Add(entry);
+                    result.Add(currentDirectory);
                 }
-                foreach (FileSystemEntry directoryEntry in directoryEntries)
+                foreach (FileSystemEntry entry in entries)
                 {
-                    if (directoryEntry.IsDirectory)
+                    if (entry.IsDirectory)
                     {
-                        directories.Enqueue(directoryEntry);
+                        directories.Enqueue(entry);
                     }
                     else
                     {
-                        result.Add(directoryEntry);
+                        result.Add(entry);
                     }
                 }
             }
