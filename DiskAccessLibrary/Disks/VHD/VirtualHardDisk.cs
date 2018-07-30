@@ -36,7 +36,7 @@ namespace DiskAccessLibrary
         {
             // We can't read the VHD footer using this.ReadSector() because it's out of the disk boundaries
             m_file = new RawDiskImage(virtualHardDiskPath, BytesPerDiskSector);
-            byte[] buffer = m_file.ReadSector(m_file.Size / m_file.BytesPerSector - 1);
+            byte[] buffer = m_file.ReadSector(m_file.Size / BytesPerDiskSector - 1);
             m_vhdFooter = new VHDFooter(buffer);
 
             if (!m_vhdFooter.IsValid)
@@ -108,7 +108,7 @@ namespace DiskAccessLibrary
 
         public override void WriteSectors(long sectorIndex, byte[] data)
         {
-            CheckBoundaries(sectorIndex, data.Length / this.BytesPerSector);
+            CheckBoundaries(sectorIndex, data.Length / BytesPerDiskSector);
             if (m_vhdFooter.DiskType == VirtualHardDiskType.Fixed)
             {
                 m_file.WriteSectors(sectorIndex, data);
@@ -121,9 +121,9 @@ namespace DiskAccessLibrary
 
         public override void Extend(long numberOfAdditionalBytes)
         {
-            if (numberOfAdditionalBytes % this.BytesPerSector > 0)
+            if (numberOfAdditionalBytes % BytesPerDiskSector > 0)
             {
-                throw new ArgumentException("numberOfAdditionalBytes must be a multiple of BytesPerSector");
+                throw new ArgumentException("numberOfAdditionalBytes must be a multiple of sector size");
             }
 
             if (m_vhdFooter.DiskType == VirtualHardDiskType.Fixed)
@@ -132,7 +132,7 @@ namespace DiskAccessLibrary
                 m_file.Extend(numberOfAdditionalBytes);
                 m_vhdFooter.CurrentSize += (ulong)numberOfAdditionalBytes;
                 byte[] footerBytes = m_vhdFooter.GetBytes();
-                m_file.WriteSectors((length + numberOfAdditionalBytes) / this.BytesPerSector, footerBytes);
+                m_file.WriteSectors((length + numberOfAdditionalBytes) / BytesPerDiskSector, footerBytes);
             }
             else
             {
