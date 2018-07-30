@@ -146,6 +146,39 @@ namespace DynamicDiskPartitioner
                         return;
                     }
                 }
+
+                try
+                {
+                    // Restore entry metadata
+                    // Note: File.SetCreationTime will not work on directories, but Directory.SetCreationTime is documented to work on files.
+                    Directory.SetCreationTime(destinationPath, entry.CreationTime);
+                    Directory.SetLastWriteTime(destinationPath, entry.LastWriteTime);
+                    Directory.SetLastAccessTime(destinationPath, entry.LastAccessTime);
+                    if (entry.IsHidden || entry.IsReadonly || entry.IsArchived)
+                    {
+                        FileAttributes attributes = (FileAttributes)0;
+                        if (entry.IsDirectory)
+                        {
+                            attributes |= FileAttributes.Directory;
+                        }
+                        if (entry.IsHidden)
+                        {
+                            attributes |= FileAttributes.Hidden;
+                        }
+                        if (entry.IsReadonly)
+                        {
+                            attributes |= FileAttributes.ReadOnly;
+                        }
+                        if (entry.IsArchived)
+                        {
+                            attributes |= FileAttributes.Archive;
+                        }
+                        File.SetAttributes(destinationPath, attributes);
+                    }
+                }
+                catch (IOException)
+                {
+                }
             }
             this.Invoke((MethodInvoker)delegate()
             {
@@ -167,9 +200,9 @@ namespace DynamicDiskPartitioner
         {
             List<FileSystemEntry> result = new List<FileSystemEntry>();
             FileSystemEntry searchRootEntry = m_fileSystem.GetEntry(directoryPath);
+            result.Add(searchRootEntry);
             if (!searchRootEntry.IsDirectory)
             {
-                result.Add(searchRootEntry);
                 return result;
             }
             Queue<FileSystemEntry> directories = new Queue<FileSystemEntry>();
@@ -178,19 +211,14 @@ namespace DynamicDiskPartitioner
             {
                 FileSystemEntry currentDirectory = directories.Dequeue();
                 List<FileSystemEntry> entries = m_fileSystem.ListEntriesInDirectory(currentDirectory.FullName);
-                if (entries.Count == 0) // Empty directory
-                {
-                    result.Add(currentDirectory);
-                }
                 foreach (FileSystemEntry entry in entries)
                 {
+                    // The result should include directories (to retain empty directories and directory metadata)
+                    result.Add(entry);
+
                     if (entry.IsDirectory)
                     {
                         directories.Enqueue(entry);
-                    }
-                    else
-                    {
-                        result.Add(entry);
                     }
                 }
             }
