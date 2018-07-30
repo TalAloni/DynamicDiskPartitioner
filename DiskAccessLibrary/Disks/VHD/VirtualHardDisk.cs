@@ -236,19 +236,19 @@ namespace DiskAccessLibrary
             cylinders = (ushort)(cylindersTimesHeads / heads);
         }
 
-        /// <param name="size">In bytes</param>
+        /// <param name="diskSize">In bytes</param>
         /// <exception cref="System.IO.IOException"></exception>
         /// <exception cref="System.UnauthorizedAccessException"></exception>
-        public static VirtualHardDisk Create(string path, long size)
+        public static VirtualHardDisk Create(string path, long diskSize)
         {
             VHDFooter footer = new VHDFooter();
-            footer.OriginalSize = (ulong)size;
-            footer.CurrentSize = (ulong)size;
+            footer.OriginalSize = (ulong)diskSize;
+            footer.CurrentSize = (ulong)diskSize;
             footer.SetCurrentTimeStamp();
-            footer.SetDiskGeometry((ulong)size / BytesPerDiskSector);
+            footer.SetDiskGeometry((ulong)diskSize / BytesPerDiskSector);
 
-            RawDiskImage diskImage = RawDiskImage.Create(path, size + VHDFooter.Length, BytesPerDiskSector);
-            diskImage.WriteSectors(size / BytesPerDiskSector, footer.GetBytes());
+            RawDiskImage diskImage = RawDiskImage.Create(path, diskSize + VHDFooter.Length, BytesPerDiskSector);
+            diskImage.WriteSectors(diskSize / BytesPerDiskSector, footer.GetBytes());
 
             return new VirtualHardDisk(path);
         }
