@@ -18,11 +18,11 @@ namespace DiskAccessLibrary
         {
             byte[] buffer = new byte[sectorCount * BytesPerDiskSector];
             int sectorOffset = 0;
+            int sectorsInBlock = (int)(m_dynamicHeader.BlockSize / BytesPerDiskSector);
             while (sectorOffset < sectorCount)
             {
                 uint blockIndex = (uint)((sectorIndex + sectorOffset) * BytesPerDiskSector / m_dynamicHeader.BlockSize);
                 int sectorOffsetInBlock = (int)(((sectorIndex + sectorOffset) * BytesPerDiskSector % m_dynamicHeader.BlockSize) / BytesPerDiskSector);
-                int sectorsInBlock = (int)(m_dynamicHeader.BlockSize / BytesPerDiskSector);
                 int sectorsRemainingInBlock = sectorsInBlock - sectorOffsetInBlock;
                 int sectorsToRead = Math.Min(sectorCount - sectorOffset, sectorsRemainingInBlock);
 
@@ -68,11 +68,11 @@ namespace DiskAccessLibrary
         {
             int sectorOffset = 0;
             int sectorCount = data.Length / BytesPerDiskSector;
+            int sectorsInBlock = (int)(m_dynamicHeader.BlockSize / BytesPerDiskSector);
             while (sectorOffset < sectorCount)
             {
                 uint blockIndex = (uint)((sectorIndex + sectorOffset) * BytesPerDiskSector / m_dynamicHeader.BlockSize);
                 int sectorOffsetInBlock = (int)(((sectorIndex + sectorOffset) * BytesPerDiskSector % m_dynamicHeader.BlockSize) / BytesPerDiskSector);
-                int sectorsInBlock = (int)(m_dynamicHeader.BlockSize / BytesPerDiskSector);
                 int sectorsRemainingInBlock = sectorsInBlock - sectorOffsetInBlock;
                 int sectorsToWrite = Math.Min(sectorCount - sectorOffset, sectorsRemainingInBlock);
 
