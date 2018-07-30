@@ -111,3 +111,5 @@ Revision History:
         Bugfix: Clicking on resume now works.
 
 1.4.7 - Bugfix: Extending NTFS volumes repeatedly may have resulted in corrupted Bitmap file record.
+
+1.4.8 - Minor improvements.
