@@ -7,7 +7,6 @@
 using System;
 using System.IO;
 using System.Collections.Generic;
-using System.Text;
 using Utilities;
 using DiskAccessLibrary.VHD;
 
@@ -101,37 +100,23 @@ namespace DiskAccessLibrary
             {
                 return m_file.ReadSectors(sectorIndex, sectorCount);
             }
-            else // dynamic
+            else // Dynamic VHD
             {
-                byte[] buffer = new byte[sectorCount * this.BytesPerSector];
-                int sectorOffset = 0;
-                while (sectorOffset < sectorCount)
-                {
-                    uint blockIndex = (uint)((sectorIndex + sectorOffset) * this.BytesPerSector / m_dynamicHeader.BlockSize);
-                    int sectorOffsetInBlock = (int)(((sectorIndex + sectorOffset) * this.BytesPerSector % m_dynamicHeader.BlockSize) / this.BytesPerSector);
-                    int sectorsInBlock = (int)(m_dynamicHeader.BlockSize / this.BytesPerSector);
-                    int sectorsRemainingInBlock = sectorsInBlock - sectorOffsetInBlock;
-                    int sectorsToRead = Math.Min(sectorCount - sectorOffset, sectorsRemainingInBlock);
-
-                    uint blockStartSector;
-                    if (m_blockAllocationTable.IsBlockInUse(blockIndex, out blockStartSector))
-                    {
-                        // each data block has a sector bitmap preceding the data, the bitmap is padded to a 512-byte sector boundary.
-                        int blockBitmapSectorCount = (int)Math.Ceiling((double)sectorsInBlock / (this.BytesPerSector * 8));
-                        // "All sectors within a block whose corresponding bits in the bitmap are zero must contain 512 bytes of zero on disk"
-                        byte[] temp = m_file.ReadSectors(blockStartSector + blockBitmapSectorCount + sectorOffsetInBlock, sectorsToRead);
-                        ByteWriter.WriteBytes(buffer, sectorOffset * this.BytesPerSector, temp);
-                    }
-                    sectorOffset += sectorsToRead;
-                }
-                return buffer;
+                return ReadSectorsFromDynamicDisk(sectorIndex, sectorCount);
             }
         }
 
         public override void WriteSectors(long sectorIndex, byte[] data)
         {
             CheckBoundaries(sectorIndex, data.Length / this.BytesPerSector);
-            m_file.WriteSectors(sectorIndex, data);
+            if (m_vhdFooter.DiskType == VirtualHardDiskType.Fixed)
+            {
+                m_file.WriteSectors(sectorIndex, data);
+            }
+            else // Dynamic VHD
+            {
+                WriteSectorsToDynamicDisk(sectorIndex, data);
+            }
         }
 
         public override void Extend(long numberOfAdditionalBytes)
