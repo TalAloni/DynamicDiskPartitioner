@@ -178,13 +178,12 @@ namespace DiskAccessLibrary
         /// <exception cref="System.UnauthorizedAccessException"></exception>
         public static VirtualHardDisk CreateDynamicDisk(string path, long diskSize)
         {
-            const int BlockSizeInBytes = 4096 * BytesPerDiskSector;
-
-            if (diskSize % BlockSizeInBytes > 0)
+            if (diskSize % BytesPerDiskSector > 0)
             {
-                // All blocks within a given image must be the same size
-                throw new ArgumentException("Dynamic VHD disk size must be a multiple of 2MiB");
+                throw new ArgumentException("diskSize must be a multiple of sector size");
             }
+
+            const int BlockSizeInBytes = 4096 * BytesPerDiskSector;
 
             VHDFooter footer = new VHDFooter();
             footer.OriginalSize = (ulong)diskSize;
