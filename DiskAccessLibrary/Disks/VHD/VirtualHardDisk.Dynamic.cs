@@ -17,8 +17,8 @@ namespace DiskAccessLibrary
         private byte[] ReadSectorsFromDynamicDisk(long sectorIndex, int sectorCount)
         {
             byte[] buffer = new byte[sectorCount * BytesPerDiskSector];
-            int sectorOffset = 0;
             int sectorsInBlock = (int)(m_dynamicHeader.BlockSize / BytesPerDiskSector);
+            int sectorOffset = 0;
             while (sectorOffset < sectorCount)
             {
                 uint blockIndex = (uint)((sectorIndex + sectorOffset) * BytesPerDiskSector / m_dynamicHeader.BlockSize);
@@ -66,9 +66,9 @@ namespace DiskAccessLibrary
 
         private void WriteSectorsToDynamicDisk(long sectorIndex, byte[] data)
         {
-            int sectorOffset = 0;
             int sectorCount = data.Length / BytesPerDiskSector;
             int sectorsInBlock = (int)(m_dynamicHeader.BlockSize / BytesPerDiskSector);
+            int sectorOffset = 0;
             while (sectorOffset < sectorCount)
             {
                 uint blockIndex = (uint)((sectorIndex + sectorOffset) * BytesPerDiskSector / m_dynamicHeader.BlockSize);
