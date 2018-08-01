@@ -113,3 +113,5 @@ Revision History:
 1.4.7 - Bugfix: Extending NTFS volumes repeatedly may have resulted in corrupted Bitmap file record.
 
 1.4.8 - Minor improvements.
+
+1.4.9 - Export: Retain file / folder metadata during export.
