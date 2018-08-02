@@ -218,6 +218,20 @@ namespace DiskAccessLibrary.FileSystems.NTFS
             return result;
         }
 
+        /// <summary>
+        /// This method is slower and should only be used for recovery purposes.
+        /// </summary>
+        private KeyValuePairList<MftSegmentReference, FileNameRecord> GetFileNameRecordsInDirectoryFromMft(long directoryBaseSegmentNumber)
+        {
+            KeyValuePairList<MftSegmentReference, FileNameRecord> result = new KeyValuePairList<MftSegmentReference,FileNameRecord>();
+            List<FileRecord> fileRecords = GetFileRecordsInDirectoryFromMft(directoryBaseSegmentNumber);
+            foreach (FileRecord fileRecord in fileRecords)
+            {
+                result.Add(new MftSegmentReference(fileRecord.MftSegmentNumber, fileRecord.SequenceNumber), fileRecord.FileNameRecord);
+            }
+            return result;
+        }
+
         // logical cluster
         public byte[] ReadCluster(long clusterLCN)
         {
