@@ -89,7 +89,7 @@ namespace DiskAccessLibrary.FileSystems.NTFS
         private FileRecord FindDirectoryRecord(KeyValuePairList<MftSegmentReference, FileNameRecord> records, string directoryName)
         {
             FileRecord directoryRecord = FindRecord(records, directoryName);
-            if (directoryRecord.IsDirectory)
+            if (directoryRecord != null && directoryRecord.IsDirectory)
             {
                 return directoryRecord;
             }
@@ -102,7 +102,7 @@ namespace DiskAccessLibrary.FileSystems.NTFS
             if (nameRecord != null)
             {
                 FileRecord record = m_mft.GetFileRecord(nameRecord.Value.Key);
-                if (record.IsInUse && !record.IsMetaFile)
+                if (record != null && record.IsInUse && !record.IsMetaFile)
                 {
                     return record;
                 }
