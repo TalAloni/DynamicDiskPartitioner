@@ -1,4 +1,4 @@
-/* Copyright (C) 2014-2016 Tal Aloni <tal.aloni.il@gmail.com>. All rights reserved.
+/* Copyright (C) 2014-2018 Tal Aloni <tal.aloni.il@gmail.com>. All rights reserved.
  * 
  * You can redistribute this program and/or modify it under the terms of
  * the GNU Lesser Public License as published by the Free Software Foundation,
@@ -6,7 +6,6 @@
  */
 using System;
 using System.Collections.Generic;
-using System.Text;
 using Utilities;
 
 namespace DiskAccessLibrary.FileSystems.NTFS
@@ -34,7 +33,7 @@ namespace DiskAccessLibrary.FileSystems.NTFS
             {
                 return new byte[0];
             }
-            long clusterVCN = (long)offset / m_volume.BytesPerCluster;
+            long clusterVCN = (long)(offset / (uint)m_volume.BytesPerCluster);
             int offsetInCluster = (int)(offset % (uint)m_volume.BytesPerCluster);
             int clusterCount = (int)Math.Ceiling((double)(offsetInCluster + length) / m_volume.BytesPerCluster);
             byte[] clustersBytes = m_fileRecord.DataRecord.ReadDataClusters(m_volume, clusterVCN, clusterCount);
@@ -53,7 +52,7 @@ namespace DiskAccessLibrary.FileSystems.NTFS
             ulong currentSize = m_fileRecord.DataRecord.DataRealSize;
             if (offset + (uint)bytes.Length > currentSize)
             { 
-                // file needs to be extended
+                // File needs to be extended
                 ulong additionalLength = offset + (uint)bytes.Length - currentSize;
                 ExtendFile(additionalLength);
             }
