@@ -22,7 +22,7 @@ namespace DiskAccessLibrary.FileSystems.NTFS
     {
         private Volume m_volume;
         private MasterFileTable m_mft;
-        private ClusterUsageBitmap m_bitmap;
+        private VolumeBitmap m_bitmap;
 
         private NTFSBootRecord m_bootRecord; // partition's boot record
 
@@ -39,7 +39,7 @@ namespace DiskAccessLibrary.FileSystems.NTFS
             if (m_bootRecord != null)
             {
                 m_mft = new MasterFileTable(this, useMftMirror);
-                m_bitmap = new ClusterUsageBitmap(this);
+                m_bitmap = new VolumeBitmap(this);
             }
         }
 

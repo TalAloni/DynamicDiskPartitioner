@@ -11,14 +11,18 @@ using Utilities;
 
 namespace DiskAccessLibrary.FileSystems.NTFS
 {
-    public class ClusterUsageBitmap : NTFSFile
+    /// <summary>
+    /// This class is used to read and update the volume bitmap (the $Bitmap metafile).
+    /// Each bit in this file represents a cluster, extra bits are always set to 1.
+    /// </summary>
+    public class VolumeBitmap : NTFSFile
     {
         NTFSVolume m_volume;
         private long m_bufferedClusterVCN = -1;
         private byte[] m_bufferedCluster;
         private bool m_isBufferDirty; // if set to true, we need to write the buffer
 
-        public ClusterUsageBitmap(NTFSVolume volume) : base(volume, MasterFileTable.BitmapSegmentNumber)
+        public VolumeBitmap(NTFSVolume volume) : base(volume, MasterFileTable.BitmapSegmentNumber)
         {
             m_volume = volume;
         }
@@ -32,7 +36,7 @@ namespace DiskAccessLibrary.FileSystems.NTFS
                     FlushBuffer();
                 }
                 m_bufferedClusterVCN = bitmapClusterVCN;
-                // ClusterUsageBitmap is always non-resident
+                // VolumeBitmap data record is always non-resident (the NTFS v5.1 driver does not support a VolumeBitmap having a resident data record)
                 m_bufferedCluster = FileRecord.NonResidentDataRecord.ReadDataCluster(Volume, bitmapClusterVCN);
             }
             return m_bufferedCluster;

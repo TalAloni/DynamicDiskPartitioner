@@ -1,4 +1,4 @@
-/* Copyright (C) 2014-2016 Tal Aloni <tal.aloni.il@gmail.com>. All rights reserved.
+/* Copyright (C) 2014-2018 Tal Aloni <tal.aloni.il@gmail.com>. All rights reserved.
  * 
  * You can redistribute this program and/or modify it under the terms of
  * the GNU Lesser Public License as published by the Free Software Foundation,
@@ -78,7 +78,7 @@ namespace DiskAccessLibrary.FileSystems.NTFS
                 nextClusterIndexInBitmap = currentNumberOfClusters % 64;
                 while (nextClusterIndexInBitmap < 64)
                 {
-                    ClusterUsageBitmap.UpdateClusterStatus(bitmap, nextClusterIndexInBitmap, false);
+                    VolumeBitmap.UpdateClusterStatus(bitmap, nextClusterIndexInBitmap, false);
                     nextClusterIndexInBitmap++;
                 }
 
@@ -96,7 +96,7 @@ namespace DiskAccessLibrary.FileSystems.NTFS
             // mark extra bits as used:
             while (nextClusterIndexInBitmap < (ulong)bitmap.Length * 8)
             {
-                ClusterUsageBitmap.UpdateClusterStatus(bitmap, nextClusterIndexInBitmap, true);
+                VolumeBitmap.UpdateClusterStatus(bitmap, nextClusterIndexInBitmap, true);
                 nextClusterIndexInBitmap++;
             }
 

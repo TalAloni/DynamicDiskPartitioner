@@ -71,7 +71,6 @@
     <Compile Include="FileSystems\NTFS\AttributeRecord\ResidentAttributeRecord.cs" />
     <Compile Include="FileSystems\NTFS\AttributeRecord\StandardInformationRecord.cs" />
     <Compile Include="FileSystems\NTFS\AttributeRecord\VolumeInformationRecord.cs" />
-    <Compile Include="FileSystems\NTFS\ClusterUsageBitmap.cs" />
     <Compile Include="FileSystems\NTFS\DataRun.cs" />
     <Compile Include="FileSystems\NTFS\DataRunSequence.cs" />
     <Compile Include="FileSystems\NTFS\Enums\AttributeCollationRule.cs" />
@@ -92,6 +91,7 @@
     <Compile Include="FileSystems\NTFS\NTFSVolume.cs" />
     <Compile Include="FileSystems\NTFS\Structures\FileNameRecord.cs" />
     <Compile Include="FileSystems\NTFS\Structures\MftSegmentReference.cs" />
+    <Compile Include="FileSystems\NTFS\VolumeBitmap.cs" />
     <Compile Include="Helpers\BasicDiskHelper.cs" />
     <Compile Include="Helpers\DiskExtentHelper.cs" />
     <Compile Include="Helpers\DiskExtentsHelper.cs" />
