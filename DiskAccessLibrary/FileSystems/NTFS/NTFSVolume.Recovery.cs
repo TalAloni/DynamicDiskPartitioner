@@ -26,7 +26,7 @@ namespace DiskAccessLibrary.FileSystems.NTFS
         /// </summary>
         private List<FileRecord> GetFileRecordsInDirectoryFromMft(long directoryBaseSegmentNumber, bool includeMetaFiles)
         {
-            long maxNumOfRecords = m_mft.GetMaximumNumberOfSegments();
+            long maxNumOfRecords = m_mft.GetNumberOfUsableSegments();
             List<FileRecord> result = new List<FileRecord>();
 
             for (long index = 0; index < maxNumOfRecords; index++)

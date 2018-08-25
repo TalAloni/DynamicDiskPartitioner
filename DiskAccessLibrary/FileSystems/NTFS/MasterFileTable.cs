@@ -268,18 +268,9 @@ namespace DiskAccessLibrary.FileSystems.NTFS
 
         // In NTFS v3.1 the FileRecord's self reference SegmentNumber is 32 bits,
         // but the MftSegmentReference's SegmentNumber is 48 bits.
-        public long GetMaximumNumberOfSegments()
+        public long GetNumberOfUsableSegments()
         {
-            NTFSBootRecord bootRecord = m_volume.BootRecord;
-            if (bootRecord != null)
-            {
-                long maximumNumberOfRecords = (long)(m_mftRecord.NonResidentDataRecord.FileSize / (uint)m_volume.BootRecord.BytesPerFileRecordSegment);
-                return maximumNumberOfRecords;
-            }
-            else
-            {
-                return 0;
-            }
+            return (long)(m_mftRecord.NonResidentDataRecord.FileSize / (uint)m_volume.BytesPerFileRecordSegment);
         }
     }
 }
