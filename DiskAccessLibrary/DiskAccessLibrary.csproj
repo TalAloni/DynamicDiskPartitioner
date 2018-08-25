@@ -158,6 +158,7 @@
     <Compile Include="Win32\Disks\PhysicalDiskHandlePool.cs" />
     <Compile Include="Win32\Enums\Win32Error.cs" />
     <Compile Include="Win32\Helpers\DiskOfflineHelper.cs" />
+    <Compile Include="Win32\Helpers\IOExceptionHelper.cs" />
     <Compile Include="Win32\Helpers\LockHelper.cs" />
     <Compile Include="Win32\Helpers\PhysicalDiskHelper.cs" />
     <Compile Include="Win32\Helpers\WindowsVolumeHelper.cs" />
