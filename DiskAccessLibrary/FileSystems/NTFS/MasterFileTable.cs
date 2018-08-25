@@ -6,6 +6,7 @@
  */
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Text;
 using Utilities;
 
@@ -61,7 +62,7 @@ namespace DiskAccessLibrary.FileSystems.NTFS
                 FileRecordSegment mftRecordSegment = GetRecordSegmentOfMasterFileTable(mftStartLCN, MasterFileTableSegmentNumber);
                 if (!mftRecordSegment.IsBaseFileRecord)
                 {
-                    return null;
+                    throw new InvalidDataException("Invalid MFT record, not a base record");
                 }
 
                 AttributeRecord attributeListRecord = mftRecordSegment.GetImmediateAttributeRecord(AttributeType.AttributeList);
@@ -94,8 +95,7 @@ namespace DiskAccessLibrary.FileSystems.NTFS
                         }
                         else
                         {
-                            // MFT is invalid
-                            return null;
+                            throw new InvalidDataException("Invalid MFT record, missing segment");
                         }
                     }
                     return new FileRecord(recordSegments);
