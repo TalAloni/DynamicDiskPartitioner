@@ -44,12 +44,12 @@ namespace DiskAccessLibrary.FileSystems.NTFS
         private ulong BaseFileRecordSegmentNumber; // If this is the base file record, the value is 0
         public ushort NextAttributeId; // Starting from 0
         // 2 zeros - padding
-        public uint MftSegmentNumberXP; // Self-reference, NTFS v3.0+
+        public uint MftSegmentNumberOnDisk; // Self-reference, NTFS v3.0+
 
         public ushort UpdateSequenceNumber; // a.k.a. USN
         /* End of header */
 
-        private long m_mftSegmentNumber; // We use our own segment number to support NTFS v3.0 (note that MftSegmentNumberXP is UInt32, which is another reason to avoid it)
+        private long m_mftSegmentNumber; // We use our own segment number to support NTFS v3.0 (note that MftSegmentNumberOnDisk is UInt32, which is another reason to avoid it)
 
         private List<AttributeRecord> m_immediateAttributes = new List<AttributeRecord>(); // Attribute records that are stored in the base file record
 
@@ -77,7 +77,7 @@ namespace DiskAccessLibrary.FileSystems.NTFS
             BaseFileRecordSegmentNumber = LittleEndianConverter.ToUInt64(buffer, offset + 0x20); 
             NextAttributeId = LittleEndianConverter.ToUInt16(buffer, offset + 0x28);
             // 2 zeros - padding
-            MftSegmentNumberXP = LittleEndianConverter.ToUInt32(buffer, offset + 0x2C);
+            MftSegmentNumberOnDisk = LittleEndianConverter.ToUInt32(buffer, offset + 0x2C);
 
             // There is an UpdateSequenceNumber for the FileRecordSegment,
             // and an entry in the UpdateSequenceArray for each sector of the record
@@ -148,7 +148,7 @@ namespace DiskAccessLibrary.FileSystems.NTFS
             LittleEndianWriter.WriteUInt16(buffer, 0x28, NextAttributeId);
             if (minorNTFSVersion == 1)
             {
-                LittleEndianWriter.WriteUInt32(buffer, 0x2C, MftSegmentNumberXP);
+                LittleEndianWriter.WriteUInt32(buffer, 0x2C, MftSegmentNumberOnDisk);
             }
 
             // write attributes
