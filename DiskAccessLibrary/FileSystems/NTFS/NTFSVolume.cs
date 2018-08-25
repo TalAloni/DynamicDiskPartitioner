@@ -8,7 +8,6 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Text;
-using DiskAccessLibrary;
 using Utilities;
 
 namespace DiskAccessLibrary.FileSystems.NTFS
@@ -173,62 +172,6 @@ namespace DiskAccessLibrary.FileSystems.NTFS
                 }
             }
 
-            return result;
-        }
-
-        /// <summary>
-        /// This method is slower and should only be used for recovery purposes.
-        /// </summary>
-        public List<FileRecord> GetFileRecordsInDirectoryFromMft(long directoryBaseSegmentNumber)
-        {
-            return GetFileRecordsInDirectoryFromMft(directoryBaseSegmentNumber, false);
-        }
-
-        /// <summary>
-        /// This method is slower and should only be used for recovery purposes.
-        /// </summary>
-        private List<FileRecord> GetFileRecordsInDirectoryFromMft(long directoryBaseSegmentNumber, bool includeMetaFiles)
-        {
-            long maxNumOfRecords = m_mft.GetMaximumNumberOfSegments();
-            List<FileRecord> result = new List<FileRecord>();
-
-            for (long index = 0; index < maxNumOfRecords; index++)
-            {
-                FileRecord record;
-                try
-                {
-                    record = m_mft.GetFileRecord(index);
-                }
-                catch (InvalidDataException)
-                {
-                    continue;
-                }
-                if (record != null)
-                {
-                    if (record.ParentDirMftSegmentNumber == directoryBaseSegmentNumber)
-                    {
-                        if (record.IsInUse && (includeMetaFiles || !record.IsMetaFile))
-                        {
-                            result.Add(record);
-                        }
-                    }
-                }
-            }
-
-            return result;
-        }
-
-        /// <summary>
-        /// This method is slower and should only be used for recovery purposes.
-        /// </summary>
-        private KeyValuePairList<MftSegmentReference, FileNameRecord> GetFileNameRecordsInDirectoryFromMft(long directoryBaseSegmentNumber)
-        {
-            KeyValuePairList<MftSegmentReference, FileNameRecord> result = new KeyValuePairList<MftSegmentReference,FileNameRecord>();
-            List<FileRecord> fileRecords = GetFileRecordsInDirectoryFromMft(directoryBaseSegmentNumber);
-            foreach (FileRecord fileRecord in fileRecords)
-            {
-                result.Add(new MftSegmentReference(fileRecord.MftSegmentNumber, fileRecord.SequenceNumber), fileRecord.FileNameRecord);
-            }
             return result;
         }
 
