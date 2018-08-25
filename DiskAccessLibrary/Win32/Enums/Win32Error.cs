@@ -16,7 +16,10 @@ namespace DiskAccessLibrary
         ERROR_SECTOR_NOT_FOUND = 0x001B,
         ERROR_CRC = 0x0017, // This is the same error as STATUS_DEVICE_DATA_ERROR, and it means the disk has a bad block
         ERROR_SHARING_VIOLATION = 0x0020,
+        ERROR_DISK_FULL = 0x0070,
         ERROR_INSUFFICIENT_BUFFER = 0x007A,
+        ERROR_DIR_NOT_EMPTY = 0x0091,
+        ERROR_ALREADY_EXISTS = 0x00B7,
         ERROR_MORE_DATA = 0x00EA, // buffer was not long enough
         ERROR_NO_MORE_ITEMS = 0x0103,
         ERROR_MEDIA_CHANGED = 0x0456,
