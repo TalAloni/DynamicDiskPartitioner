@@ -17,10 +17,10 @@ namespace DiskAccessLibrary.FileSystems.NTFS
         public const int HeaderLength = 0x1A; // Excluding name
 
         public AttributeType AttributeType;
-        public ushort Length; // The size of this structure, plus the optional name buffer, in bytes
-        public byte NameLength;  // number of bytes
+        public ushort Length;   // The size of this structure, plus the optional name buffer, in bytes
+        public byte NameLength; // Number of bytes
         public byte NameOffset;
-        public ulong LowestVCN;
+        public long LowestVCN;  // Stored as unsigned, but is within the range of long
         public MftSegmentReference SegmentReference;
         public ushort AttributeID;
         public string AttributeName = String.Empty;
@@ -39,7 +39,7 @@ namespace DiskAccessLibrary.FileSystems.NTFS
             }
             NameLength = buffer[offset + 0x06];
             NameOffset = buffer[offset + 0x07];
-            LowestVCN = LittleEndianConverter.ToUInt64(buffer, offset + 0x08);
+            LowestVCN = (long)LittleEndianConverter.ToUInt64(buffer, offset + 0x08);
             SegmentReference = new MftSegmentReference(buffer, offset + 0x10);
             AttributeID = LittleEndianConverter.ToUInt16(buffer, offset + 0x18);
             if (NameLength > 0)

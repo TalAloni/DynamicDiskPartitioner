@@ -19,16 +19,16 @@ namespace DiskAccessLibrary.FileSystems.NTFS
         /* Start of MULTI_SECTOR_HEADER */
         public string Signature = ValidSignature;
         // private ushort UpdateSequenceArrayOffset;
-        // private ushort UpdateSequenceArraySize; // number of (2 byte) words
+        // private ushort UpdateSequenceArraySize; // Number of (2 byte) words
         /* End of MULTI_SECTOR_HEADER */
         public ulong LogFileSequenceNumber;
-        public ulong RecordVCN;
+        public long RecordVCN; // Stored as unsigned, but is within the range of long
         /* Header */
         /* Index Header start */
-        public uint EntriesOffset; // relative to Index record header start offset
-        public uint IndexLength;  // including the Index record header
-        public uint AllocatedLength; // including the Index record header
-        public bool HasChildren; // level?
+        public uint EntriesOffset; // Relative to Index record header start offset
+        public uint IndexLength;  // Including the Index record header
+        public uint AllocatedLength; // Including the Index record header
+        public bool HasChildren; // Level?
         // 3 zero bytes (padding)
         /* Index Header end */
         public ushort UpdateSequenceNumber;
@@ -47,7 +47,7 @@ namespace DiskAccessLibrary.FileSystems.NTFS
             ushort updateSequenceArrayOffset = LittleEndianConverter.ToUInt16(buffer, offset + 0x04);
             ushort updateSequenceArraySize = LittleEndianConverter.ToUInt16(buffer, offset + 0x06);
             LogFileSequenceNumber = LittleEndianConverter.ToUInt64(buffer, offset + 0x08);
-            RecordVCN = LittleEndianConverter.ToUInt64(buffer, offset + 0x10);
+            RecordVCN = (long)LittleEndianConverter.ToUInt64(buffer, offset + 0x10);
             EntriesOffset = LittleEndianConverter.ToUInt32(buffer, offset + 0x18);
             IndexLength = LittleEndianConverter.ToUInt32(buffer, offset + 0x1C);
             AllocatedLength = LittleEndianConverter.ToUInt32(buffer, offset + 0x20);
