@@ -1,4 +1,4 @@
-/* Copyright (C) 2014-2016 Tal Aloni <tal.aloni.il@gmail.com>. All rights reserved.
+/* Copyright (C) 2014-2018 Tal Aloni <tal.aloni.il@gmail.com>. All rights reserved.
  * 
  * You can redistribute this program and/or modify it under the terms of
  * the GNU Lesser Public License as published by the Free Software Foundation,
@@ -7,7 +7,6 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
-using DiskAccessLibrary;
 using Utilities;
 
 namespace DiskAccessLibrary.FileSystems.NTFS
@@ -113,48 +112,76 @@ namespace DiskAccessLibrary.FileSystems.NTFS
         public override void SetAttributes(string path, bool? isHidden, bool? isReadonly, bool? isArchived)
         {
             FileRecord record = m_volume.GetFileRecord(path);
-            if (isHidden.HasValue)
+            if (record != null)
             {
-                if (isHidden.Value)
+                if (isHidden.HasValue)
                 {
-                    record.StandardInformation.FileAttributes |= FileAttributes.Hidden;
+                    if (isHidden.Value)
+                    {
+                        record.StandardInformation.FileAttributes |= FileAttributes.Hidden;
+                    }
+                    else
+                    {
+                        record.StandardInformation.FileAttributes &= ~FileAttributes.Hidden;
+                    }
                 }
-                else
-                {
-                    record.StandardInformation.FileAttributes &= ~FileAttributes.Hidden;
-                }
-            }
 
-            if (isReadonly.HasValue)
-            {
-                if (isReadonly.Value)
+                if (isReadonly.HasValue)
                 {
-                    record.StandardInformation.FileAttributes |= FileAttributes.Readonly;
+                    if (isReadonly.Value)
+                    {
+                        record.StandardInformation.FileAttributes |= FileAttributes.Readonly;
+                    }
+                    else
+                    {
+                        record.StandardInformation.FileAttributes &= ~FileAttributes.Readonly;
+                    }
                 }
-                else
-                {
-                    record.StandardInformation.FileAttributes &= ~FileAttributes.Readonly;
-                }
-            }
 
-            if (isArchived.HasValue)
-            {
-                if (isArchived.Value)
+                if (isArchived.HasValue)
                 {
-                    record.StandardInformation.FileAttributes |= FileAttributes.Archive;
+                    if (isArchived.Value)
+                    {
+                        record.StandardInformation.FileAttributes |= FileAttributes.Archive;
+                    }
+                    else
+                    {
+                        record.StandardInformation.FileAttributes &= ~FileAttributes.Archive;
+                    }
                 }
-                else
-                {
-                    record.StandardInformation.FileAttributes &= ~FileAttributes.Archive;
-                }
-            }
 
-            m_volume.MasterFileTable.UpdateFileRecord(record);
+                record.StandardInformation.MftModificationTime = DateTime.Now;
+                m_volume.MasterFileTable.UpdateFileRecord(record);
+            }
         }
 
         public override void SetDates(string path, DateTime? creationDT, DateTime? lastWriteDT, DateTime? lastAccessDT)
         {
-            throw new NotImplementedException("The method or operation is not implemented.");
+            FileRecord record = m_volume.GetFileRecord(path);
+            if (record != null)
+            {
+                if (creationDT.HasValue)
+                {
+                    record.StandardInformation.CreationTime = creationDT.Value;
+                    record.FileNameRecord.CreationTime = creationDT.Value;
+                }
+
+                if (lastWriteDT.HasValue)
+                {
+                    record.StandardInformation.ModificationTime = lastWriteDT.Value;
+                    record.FileNameRecord.ModificationTime = lastWriteDT.Value;
+                }
+
+                if (lastAccessDT.HasValue)
+                {
+                    record.StandardInformation.LastAccessTime = lastAccessDT.Value;
+                    record.FileNameRecord.LastAccessTime = lastAccessDT.Value;
+                }
+
+                record.StandardInformation.MftModificationTime = DateTime.Now;
+                record.FileNameRecord.MftModificationTime = DateTime.Now;
+                m_volume.MasterFileTable.UpdateFileRecord(record);
+            }
         }
 
         public long GetMaximumSizeToExtend()
