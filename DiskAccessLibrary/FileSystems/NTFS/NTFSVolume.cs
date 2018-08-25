@@ -23,7 +23,7 @@ namespace DiskAccessLibrary.FileSystems.NTFS
         private MasterFileTable m_mft;
         private VolumeBitmap m_bitmap;
 
-        private NTFSBootRecord m_bootRecord; // partition's boot record
+        private NTFSBootRecord m_bootRecord; // Partition's boot record
 
         public NTFSVolume(Volume volume) : this(volume, false)
         { 
@@ -76,7 +76,7 @@ namespace DiskAccessLibrary.FileSystems.NTFS
                         return null;
                     }
                 }
-                else // last component
+                else // Last component
                 {
                     return FindRecord(records, components[index]);
                 }
@@ -136,7 +136,7 @@ namespace DiskAccessLibrary.FileSystems.NTFS
                     {
                         if (result[index].Value.Namespace == FilenameNamespace.DOS)
                         {
-                            // The same FileRecord can have multiple entries, each with it's own namespace
+                            // The same FileRecord can have multiple entries, each with its own namespace
                             result.RemoveAt(index);
                             index--;
                         }

@@ -250,7 +250,7 @@ namespace DiskAccessLibrary.FileSystems.NTFS
                     UpdateFileRecordSegment(segment);
                 }
                 else
-                { 
+                {
                     // new segment, we must allocate space for it
                     throw new NotImplementedException();
                 }
@@ -270,8 +270,8 @@ namespace DiskAccessLibrary.FileSystems.NTFS
             m_mftRecord.NonResidentDataRecord.WriteDataSectors(m_volume, firstSectorIndex, recordSegmentBytes);
         }
 
-        // NTFS limit is 2^32-1 files, but in theory the number of record segments can be higher
-        // http://technet.microsoft.com/en-us/library/cc938432.aspx
+        // In NTFS v3.1 the FileRecord's self reference SegmentNumber is 32 bits,
+        // but the MftSegmentReference's SegmentNumber is 48 bits.
         public long GetMaximumNumberOfSegments()
         {
             NTFSBootRecord bootRecord = m_volume.BootRecord;

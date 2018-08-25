@@ -10,8 +10,12 @@ using System.Text;
 
 namespace DiskAccessLibrary.FileSystems.NTFS
 {
-    // Data attribute can be either resident or non-resident attribute
-    // This represents an AttributeRecord's data
+    /// <summary>
+    /// This class provides a unified interface to access the data of an AttributeRecord.
+    /// </summary>
+    /// <remarks>
+    /// The $Data attribute can be either resident or non-resident.
+    /// </remarks>
     public class DataRecord
     {
         AttributeRecord m_record;

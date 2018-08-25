@@ -15,8 +15,8 @@ namespace DiskAccessLibrary.FileSystems.NTFS
     {
         public const string ValidSignature = "FILE";
         public const int EndMarkerLength = 4;
-        public const int NTFS30UpdateSequenceArrayOffset = 0x2A; // NTFS 3.0 and earlier (up to Windows 2000)
-        public const int NTFS31UpdateSequenceArrayOffset = 0x30; // NTFS 3.1 and later   (XP and later)
+        public const int NTFS30UpdateSequenceArrayOffset = 0x2A; // NTFS v3.0 and earlier (up to Windows 2000)
+        public const int NTFS31UpdateSequenceArrayOffset = 0x30; // NTFS v3.1 and later   (XP and later)
 
         [Flags]
         public enum FileRecordFlags : ushort
@@ -44,12 +44,12 @@ namespace DiskAccessLibrary.FileSystems.NTFS
         private ulong BaseFileRecordSegmentNumber; // If this is the base file record, the value is 0
         public ushort NextAttributeId; // Starting from 0
         // 2 zeros - padding
-        public uint MftSegmentNumberXP; // Self-reference (on XP+)
+        public uint MftSegmentNumberXP; // Self-reference, NTFS v3.0+
 
         public ushort UpdateSequenceNumber; // a.k.a. USN
         /* End of header */
 
-        private long m_mftSegmentNumber; // We use our own segment number to support NTFS 3.0 (note that MftSegmentNumberXP is UInt32, which is another reason to avoid it)
+        private long m_mftSegmentNumber; // We use our own segment number to support NTFS v3.0 (note that MftSegmentNumberXP is UInt32, which is another reason to avoid it)
 
         private List<AttributeRecord> m_immediateAttributes = new List<AttributeRecord>(); // Attribute records that are stored in the base file record
 
@@ -308,7 +308,7 @@ namespace DiskAccessLibrary.FileSystems.NTFS
                 updateSequenceArrayOffset = NTFS31UpdateSequenceArrayOffset;
             }
 
-            // aligned to 8 byte boundary
+            // Aligned to 8 byte boundary
             // Note: I had an issue with 4 byte boundary under Windows 7 using disk with 2048 bytes per sector.
             //       Windows used an 8 byte boundary.
             ushort firstAttributeOffset = (ushort)(Math.Ceiling((double)(updateSequenceArrayOffset + updateSequenceArraySize * 2) / 8) * 8);

@@ -43,10 +43,10 @@ namespace DiskAccessLibrary.FileSystems.NTFS
         public uint MaximumVersionNumber;
         public uint VersionNumber;
         public uint ClassID;
-        public uint OwnerID; // NTFS 3.0+
-        public uint SecurityID; // NTFS 3.0+
-        public ulong QuotaCharged; // NTFS 3.0+
-        public ulong UpdateSequenceNumber; // a.k.a. USN, NTFS 3.0+
+        public uint OwnerID; // NTFS v3.0+
+        public uint SecurityID; // NTFS v3.0+
+        public ulong QuotaCharged; // NTFS v3.0+
+        public ulong UpdateSequenceNumber; // a.k.a. USN, NTFS v3.0+
 
         public StandardInformationRecord(byte[] buffer, int offset) : base(buffer, offset)
         {
