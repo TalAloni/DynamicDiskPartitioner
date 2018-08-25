@@ -240,8 +240,7 @@ namespace DiskAccessLibrary.FileSystems.NTFS
 
         public void UpdateFileRecord(FileRecord record)
         {
-            NTFSBootRecord bootRecord = m_volume.BootRecord;
-            record.UpdateSegments(bootRecord.FileRecordSegmentLength, m_volume.BytesPerSector, m_volume.MinorVersion);
+            record.UpdateSegments(m_volume.BytesPerFileRecordSegment, m_volume.BytesPerSector, m_volume.MinorVersion);
             
             foreach (FileRecordSegment segment in record.Segments)
             {
@@ -260,12 +259,9 @@ namespace DiskAccessLibrary.FileSystems.NTFS
         public void UpdateFileRecordSegment(FileRecordSegment recordSegment)
         {
             long segmentNumber = recordSegment.MftSegmentNumber;
-            
-            NTFSBootRecord bootRecord = m_volume.BootRecord;
-
             long firstSectorIndex = segmentNumber * m_volume.SectorsPerFileRecordSegment;
 
-            byte[] recordSegmentBytes = recordSegment.GetBytes(bootRecord.FileRecordSegmentLength, m_volume.BytesPerCluster, m_volume.MinorVersion);
+            byte[] recordSegmentBytes = recordSegment.GetBytes(m_volume.BytesPerFileRecordSegment, m_volume.BytesPerCluster, m_volume.MinorVersion);
 
             m_mftRecord.NonResidentDataRecord.WriteDataSectors(m_volume, firstSectorIndex, recordSegmentBytes);
         }
@@ -277,7 +273,7 @@ namespace DiskAccessLibrary.FileSystems.NTFS
             NTFSBootRecord bootRecord = m_volume.BootRecord;
             if (bootRecord != null)
             {
-                long maximumNumberOfRecords = (long)(m_mftRecord.NonResidentDataRecord.FileSize / (uint)m_volume.BootRecord.FileRecordSegmentLength);
+                long maximumNumberOfRecords = (long)(m_mftRecord.NonResidentDataRecord.FileSize / (uint)m_volume.BootRecord.BytesPerFileRecordSegment);
                 return maximumNumberOfRecords;
             }
             else

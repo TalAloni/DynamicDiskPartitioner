@@ -228,7 +228,7 @@ namespace DiskAccessLibrary.FileSystems.NTFS
             {
                 builder.AppendLine("Bytes Per Sector: " + m_bootRecord.BytesPerSector);
                 builder.AppendLine("Bytes Per Cluster: " + m_bootRecord.BytesPerCluster);
-                builder.AppendLine("File Record Length: " + m_bootRecord.FileRecordSegmentLength);
+                builder.AppendLine("Bytes Per File Record Segment: " + m_bootRecord.BytesPerFileRecordSegment);
                 builder.AppendLine("First MFT Cluster (LCN): " + m_bootRecord.MftStartLCN);
                 builder.AppendLine("First MFT Mirror Cluster (LCN): " + m_bootRecord.MftMirrorStartLCN);
                 builder.AppendLine("Volume size (bytes): " + this.Size);
@@ -335,6 +335,14 @@ namespace DiskAccessLibrary.FileSystems.NTFS
             get
             {
                 return m_bootRecord.BytesPerSector;
+            }
+        }
+
+        public int BytesPerFileRecordSegment
+        {
+            get
+            {
+                return m_bootRecord.BytesPerFileRecordSegment;
             }
         }
 
