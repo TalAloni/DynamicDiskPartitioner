@@ -1,4 +1,4 @@
-/* Copyright (C) 2014 Tal Aloni <tal.aloni.il@gmail.com>. All rights reserved.
+/* Copyright (C) 2014-2018 Tal Aloni <tal.aloni.il@gmail.com>. All rights reserved.
  * 
  * You can redistribute this program and/or modify it under the terms of
  * the GNU Lesser Public License as published by the Free Software Foundation,
@@ -17,17 +17,16 @@ namespace DiskAccessLibrary.FileSystems.NTFS
         
         public const long MasterFileTableSegmentNumber = 0;
         public const long MftMirrorSegmentNumber = 1;
-        // $LogFile = 2
+        public const long LogFileSegmentNumber = 2;
         public const long VolumeSegmentNumber = 3;
-        // $AttrDef = 4
+        public const long AttrDefSegmentNumber = 4;
         public const long RootDirSegmentNumber = 5;
         public const long BitmapSegmentNumber = 6;
-        // $Boot = 7
-        // $BadClus = 8
-        // $Secure = 9
-        // $UpCase = 10
-        // $Extend = 11
-        
+        public const long BootSegmentNumber = 7;
+        public const long BadClusSegmentNumber = 8;
+        public const long SecureSegmentNumber = 9;
+        public const long UpCaseSegmentNumber = 10;
+        public const long ExtendSegmentNumber = 11;
         // The $Extend Metafile is simply a directory index that contains information on where to locate the last four metafiles ($ObjId, $Quota, $Reparse and $UsnJrnl)
 
         public NTFSVolume m_volume;
