@@ -54,6 +54,7 @@
     <Compile Include="Disks\VMDK\VirtualMachineDiskType.cs" />
     <Compile Include="Exceptions\CyclicRedundancyCheckException.cs" />
     <Compile Include="Exceptions\DeviceNotReadyException.cs" />
+    <Compile Include="Exceptions\DiskFullException.cs" />
     <Compile Include="Exceptions\SharingViolationException.cs" />
     <Compile Include="FileSystems\FileSystemHelper.cs" />
     <Compile Include="FileSystems\IExtendableFileSystem.cs" />
