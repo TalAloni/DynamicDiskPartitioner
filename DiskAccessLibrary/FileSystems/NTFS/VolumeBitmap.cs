@@ -49,9 +49,9 @@ namespace DiskAccessLibrary.FileSystems.NTFS
         }
 
         /// <param name="lcn">Logical cluster number</param>
-        private bool IsClusterFree(ulong lcn)
+        private bool IsClusterFree(long lcn)
         {
-            long bitmapClusterVCN = ((long)(lcn / 8)) / Volume.BytesPerCluster;
+            long bitmapClusterVCN = (lcn / 8) / Volume.BytesPerCluster;
             byte[] bitmap = GetBitmapCluster(bitmapClusterVCN);
 
             int lcnByteOffset = (int)(((long)(lcn / 8)) % Volume.BytesPerCluster);
@@ -60,26 +60,26 @@ namespace DiskAccessLibrary.FileSystems.NTFS
             return !isInUse;
         }
 
-        private void UpdateClusterStatus(ulong lcn, bool isUsed)
+        private void UpdateClusterStatus(long lcn, bool isUsed)
         {
-            long bitmapClusterVCN = (long)(lcn / (8 * (uint)Volume.BytesPerCluster));
+            long bitmapClusterVCN = lcn / (8 * Volume.BytesPerCluster);
 
             // bitmap will reference m_bufferedCluster
             byte[] bitmap = GetBitmapCluster(bitmapClusterVCN);
             
-            ulong clusterIndexInBitmap = lcn  % (8 * (uint)Volume.BytesPerCluster);
+            long clusterIndexInBitmap = lcn % (8 * Volume.BytesPerCluster);
             UpdateClusterStatus(bitmap, clusterIndexInBitmap, true);
             
             m_isBufferDirty = true;
         }
 
-        public KeyValuePairList<ulong, long> AllocateClusters(ulong desiredStartLCN, long numberOfClusters)
+        public KeyValuePairList<long, long> AllocateClusters(long desiredStartLCN, long numberOfClusters)
         {
-            KeyValuePairList<ulong, long> freeClusterRunList = FindClustersToAllocate(desiredStartLCN, numberOfClusters);
+            KeyValuePairList<long, long> freeClusterRunList = FindClustersToAllocate(desiredStartLCN, numberOfClusters);
             // mark the clusters as used in the volume bitmap
             for (int index = 0; index < freeClusterRunList.Count; index++)
             {
-                ulong runStartLCN = freeClusterRunList[index].Key;
+                long runStartLCN = freeClusterRunList[index].Key;
                 long runLength = freeClusterRunList[index].Value;
                 for (uint position = 0; position < runLength; position++)
                 {
@@ -96,13 +96,13 @@ namespace DiskAccessLibrary.FileSystems.NTFS
         /// <summary>
         /// Return list of free cluster runs, key is cluster LCN, value is run length
         /// </summary>
-        private KeyValuePairList<ulong, long> FindClustersToAllocate(ulong desiredStartLCN, long numberOfClusters)
+        private KeyValuePairList<long, long> FindClustersToAllocate(long desiredStartLCN, long numberOfClusters)
         {
-            KeyValuePairList<ulong, long> result = new KeyValuePairList<ulong, long>();
+            KeyValuePairList<long, long> result = new KeyValuePairList<long, long>();
 
             long leftToAllocate;
-            ulong endLCN = (ulong)(m_volume.Size / m_volume.BytesPerCluster) - 1;
-            KeyValuePairList<ulong, long> segment = FindClustersToAllocate(desiredStartLCN, endLCN, numberOfClusters, out leftToAllocate);
+            long endLCN = m_volume.Size / m_volume.BytesPerCluster - 1;
+            KeyValuePairList<long, long> segment = FindClustersToAllocate(desiredStartLCN, endLCN, numberOfClusters, out leftToAllocate);
             result.AddRange(segment);
 
             if (leftToAllocate > 0 && desiredStartLCN > 0)
@@ -120,14 +120,14 @@ namespace DiskAccessLibrary.FileSystems.NTFS
         }
 
         /// <param name="clustersToAllocate">Number of clusters to allocate</param>
-        private KeyValuePairList<ulong, long> FindClustersToAllocate(ulong startLCN, ulong endLCN, long clustersToAllocate, out long leftToAllocate)
+        private KeyValuePairList<long, long> FindClustersToAllocate(long startLCN, long endLCN, long clustersToAllocate, out long leftToAllocate)
         {
-            KeyValuePairList<ulong, long> result = new KeyValuePairList<ulong, long>();
+            KeyValuePairList<long, long> result = new KeyValuePairList<long, long>();
             leftToAllocate = clustersToAllocate;
 
-            ulong runStartLCN = 0; // temporary
+            long runStartLCN = 0; // temporary
             long runLength = 0;
-            ulong nextLCN = startLCN;
+            long nextLCN = startLCN;
             while (nextLCN <= endLCN && leftToAllocate > 0)
             {
                 if (IsClusterFree(nextLCN))
@@ -208,9 +208,9 @@ namespace DiskAccessLibrary.FileSystems.NTFS
             return result;
         }
 
-        public static void UpdateClusterStatus(byte[] bitmap, ulong clusterIndexInBitmap, bool isUsed)
+        public static void UpdateClusterStatus(byte[] bitmap, long clusterIndexInBitmap, bool isUsed)
         {
-            ulong byteOffset = clusterIndexInBitmap / 8;
+            long byteOffset = clusterIndexInBitmap / 8;
             int bitOffset = (int)(clusterIndexInBitmap % 8);
             if (isUsed)
             {

@@ -247,11 +247,11 @@ namespace DiskAccessLibrary.FileSystems.NTFS
         // The maximum NTFS file size is 2^64 bytes, so total number of file clusters can be represented using long
         public void AllocateAdditionalClusters(NTFSVolume volume, long clustersToAllocate)
         {
-            ulong desiredStartLCN = (ulong)DataRunSequence.DataLastLCN;
-            KeyValuePairList<ulong, long> freeClusterRunList = volume.AllocateClusters(desiredStartLCN, clustersToAllocate);
+            long desiredStartLCN = DataRunSequence.DataLastLCN;
+            KeyValuePairList<long, long> freeClusterRunList = volume.AllocateClusters(desiredStartLCN, clustersToAllocate);
             for (int index = 0; index < freeClusterRunList.Count; index++)
             {
-                ulong runStartLCN = freeClusterRunList[index].Key;
+                long runStartLCN = freeClusterRunList[index].Key;
                 long runLength = freeClusterRunList[index].Value;
 
                 bool mergeWithLastRun = (index == 0 && runStartLCN == desiredStartLCN);
@@ -259,15 +259,15 @@ namespace DiskAccessLibrary.FileSystems.NTFS
                 {
                     // we append this run to the last run
                     DataRun lastRun = DataRunSequence[DataRunSequence.Count - 1];
-                    lastRun.RunLength += (long)runLength;
+                    lastRun.RunLength += runLength;
                     HighestVCN += (long)runLength;
                 }
                 else
                 {
                     DataRun run = new DataRun();
-                    ulong previousLCN = (ulong)DataRunSequence.LastDataRunStartLCN;
-                    run.RunOffset = (long)(runStartLCN - previousLCN);
-                    run.RunLength = (long)runLength;
+                    long previousLCN = DataRunSequence.LastDataRunStartLCN;
+                    run.RunOffset = runStartLCN - previousLCN;
+                    run.RunLength = runLength;
                     HighestVCN += runLength;
                     DataRunSequence.Add(run);
                 }

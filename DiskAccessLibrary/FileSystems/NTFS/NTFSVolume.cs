@@ -380,7 +380,7 @@ namespace DiskAccessLibrary.FileSystems.NTFS
             }
         }
 
-        public KeyValuePairList<ulong, long> AllocateClusters(ulong desiredStartLCN, long numberOfClusters)
+        public KeyValuePairList<long, long> AllocateClusters(long desiredStartLCN, long numberOfClusters)
         {
             return m_bitmap.AllocateClusters(desiredStartLCN, numberOfClusters);
         }

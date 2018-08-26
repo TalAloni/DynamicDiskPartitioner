@@ -21,19 +21,14 @@ namespace DiskAccessLibrary.FileSystems.NTFS
 
         public void Extend(long numberOfAdditionalSectors)
         {
-            Extend((ulong)numberOfAdditionalSectors);
-        }
-
-        public void Extend(ulong numberOfAdditionalSectors)
-        {
-            ulong originalNumberOfSectors = m_bootRecord.TotalSectors;
-            ulong currentNumberOfClusters = m_bootRecord.TotalSectors / m_bootRecord.SectorsPerCluster;
-            ulong numberOfAdditionalClusters = numberOfAdditionalSectors / m_bootRecord.SectorsPerCluster;
+            long originalNumberOfSectors = (long)m_bootRecord.TotalSectors;
+            long currentNumberOfClusters = originalNumberOfSectors / m_bootRecord.SectorsPerCluster;
+            long numberOfAdditionalClusters = numberOfAdditionalSectors / m_bootRecord.SectorsPerCluster;
 
             Extend(currentNumberOfClusters, numberOfAdditionalClusters);
 
             // We set TotalSectors only after extending the File system, or otherwise the $bitmap size will mismatch
-            m_bootRecord.TotalSectors += numberOfAdditionalClusters * m_bootRecord.SectorsPerCluster; // we only add usable sectors
+            m_bootRecord.TotalSectors += (ulong)numberOfAdditionalClusters * m_bootRecord.SectorsPerCluster; // we only add usable sectors
 
             // update boot sector
             byte[] bootRecordBytes = m_bootRecord.GetBytes();
@@ -41,12 +36,12 @@ namespace DiskAccessLibrary.FileSystems.NTFS
 
             // recreate the backup boot sector at the new end of the raw volume
             // Note: The backup boot sector does not count as part of the NTFS volume
-            long backupBootSectorIndex = (long)(originalNumberOfSectors + numberOfAdditionalSectors);
+            long backupBootSectorIndex = originalNumberOfSectors + numberOfAdditionalSectors;
             WriteSectors(backupBootSectorIndex, bootRecordBytes);
         }
 
         // Note: there could be up to 2^64 clusters ( http://technet.microsoft.com/en-us/library/cc938432.aspx ) 
-        private void Extend(ulong currentNumberOfClusters, ulong numberOfAdditionalClusters)
+        private void Extend(long currentNumberOfClusters, long numberOfAdditionalClusters)
         {
             // Each bit in the $Bitmap file represents a cluster.
             // The size of the $Bitmap file is always a multiple of 8 bytes, extra bits are always set to 1.
@@ -55,12 +50,12 @@ namespace DiskAccessLibrary.FileSystems.NTFS
             // 1TB of additional allocation will result in a bitmap of 32 MB (assuming 4KB clusters)
             // 128TB of additional allocation will result in a bitmap of 512 MB (assuming 8KB clusters)
             byte[] bitmap;
-            ulong nextClusterIndexInBitmap = 0; // the next cluster that will be allocated
+            long nextClusterIndexInBitmap = 0; // the next cluster that will be allocated
             ulong writeOffset = m_bitmap.Length;
 
             if (currentNumberOfClusters % 64 > 0)
             {
-                ulong numberOfClustersToAllocate = numberOfAdditionalClusters - (64 - (currentNumberOfClusters % 64));
+                long numberOfClustersToAllocate = numberOfAdditionalClusters - (64 - (currentNumberOfClusters % 64));
                 ulong numberOfBytesToAllocate = (ulong)Math.Ceiling((double)numberOfClustersToAllocate / 8);
                 numberOfBytesToAllocate = (ulong)Math.Ceiling((double)numberOfBytesToAllocate / 8) * 8;
 
@@ -93,8 +88,8 @@ namespace DiskAccessLibrary.FileSystems.NTFS
                 nextClusterIndexInBitmap = numberOfAdditionalClusters;
             }
 
-            // mark extra bits as used:
-            while (nextClusterIndexInBitmap < (ulong)bitmap.Length * 8)
+            // Mark extra bits as used:
+            while (nextClusterIndexInBitmap < (long)bitmap.Length * 8)
             {
                 VolumeBitmap.UpdateClusterStatus(bitmap, nextClusterIndexInBitmap, true);
                 nextClusterIndexInBitmap++;
