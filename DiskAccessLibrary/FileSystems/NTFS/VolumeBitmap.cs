@@ -17,120 +17,118 @@ namespace DiskAccessLibrary.FileSystems.NTFS
     /// </summary>
     public class VolumeBitmap : NTFSFile
     {
-        NTFSVolume m_volume;
-        private long m_bufferedClusterVCN = -1;
-        private byte[] m_bufferedCluster;
-        private bool m_isBufferDirty; // if set to true, we need to write the buffer
+        private NTFSVolume m_volume;
+        private long? m_numberOfFreeClusters;
+        private long m_searchStartIndex = 0;
+        private long m_numberOfUsableClustersInVolume; // This will correctly reflect the current number of clusters in the volume when extending the bitmap.
+        private readonly int ExtendGranularity = 8; // The NTFS v5.1 driver extend the $Bitmap file in chunks of 8 bytes, let's immitate that.
 
         public VolumeBitmap(NTFSVolume volume) : base(volume, MasterFileTable.BitmapSegmentNumber)
         {
             m_volume = volume;
+            m_numberOfUsableClustersInVolume = m_volume.Size / m_volume.BytesPerCluster;
         }
 
-        private byte[] GetBitmapCluster(long bitmapClusterVCN)
+        /// <summary>
+        /// The caller must verify that there are enough free clusters before calling this method.
+        /// </summary>
+        public KeyValuePairList<long, long> AllocateClusters(long numberOfClusters)
         {
-            if (m_bufferedClusterVCN != bitmapClusterVCN)
-            {
-                if (m_isBufferDirty)
-                {
-                    FlushBuffer();
-                }
-                m_bufferedClusterVCN = bitmapClusterVCN;
-                // VolumeBitmap data record is always non-resident (the NTFS v5.1 driver does not support a VolumeBitmap having a resident data record)
-                m_bufferedCluster = FileRecord.NonResidentDataRecord.ReadDataCluster(Volume, bitmapClusterVCN);
-            }
-            return m_bufferedCluster;
-        }
-        
-        private void FlushBuffer()
-        {
-            FileRecord.NonResidentDataRecord.WriteDataClusters(Volume, m_bufferedClusterVCN, m_bufferedCluster);
-            m_isBufferDirty = false;
+            KeyValuePairList<long, long> runList = AllocateClusters(m_searchStartIndex, numberOfClusters);
+            long lastRunLCN = runList[runList.Count - 1].Key;
+            long lastRunLength = runList[runList.Count - 1].Value;
+            m_searchStartIndex = lastRunLCN + lastRunLength;
+            return runList;
         }
 
-        /// <param name="lcn">Logical cluster number</param>
-        private bool IsClusterFree(long lcn)
-        {
-            long bitmapClusterVCN = (lcn / 8) / Volume.BytesPerCluster;
-            byte[] bitmap = GetBitmapCluster(bitmapClusterVCN);
-
-            int lcnByteOffset = (int)(((long)(lcn / 8)) % Volume.BytesPerCluster);
-            int lcnBitIndex = (int)(lcn % 8);
-            bool isInUse = ((bitmap[lcnByteOffset] >> lcnBitIndex) & 0x01) != 0;
-            return !isInUse;
-        }
-
-        private void UpdateClusterStatus(long lcn, bool isUsed)
-        {
-            long bitmapClusterVCN = lcn / (8 * Volume.BytesPerCluster);
-
-            // bitmap will reference m_bufferedCluster
-            byte[] bitmap = GetBitmapCluster(bitmapClusterVCN);
-            
-            long clusterIndexInBitmap = lcn % (8 * Volume.BytesPerCluster);
-            UpdateClusterStatus(bitmap, clusterIndexInBitmap, true);
-            
-            m_isBufferDirty = true;
-        }
-
+        /// <summary>
+        /// The caller must verify that there are enough free clusters before calling this method.
+        /// </summary>
         public KeyValuePairList<long, long> AllocateClusters(long desiredStartLCN, long numberOfClusters)
         {
             KeyValuePairList<long, long> freeClusterRunList = FindClustersToAllocate(desiredStartLCN, numberOfClusters);
-            // mark the clusters as used in the volume bitmap
+            if (freeClusterRunList == null)
+            {
+                throw new DiskFullException("Not enough free clusters");
+            }
+            // Mark the clusters as used in the volume bitmap
             for (int index = 0; index < freeClusterRunList.Count; index++)
             {
                 long runStartLCN = freeClusterRunList[index].Key;
                 long runLength = freeClusterRunList[index].Value;
-                for (uint position = 0; position < runLength; position++)
+                long bitmapVCN = (long)(runStartLCN / (uint)(m_volume.BytesPerCluster * 8));
+                int bitOffsetInBitmap = (int)(runStartLCN % (uint)(m_volume.BytesPerCluster * 8));
+                int bitsToAllocateInFirstCluster = m_volume.BytesPerCluster * 8 - bitOffsetInBitmap;
+                int bitmapClustersToRead = 1;
+                if (runLength > bitsToAllocateInFirstCluster)
                 {
-                    UpdateClusterStatus(runStartLCN + position, true);
+                    bitmapClustersToRead += (int)Math.Ceiling((double)(runLength - bitsToAllocateInFirstCluster) / m_volume.BytesPerCluster * 8);
                 }
+
+                byte[] bitmap = ReadDataClusters(bitmapVCN, bitmapClustersToRead);
+                for (int offset = 0; offset < runLength; offset++)
+                {
+                    SetBit(bitmap, bitOffsetInBitmap + offset);
+                }
+                WriteDataClusters(bitmapVCN, bitmap);
             }
-            if (m_isBufferDirty)
+
+            if (m_numberOfFreeClusters != null)
             {
-                FlushBuffer();
+                m_numberOfFreeClusters -= numberOfClusters;
             }
             return freeClusterRunList;
         }
 
         /// <summary>
-        /// Return list of free cluster runs, key is cluster LCN, value is run length
+        /// Return list of free cluster runs.
         /// </summary>
+        /// <returns>key is cluster LCN, value is run length</returns>
         private KeyValuePairList<long, long> FindClustersToAllocate(long desiredStartLCN, long numberOfClusters)
         {
             KeyValuePairList<long, long> result = new KeyValuePairList<long, long>();
 
-            long leftToAllocate;
-            long endLCN = m_volume.Size / m_volume.BytesPerCluster - 1;
-            KeyValuePairList<long, long> segment = FindClustersToAllocate(desiredStartLCN, endLCN, numberOfClusters, out leftToAllocate);
+            long leftToFind;
+            long endLCN = m_numberOfUsableClustersInVolume - 1;
+            KeyValuePairList<long, long> segment = FindClustersToAllocate(desiredStartLCN, endLCN, numberOfClusters, out leftToFind);
             result.AddRange(segment);
 
-            if (leftToAllocate > 0 && desiredStartLCN > 0)
+            if (leftToFind > 0 && desiredStartLCN > 0)
             {
-                segment = FindClustersToAllocate(0, desiredStartLCN - 1, leftToAllocate, out leftToAllocate);
+                segment = FindClustersToAllocate(0, desiredStartLCN - 1, leftToFind, out leftToFind);
                 result.AddRange(segment);
             }
 
-            if (leftToAllocate > 0)
+            if (leftToFind > 0)
             {
-                throw new Exception("Could not allocate clusters. Not enough free disk space");
+                return null;
             }
 
             return result;
         }
 
         /// <param name="clustersToAllocate">Number of clusters to allocate</param>
-        private KeyValuePairList<long, long> FindClustersToAllocate(long startLCN, long endLCN, long clustersToAllocate, out long leftToAllocate)
+        private KeyValuePairList<long, long> FindClustersToAllocate(long startLCN, long endLCN, long clustersToAllocate, out long leftToFind)
         {
             KeyValuePairList<long, long> result = new KeyValuePairList<long, long>();
-            leftToAllocate = clustersToAllocate;
+            leftToFind = clustersToAllocate;
 
             long runStartLCN = 0; // temporary
             long runLength = 0;
             long nextLCN = startLCN;
-            while (nextLCN <= endLCN && leftToAllocate > 0)
+            long bufferedBitmapVCN = -1;
+            byte[] bufferedBitmap = null;
+            while (nextLCN <= endLCN && leftToFind > 0)
             {
-                if (IsClusterFree(nextLCN))
+                long currentBitmapVCN = (long)(nextLCN / (uint)(m_volume.BytesPerCluster * 8));
+                if (currentBitmapVCN != bufferedBitmapVCN)
+                {
+                    bufferedBitmap = ReadDataCluster(currentBitmapVCN);
+                    bufferedBitmapVCN = currentBitmapVCN;
+                }
+
+                int bitOffsetInBitmap = (int)(nextLCN % (uint)(m_volume.BytesPerCluster * 8));
+                if (IsBitClear(bufferedBitmap, bitOffsetInBitmap))
                 {
                     if (runLength == 0)
                     {
@@ -141,21 +139,21 @@ namespace DiskAccessLibrary.FileSystems.NTFS
                     {
                         runLength++;
                     }
-                    leftToAllocate--;
+                    leftToFind--;
                 }
                 else
                 {
                     if (runLength > 0)
                     {
+                        // Add this run
                         result.Add(runStartLCN, runLength);
                         runLength = 0;
-                        // add this run
                     }
                 }
                 nextLCN++;
             }
 
-            // add the last run
+            // Add the last run
             if (runLength > 0)
             {
                 result.Add(runStartLCN, runLength);
@@ -164,41 +162,27 @@ namespace DiskAccessLibrary.FileSystems.NTFS
             return result;
         }
 
-        private byte CountNumberOfFreeClusters(byte bitmap)
-        {
-            byte result = 0;
-            for (int bitIndex = 0; bitIndex < 8; bitIndex++)
-            {
-                bool isFree = ((bitmap >> bitIndex) & 0x01) == 0;
-                if (isFree)
-                {
-                    result++;
-                }
-            }
-            return result;
-        }
-
         // Each bit in the $Bitmap file represents a cluster.
         // The size of the $Bitmap file is always a multiple of 8 bytes, extra bits are always set to 1.
-        public long CountNumberOfFreeClusters()
+        private long CountNumberOfFreeClusters()
         {
             int transferSizeInClusters = Settings.MaximumTransferSizeLBA / m_volume.SectorsPerCluster;
-            ulong endLCN = (ulong)(m_volume.Size / m_volume.BytesPerCluster) - 1;
-            long lastClusterVCN = ((long)(endLCN / 8)) / Volume.BytesPerCluster;
+            long endLCN = m_numberOfUsableClustersInVolume - 1;
+            long bitmapLastVCN = endLCN / (Volume.BytesPerCluster * 8);
             
             long result = 0;
 
-            // build lookup table
+            // Build lookup table
             byte[] lookup = new byte[256];
             for (int index = 0; index < 256; index++)
             {
-                lookup[index] = CountNumberOfFreeClusters((byte)index);
+                lookup[index] = CountNumberOfClearBits((byte)index);
             }
 
-            // extra bits will be marked as used, so no need for special treatment
-            for (long bitmapVcn = 0; bitmapVcn < lastClusterVCN; bitmapVcn += transferSizeInClusters)
+            // Extra bits will be marked as used, so no need for special treatment
+            for (long bitmapVCN = 0; bitmapVCN <= bitmapLastVCN; bitmapVCN += transferSizeInClusters)
             {
-                byte[] bitmap = FileRecord.NonResidentDataRecord.ReadDataClusters(Volume, bitmapVcn, transferSizeInClusters);
+                byte[] bitmap = ReadDataClusters(bitmapVCN, transferSizeInClusters);
                 for (int index = 0; index < bitmap.Length; index++)
                 {
                     result += lookup[bitmap[index]];
@@ -208,18 +192,141 @@ namespace DiskAccessLibrary.FileSystems.NTFS
             return result;
         }
 
-        public static void UpdateClusterStatus(byte[] bitmap, long clusterIndexInBitmap, bool isUsed)
+        /// <param name="numberOfAdditionalClusters">
+        /// The number of additional clusters being added to the volume.
+        /// </param>
+        /// <remarks>
+        /// 1TB of additional allocation will result in a bitmap of 32 MB (assuming 4KB clusters).
+        /// 128TB of additional allocation will result in a bitmap of 512 MB (assuming 8KB clusters).
+        /// </remarks>
+        internal void Extend(long numberOfAdditionalClusters)
         {
-            long byteOffset = clusterIndexInBitmap / 8;
-            int bitOffset = (int)(clusterIndexInBitmap % 8);
-            if (isUsed)
+            if (m_numberOfFreeClusters == null)
             {
-                bitmap[byteOffset] |= (byte)(0x01 << bitOffset);
+                m_numberOfFreeClusters = CountNumberOfFreeClusters();
             }
-            else
+            // When extending the $Bitmap file we might need to allocate additional clusters for the bitmap,
+            // However, we haven't yet extended the bitmap so those clusters must be allocated within the current bitmap.
+            // To reduce the chance of running out of space, we first use all the remaining bits in the last bitmap cluster.
+            int bitsPerCluster = m_volume.BytesPerCluster * 8;
+            long currentNumberOfClustersInVolume = m_volume.Size / m_volume.BytesPerCluster;
+            int usedBitsInLastCluster = (int)((currentNumberOfClustersInVolume - 1) % bitsPerCluster) + 1;
+            int unusedBitsInLastCluster = bitsPerCluster - usedBitsInLastCluster;
+            if (unusedBitsInLastCluster < numberOfAdditionalClusters)
             {
-                bitmap[byteOffset] &= (byte)(~(0x01 << bitOffset));
+                const int MinimumNumberOfFreeClusters = 2;
+                long bitmapClustersNeeded = (long)Math.Ceiling((double)(numberOfAdditionalClusters - unusedBitsInLastCluster) / bitsPerCluster);
+                if (unusedBitsInLastCluster + m_numberOfFreeClusters < MinimumNumberOfFreeClusters)
+                {
+                    throw new DiskFullException("Not enough free clusters to extend $Bitmap before extending the volume");
+                }
             }
+
+            if (unusedBitsInLastCluster > 0)
+            {
+                int numberOfVolumeClustersToAllocate = (int)Math.Min(unusedBitsInLastCluster, numberOfAdditionalClusters);
+                long bitmapClusterVCN = currentNumberOfClustersInVolume / bitsPerCluster;
+                byte[] bitmap = ReadDataCluster(bitmapClusterVCN);
+                int originalBitmapLength = bitmap.Length;
+                int finalBitmapLength = (int)Math.Ceiling((double)(usedBitsInLastCluster + numberOfVolumeClustersToAllocate) / (ExtendGranularity * 8)) * ExtendGranularity;
+                if (bitmap.Length < finalBitmapLength)
+                {
+                    bitmap = ByteUtils.Concatenate(bitmap, new byte[finalBitmapLength - bitmap.Length]);
+                }
+                // The NTFS v5.1 driver extend the $Bitmap file in chunks of 8 bytes, the last bytes
+                // may contain extra bits that were previously set as used, and now have to be free.
+                int numberOfBitsToClear = originalBitmapLength * 8 - usedBitsInLastCluster;
+                for (int offset = 0; offset < numberOfBitsToClear; offset++)
+                {
+                    ClearBit(bitmap, usedBitsInLastCluster + offset);
+                }
+                WriteToFile((ulong)(bitmapClusterVCN * m_volume.BytesPerCluster), bitmap);
+                m_numberOfFreeClusters += numberOfVolumeClustersToAllocate;
+                m_numberOfUsableClustersInVolume += numberOfVolumeClustersToAllocate;
+                numberOfAdditionalClusters -= numberOfVolumeClustersToAllocate;
+            }
+
+            while (numberOfAdditionalClusters > 0)
+            {
+                int numberOfVolumeClustersToAllocate = (int)Math.Min(Math.Min(m_numberOfFreeClusters.Value * bitsPerCluster, numberOfAdditionalClusters), Settings.MaximumTransferSizeLBA * 8);
+                int bitmapLength = (int)Math.Ceiling((double)numberOfVolumeClustersToAllocate / (ExtendGranularity * 8)) * ExtendGranularity;
+                byte[] bitmap = new byte[bitmapLength];
+                // Mark extra bits as used:
+                int bitOffsetInBitmap = numberOfVolumeClustersToAllocate;
+                while (bitOffsetInBitmap < bitmap.Length * 8)
+                {
+                    SetBit(bitmap, bitOffsetInBitmap);
+                    bitOffsetInBitmap++;
+                }
+                WriteToFile(this.Length, bitmap);
+                m_numberOfFreeClusters += numberOfVolumeClustersToAllocate;
+                m_numberOfUsableClustersInVolume += numberOfVolumeClustersToAllocate;
+                numberOfAdditionalClusters -= numberOfVolumeClustersToAllocate;
+            }
+        }
+
+        private byte[] ReadDataCluster(long bitmapClusterVCN)
+        {
+            // VolumeBitmap data record is always non-resident (the NTFS v5.1 driver does not support a VolumeBitmap having a resident data record)
+            return FileRecord.NonResidentDataRecord.ReadDataCluster(m_volume, bitmapClusterVCN);
+        }
+
+        private byte[] ReadDataClusters(long bitmapClusterVCN, int count)
+        {
+            return FileRecord.NonResidentDataRecord.ReadDataClusters(m_volume, bitmapClusterVCN, count);
+        }
+
+        private void WriteDataClusters(long bitmapClusterVCN, byte[] data)
+        {
+            FileRecord.NonResidentDataRecord.WriteDataClusters(m_volume, bitmapClusterVCN, data);
+        }
+
+        public long NumberOfFreeClusters
+        {
+            get
+            {
+                if (m_numberOfFreeClusters == null)
+                {
+                    m_numberOfFreeClusters = CountNumberOfFreeClusters();
+                }
+                return m_numberOfFreeClusters.Value;
+            }
+        }
+
+        private static bool IsBitClear(byte[] bitmap, int bitOffsetInBitmap)
+        {
+            int byteOffset = bitOffsetInBitmap / 8;
+            int bitOffsetInByte = bitOffsetInBitmap % 8;
+            bool isInUse = ((bitmap[byteOffset] >> bitOffsetInByte) & 0x01) != 0;
+            return !isInUse;
+        }
+
+        private static void SetBit(byte[] bitmap, int bitOffsetInBitmap)
+        {
+            int byteOffset = bitOffsetInBitmap / 8;
+            int bitOffsetInByte = bitOffsetInBitmap % 8;
+            bitmap[byteOffset] |= (byte)(0x01 << bitOffsetInByte);
+        }
+
+        private static void ClearBit(byte[] bitmap, int bitOffsetInBitmap)
+        {
+            int byteOffset = bitOffsetInBitmap / 8;
+            int bitOffsetInByte = bitOffsetInBitmap % 8;
+            bitmap[byteOffset] &= (byte)(~(0x01 << bitOffsetInByte));
+        }
+
+        private static byte CountNumberOfClearBits(byte bitmap)
+        {
+            byte result = 0;
+            for (int bitIndex = 0; bitIndex < 8; bitIndex++)
+            {
+                bool isClear = ((bitmap >> bitIndex) & 0x01) == 0;
+                if (isClear)
+                {
+                    result++;
+                }
+            }
+            return result;
         }
     }
 }

@@ -302,7 +302,7 @@ namespace DiskAccessLibrary.FileSystems.NTFS
         {
             get
             {
-                return m_bitmap.CountNumberOfFreeClusters() * this.BytesPerCluster;
+                return m_bitmap.NumberOfFreeClusters * this.BytesPerCluster;
             }
         }
 
