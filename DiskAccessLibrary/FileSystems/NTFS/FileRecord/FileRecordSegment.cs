@@ -18,16 +18,6 @@ namespace DiskAccessLibrary.FileSystems.NTFS
         public const int NTFS30UpdateSequenceArrayOffset = 0x2A; // NTFS v3.0 and earlier (up to Windows 2000)
         public const int NTFS31UpdateSequenceArrayOffset = 0x30; // NTFS v3.1 and later   (XP and later)
 
-        [Flags]
-        public enum FileRecordFlags : ushort
-        {
-            None = 0x0000,
-            InUse = 0x0001,
-            IsDirectory = 0x0002,
-            IsMetaFile = 0x0004,
-            HasViewIndex = 0x0008,
-        }
-
         /* Start of header */
         /* Start of MULTI_SECTOR_HEADER */
         public string Signature = ValidSignature;
