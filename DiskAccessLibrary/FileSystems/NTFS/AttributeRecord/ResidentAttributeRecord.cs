@@ -1,4 +1,4 @@
-/* Copyright (C) 2014 Tal Aloni <tal.aloni.il@gmail.com>. All rights reserved.
+/* Copyright (C) 2014-2018 Tal Aloni <tal.aloni.il@gmail.com>. All rights reserved.
  * 
  * You can redistribute this program and/or modify it under the terms of
  * the GNU Lesser Public License as published by the Free Software Foundation,
@@ -25,7 +25,7 @@ namespace DiskAccessLibrary.FileSystems.NTFS
             ushort dataOffset = LittleEndianConverter.ToUInt16(buffer, offset + 0x14);
             IndexedFlag = ByteReader.ReadByte(buffer, offset + 0x16);
 
-            if (dataOffset + dataLength > this.StoredRecordLength)
+            if (dataOffset + dataLength > this.RecordLengthOnDisk)
             {
                 throw new InvalidDataException("Corrupt attribute, data outside of attribute record");
             }

@@ -44,7 +44,7 @@ namespace DiskAccessLibrary.FileSystems.NTFS
             ValidDataLength = LittleEndianConverter.ToUInt64(buffer, offset + 0x38);
 
             int position = offset + mappingPairsOffset;
-            while (position < offset + this.StoredRecordLength)
+            while (position < offset + this.RecordLengthOnDisk)
             {
                 DataRun run = new DataRun();
                 int length = run.Read(buffer, position);

@@ -287,14 +287,14 @@ namespace DiskAccessLibrary.FileSystems.NTFS
             }
         }
 
-        public int StoredAttributesLength
+        public int AttributesLengthOnDisk
         {
             get
             {
                 int length = 0;
                 foreach (AttributeRecord attribute in this.Attributes)
                 {
-                    length += (int)attribute.StoredRecordLength;
+                    length += (int)attribute.RecordLengthOnDisk;
                 }
                 return length;
             }

@@ -105,7 +105,7 @@ namespace DiskAccessLibrary.FileSystems.NTFS
                 AttributeRecord attribute = AttributeRecord.FromBytes(buffer, position);
                 
                 m_immediateAttributes.Add(attribute);
-                position += (int)attribute.StoredRecordLength;
+                position += (int)attribute.RecordLengthOnDisk;
                 if (position > buffer.Length)
                 {
                     throw new InvalidDataException("Improper attribute length");

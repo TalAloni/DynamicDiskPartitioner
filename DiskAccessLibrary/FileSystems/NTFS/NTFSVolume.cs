@@ -250,7 +250,7 @@ namespace DiskAccessLibrary.FileSystems.NTFS
                     builder.Append(mftRecord.NonResidentDataRecord.DataRunSequence.ToString());
 
                     builder.AppendLine("Number of $MFT Attributes: " + mftRecord.Attributes.Count);
-                    builder.AppendLine("Length of $MFT Attributes: " + mftRecord.StoredAttributesLength);
+                    builder.AppendLine("Length of $MFT Attributes: " + mftRecord.AttributesLengthOnDisk);
                     builder.AppendLine();
 
                     FileRecord bitmapRecord = m_mft.GetBitmapRecord();
@@ -260,7 +260,7 @@ namespace DiskAccessLibrary.FileSystems.NTFS
                         builder.AppendLine("$Bitmap Clusters: " + bitmapRecord.NonResidentDataRecord.DataRunSequence.DataClusterCount);
 
                         builder.AppendLine("Number of $Bitmap Attributes: " + bitmapRecord.Attributes.Count);
-                        builder.AppendLine("Length of $Bitmap Attributes: " + bitmapRecord.StoredAttributesLength);
+                        builder.AppendLine("Length of $Bitmap Attributes: " + bitmapRecord.AttributesLengthOnDisk);
                     }
                 }
 
