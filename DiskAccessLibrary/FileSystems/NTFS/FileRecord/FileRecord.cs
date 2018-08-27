@@ -13,10 +13,10 @@ namespace DiskAccessLibrary.FileSystems.NTFS
 {
     public class FileRecord // A collection of base record segment and zero or more file record segments making up this file record
     {
-        List<FileRecordSegment> m_segments;
+        private List<FileRecordSegment> m_segments;
         private List<AttributeRecord> m_attributes;
 
-        private DataRecord m_dataRecord;
+        private AttributeData m_dataRecord;
 
         public FileRecord(FileRecordSegment segment)
         {
@@ -218,7 +218,7 @@ namespace DiskAccessLibrary.FileSystems.NTFS
             return null;
         }
 
-        public DataRecord DataRecord
+        public AttributeData DataRecord
         {
             get
             {
@@ -227,7 +227,7 @@ namespace DiskAccessLibrary.FileSystems.NTFS
                     AttributeRecord record = GetAttributeRecord(AttributeType.Data, String.Empty);
                     if (record != null)
                     {
-                        m_dataRecord = new DataRecord(record);
+                        m_dataRecord = new AttributeData(record);
                     }
                 }
                 return m_dataRecord;

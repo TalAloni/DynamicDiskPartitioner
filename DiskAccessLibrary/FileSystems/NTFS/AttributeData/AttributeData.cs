@@ -1,4 +1,4 @@
-/* Copyright (C) 2014-2016 Tal Aloni <tal.aloni.il@gmail.com>. All rights reserved.
+/* Copyright (C) 2014-2018 Tal Aloni <tal.aloni.il@gmail.com>. All rights reserved.
  * 
  * You can redistribute this program and/or modify it under the terms of
  * the GNU Lesser Public License as published by the Free Software Foundation,
@@ -6,7 +6,6 @@
  */
 using System;
 using System.Collections.Generic;
-using System.Text;
 
 namespace DiskAccessLibrary.FileSystems.NTFS
 {
@@ -16,11 +15,11 @@ namespace DiskAccessLibrary.FileSystems.NTFS
     /// <remarks>
     /// The $Data attribute can be either resident or non-resident.
     /// </remarks>
-    public class DataRecord
+    public class AttributeData
     {
         AttributeRecord m_record;
 
-        public DataRecord(AttributeRecord record)
+        public AttributeData(AttributeRecord record)
         {
             m_record = record;
         }

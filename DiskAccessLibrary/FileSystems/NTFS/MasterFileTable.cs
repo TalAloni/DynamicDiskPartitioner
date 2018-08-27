@@ -73,7 +73,7 @@ namespace DiskAccessLibrary.FileSystems.NTFS
                 else
                 {
                     // I have never personally seen an MFT with an attribute list
-                    AttributeListRecord attributeList = new AttributeListRecord(m_volume, attributeListRecord);
+                    AttributeList attributeList = new AttributeList(m_volume, attributeListRecord);
                     List<MftSegmentReference> references = attributeList.GetSegmentReferenceList();
                     int baseSegmentIndex = MftSegmentReference.IndexOfSegmentNumber(references, MasterFileTableSegmentNumber);
 
@@ -188,7 +188,7 @@ namespace DiskAccessLibrary.FileSystems.NTFS
                 {
                     // The attribute list contains entries for every attribute the record has (excluding the attribute list),
                     // including attributes that reside within the base record segment.
-                    AttributeListRecord attributeList = new AttributeListRecord(m_volume, attributeListRecord);
+                    AttributeList attributeList = new AttributeList(m_volume, attributeListRecord);
                     List<MftSegmentReference> references = attributeList.GetSegmentReferenceList();
                     int baseSegmentIndex = MftSegmentReference.IndexOfSegmentNumber(references, baseSegmentNumber);
                     

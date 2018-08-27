@@ -16,13 +16,13 @@ namespace DiskAccessLibrary.FileSystems.NTFS
     // 1. A file can only have one attribute list and the $ATTRIBUTE_LIST record must reside in the base record segment
     // 2. AttributeList record is not necessarily resident.
     // 3. AttributeList can point to both resident and non-resident records
-    public class AttributeListRecord
+    public class AttributeList
     {
         private NTFSVolume m_volume;
         private AttributeRecord m_record;
-        public List<AttributeListEntry> AttributeList = new List<AttributeListEntry>();
+        public List<AttributeListEntry> Attributes = new List<AttributeListEntry>();
 
-        public AttributeListRecord(NTFSVolume volume, AttributeRecord record)
+        public AttributeList(NTFSVolume volume, AttributeRecord record)
         {
             m_volume = volume;
             m_record = record;
@@ -33,7 +33,7 @@ namespace DiskAccessLibrary.FileSystems.NTFS
             while (position < data.Length)
             {
                 AttributeListEntry entry = new AttributeListEntry(data, position);
-                AttributeList.Add(entry);
+                Attributes.Add(entry);
                 position += entry.Length;
             }
         }
@@ -44,7 +44,7 @@ namespace DiskAccessLibrary.FileSystems.NTFS
         public List<MftSegmentReference> GetSegmentReferenceList()
         {
             List<MftSegmentReference> result = new List<MftSegmentReference>();
-            foreach (AttributeListEntry entry in AttributeList)
+            foreach (AttributeListEntry entry in Attributes)
             {
                 if (!MftSegmentReference.ContainsSegmentNumber(result, entry.SegmentReference.SegmentNumber))
                 {
