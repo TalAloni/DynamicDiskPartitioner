@@ -14,22 +14,22 @@ namespace DiskAccessLibrary.FileSystems.NTFS
 {
     public class MasterFileTable
     {
-        public const int LastReservedMftSegmentNumber = 15; // 12-15 are reserved for additional metafiles
+        internal const int LastReservedMftSegmentNumber = 15; // 12-15 are reserved for additional metafiles
         
-        public const long MasterFileTableSegmentNumber = 0;
-        public const long MftMirrorSegmentNumber = 1;
-        public const long LogFileSegmentNumber = 2;
-        public const long VolumeSegmentNumber = 3;
-        public const long AttrDefSegmentNumber = 4;
-        public const long RootDirSegmentNumber = 5;
-        public const long BitmapSegmentNumber = 6;
-        public const long BootSegmentNumber = 7;
-        public const long BadClusSegmentNumber = 8;
-        public const long SecureSegmentNumber = 9;
-        public const long UpCaseSegmentNumber = 10;
-        public const long ExtendSegmentNumber = 11;
+        private const long MasterFileTableSegmentNumber = 0;
+        private const long MftMirrorSegmentNumber = 1;
+        private const long LogFileSegmentNumber = 2;
+        private const long VolumeSegmentNumber = 3;
+        private const long AttrDefSegmentNumber = 4;
+        internal const long RootDirSegmentNumber = 5;
+        internal const long BitmapSegmentNumber = 6;
+        private const long BootSegmentNumber = 7;
+        private const long BadClusSegmentNumber = 8;
+        private const long SecureSegmentNumber = 9;
+        private const long UpCaseSegmentNumber = 10;
+        private const long ExtendSegmentNumber = 11;
         // The $Extend Metafile is simply a directory index that contains information on where to locate the last four metafiles ($ObjId, $Quota, $Reparse and $UsnJrnl)
-        public readonly int AttributeDataLengthToMakeNonResident;
+        internal readonly int AttributeDataLengthToMakeNonResident;
 
         private NTFSVolume m_volume;
         private FileRecord m_mftRecord;
