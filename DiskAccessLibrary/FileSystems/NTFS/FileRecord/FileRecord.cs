@@ -16,16 +16,19 @@ namespace DiskAccessLibrary.FileSystems.NTFS
         private List<FileRecordSegment> m_segments;
         private List<AttributeRecord> m_attributes;
 
-        private AttributeData m_dataRecord;
+        private NTFSVolume m_volume;
+        private AttributeData m_data;
 
-        public FileRecord(FileRecordSegment segment)
+        public FileRecord(NTFSVolume volume, FileRecordSegment segment)
         {
+            m_volume = volume;
             m_segments = new List<FileRecordSegment>();
             m_segments.Add(segment);
         }
 
-        public FileRecord(List<FileRecordSegment> segments)
+        public FileRecord(NTFSVolume volume, List<FileRecordSegment> segments)
         {
+            m_volume = volume;
             m_segments = segments;
         }
 
@@ -218,19 +221,31 @@ namespace DiskAccessLibrary.FileSystems.NTFS
             return null;
         }
 
-        public AttributeData DataRecord
+        public void RemoveAttributeRecord(AttributeType attributeType, string name)
+        {
+            for (int index = 0; index < Attributes.Count; index++)
+            {
+                if (Attributes[index].AttributeType == attributeType && Attributes[index].Name == name)
+                {
+                    Attributes.RemoveAt(index);
+                    break;
+                }
+            }
+        }
+
+        public AttributeData Data
         {
             get
             {
-                if (m_dataRecord == null)
+                if (m_data == null)
                 {
                     AttributeRecord record = GetAttributeRecord(AttributeType.Data, String.Empty);
                     if (record != null)
                     {
-                        m_dataRecord = new AttributeData(record);
+                        m_data = new AttributeData(m_volume, this, record);
                     }
                 }
-                return m_dataRecord;
+                return m_data;
             }
         }
 
@@ -238,9 +253,9 @@ namespace DiskAccessLibrary.FileSystems.NTFS
         {
             get
             {
-                if (this.DataRecord.Record is NonResidentAttributeRecord)
+                if (this.Data.AttributeRecord is NonResidentAttributeRecord)
                 {
-                    return (NonResidentAttributeRecord)m_dataRecord.Record;
+                    return (NonResidentAttributeRecord)this.Data.AttributeRecord;
                 }
                 else
                 {

@@ -6,6 +6,7 @@
  */
 using System;
 using System.Collections.Generic;
+using Utilities;
 
 namespace DiskAccessLibrary.FileSystems.NTFS
 {
@@ -17,142 +18,171 @@ namespace DiskAccessLibrary.FileSystems.NTFS
     /// </remarks>
     public class AttributeData
     {
-        AttributeRecord m_record;
+        private NTFSVolume m_volume;
+        private FileRecord m_fileRecord;
+        private AttributeRecord m_attributeRecord;
 
-        public AttributeData(AttributeRecord record)
+        public AttributeData(NTFSVolume volume, FileRecord fileRecord, AttributeRecord attributeRecord)
         {
-            m_record = record;
+            m_volume = volume;
+            m_fileRecord = fileRecord;
+            m_attributeRecord = attributeRecord;
         }
 
-        public byte[] ReadDataCluster(NTFSVolume volume, long clusterVCN)
+        public byte[] ReadCluster(long clusterVCN)
         {
-            return ReadDataClusters(volume, clusterVCN, 1);
+            return ReadClusters(clusterVCN, 1);
         }
 
-        public byte[] ReadDataClusters(NTFSVolume volume, long clusterVCN, int count)
+        public byte[] ReadClusters(long clusterVCN, int count)
         {
-            if (m_record is NonResidentAttributeRecord)
+            if (m_attributeRecord is NonResidentAttributeRecord)
             {
-                return ((NonResidentAttributeRecord)m_record).ReadDataClusters(volume, clusterVCN, count);
+                return ((NonResidentAttributeRecord)m_attributeRecord).ReadDataClusters(m_volume, clusterVCN, count);
             }
             else
             {
-                long numberOfClusters = (long)Math.Ceiling((double)((ResidentAttributeRecord)m_record).Data.Length / volume.BytesPerCluster);
+                long numberOfClusters = (long)Math.Ceiling((double)((ResidentAttributeRecord)m_attributeRecord).Data.Length / m_volume.BytesPerCluster);
                 long highestVCN = Math.Max(numberOfClusters - 1, 0);
                 if (clusterVCN < 0 || clusterVCN > highestVCN)
                 {
                     throw new ArgumentOutOfRangeException("Cluster VCN is not within the valid range");
                 }
 
-                long offset = clusterVCN * volume.BytesPerCluster;
+                long offset = clusterVCN * m_volume.BytesPerCluster;
                 int bytesToRead;
                 // last cluster could be partial
                 if (clusterVCN + count < numberOfClusters)
                 {
-                    bytesToRead = count * volume.BytesPerCluster;   
+                    bytesToRead = count * m_volume.BytesPerCluster;   
                 }
                 else
                 {
-                    bytesToRead = (int)(((ResidentAttributeRecord)m_record).Data.Length - offset);
+                    bytesToRead = (int)(((ResidentAttributeRecord)m_attributeRecord).Data.Length - offset);
                 }
                 byte[] data = new byte[bytesToRead];
-                Array.Copy(((ResidentAttributeRecord)m_record).Data, offset, data, 0, bytesToRead);
+                Array.Copy(((ResidentAttributeRecord)m_attributeRecord).Data, offset, data, 0, bytesToRead);
                 return data;
             }
         }
 
-        public void WriteDataCluster(NTFSVolume volume, long clusterVCN, byte[] data)
+        public void WriteCluster(long clusterVCN, byte[] data)
         {
-            WriteDataClusters(volume, clusterVCN, data);
+            WriteClusters(clusterVCN, data);
         }
 
-        public void WriteDataClusters(NTFSVolume volume, long clusterVCN, byte[] data)
+        public void WriteClusters(long clusterVCN, byte[] data)
         {
-            if (m_record is NonResidentAttributeRecord)
+            if (m_attributeRecord is NonResidentAttributeRecord)
             {
-                ((NonResidentAttributeRecord)m_record).WriteDataClusters(volume, clusterVCN, data);
+                ((NonResidentAttributeRecord)m_attributeRecord).WriteDataClusters(m_volume, clusterVCN, data);
             }
             else
             {
-                int numberOfClusters = (int)Math.Ceiling((double)((ResidentAttributeRecord)m_record).Data.Length / volume.BytesPerCluster);
-                int count = (int)Math.Ceiling((double)data.Length / volume.BytesPerCluster);
+                int numberOfClusters = (int)Math.Ceiling((double)((ResidentAttributeRecord)m_attributeRecord).Data.Length / m_volume.BytesPerCluster);
+                int count = (int)Math.Ceiling((double)data.Length / m_volume.BytesPerCluster);
                 long highestVCN = Math.Max(numberOfClusters - 1, 0);
                 if (clusterVCN < 0 || clusterVCN > highestVCN)
                 {
                     throw new ArgumentOutOfRangeException("Cluster VCN is not within the valid range");
                 }
 
-                long offset = clusterVCN * volume.BytesPerCluster;
-                Array.Copy(data, 0, ((ResidentAttributeRecord)m_record).Data, offset, data.Length);
+                long offset = clusterVCN * m_volume.BytesPerCluster;
+                Array.Copy(data, 0, ((ResidentAttributeRecord)m_attributeRecord).Data, offset, data.Length);
             }
         }
 
-        public void ExtendRecord(NTFSVolume volume, ulong additionalLength)
+        public void ExtendRecord(ulong additionalLength)
         {
-            ulong currentSize = this.DataRealSize;
-            if (m_record is NonResidentAttributeRecord)
+            ulong currentSize = this.RealSize;
+            if (m_attributeRecord is NonResidentAttributeRecord)
             {
-                ((NonResidentAttributeRecord)m_record).ExtendRecord(volume, additionalLength);
+                ((NonResidentAttributeRecord)m_attributeRecord).ExtendRecord(m_volume, additionalLength);
             }
             else
             {
-                // If the resident data record becomes too long, it will be replaced with a non-resident data record when the file record will be saved
-                byte[] data = ((ResidentAttributeRecord)m_record).Data;
-                int currentLength = data.Length;
-                byte[] temp = new byte[currentLength + (int)additionalLength];
-                Array.Copy(data, temp, data.Length);
-                ((ResidentAttributeRecord)m_record).Data = temp;
-            }
-        }
-
-        public ulong GetDataAllocatedSize(int bytesPerCluster)
-        {
-            if (m_record is NonResidentAttributeRecord)
-            {
-                return (ulong)(((NonResidentAttributeRecord)m_record).DataClusterCount * bytesPerCluster);
-            }
-            else
-            {
-                return (ulong)((ResidentAttributeRecord)m_record).Data.Length;
-            }
-        }
-
-        public ulong DataRealSize
-        {
-            get
-            {
-                if (m_record is NonResidentAttributeRecord)
+                byte[] data = ((ResidentAttributeRecord)m_attributeRecord).Data;
+                ulong finalDataLength = (uint)data.Length + additionalLength;
+                if (finalDataLength >= (ulong)m_volume.MasterFileTable.AttributeDataLengthToMakeNonResident)
                 {
-                    return ((NonResidentAttributeRecord)m_record).FileSize;
+                    // Convert the attribute to non-resident
+                    long clustersToAllocate = (long)Math.Ceiling((double)finalDataLength / m_volume.BytesPerCluster);
+                    if (clustersToAllocate > m_volume.NumberOfFreeClusters)
+                    {
+                        throw new DiskFullException();
+                    }
+                    m_fileRecord.RemoveAttributeRecord(m_attributeRecord.AttributeType, m_attributeRecord.Name);
+                    NonResidentAttributeRecord attributeRecord = new NonResidentAttributeRecord(m_attributeRecord.AttributeType, m_attributeRecord.Name, m_attributeRecord.Instance);
+                    attributeRecord.AllocateAdditionalClusters(m_volume, clustersToAllocate);
+                    attributeRecord.FileSize = finalDataLength;
+                    attributeRecord.ValidDataLength = (uint)data.Length;
+                    attributeRecord.WriteDataClusters(m_volume, 0, data);
+                    m_attributeRecord = attributeRecord;
+                    m_fileRecord.Attributes.Add(m_attributeRecord);
                 }
                 else
                 {
-                    return (ulong)((ResidentAttributeRecord)m_record).Data.Length;
+                    int currentLength = data.Length;
+                    byte[] temp = new byte[currentLength + (int)additionalLength];
+                    Array.Copy(data, temp, data.Length);
+                    ((ResidentAttributeRecord)m_attributeRecord).Data = temp;
                 }
             }
+            m_volume.MasterFileTable.UpdateFileRecord(m_fileRecord);
         }
 
-        public long DataClusterCount
+        public ulong AllocatedSize
         {
             get
             {
-                if (m_record is NonResidentAttributeRecord)
+                if (m_attributeRecord is NonResidentAttributeRecord)
                 {
-                    return ((NonResidentAttributeRecord)m_record).DataClusterCount;
+                    return (ulong)(((NonResidentAttributeRecord)m_attributeRecord).DataClusterCount * m_volume.BytesPerCluster);
                 }
                 else
                 {
-                    // can it be more than 1?
-                    return 1;
+                    return (ulong)((ResidentAttributeRecord)m_attributeRecord).Data.Length;
                 }
             }
         }
 
-        public AttributeRecord Record
+        public ulong RealSize
         {
             get
             {
-                return m_record;
+                if (m_attributeRecord is NonResidentAttributeRecord)
+                {
+                    return ((NonResidentAttributeRecord)m_attributeRecord).FileSize;
+                }
+                else
+                {
+                    return (ulong)((ResidentAttributeRecord)m_attributeRecord).Data.Length;
+                }
+            }
+        }
+
+        public long ClusterCount
+        {
+            get
+            {
+                if (m_attributeRecord is NonResidentAttributeRecord)
+                {
+                    return ((NonResidentAttributeRecord)m_attributeRecord).DataClusterCount;
+                }
+                else
+                {
+                    // A resident AttributeRecord could span several clusters
+                    int dataLength = ((ResidentAttributeRecord)m_attributeRecord).Data.Length;
+                    return (long)Math.Ceiling((double)dataLength / m_volume.BytesPerCluster);
+                }
+            }
+        }
+
+        public AttributeRecord AttributeRecord
+        {
+            get
+            {
+                return m_attributeRecord;
             }
         }
     }

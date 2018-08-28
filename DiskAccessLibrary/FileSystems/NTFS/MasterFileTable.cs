@@ -29,6 +29,7 @@ namespace DiskAccessLibrary.FileSystems.NTFS
         public const long UpCaseSegmentNumber = 10;
         public const long ExtendSegmentNumber = 11;
         // The $Extend Metafile is simply a directory index that contains information on where to locate the last four metafiles ($ObjId, $Quota, $Reparse and $UsnJrnl)
+        public readonly int AttributeDataLengthToMakeNonResident;
 
         public NTFSVolume m_volume;
         private bool m_useMftMirror;
@@ -41,6 +42,7 @@ namespace DiskAccessLibrary.FileSystems.NTFS
             m_useMftMirror = useMftMirror;
 
             m_mftRecord = ReadMftRecord();
+            AttributeDataLengthToMakeNonResident = m_volume.BytesPerFileRecordSegment * 5 / 16; // We immitate the NTFS v5.1 driver
         }
 
         private FileRecord ReadMftRecord()
@@ -68,7 +70,7 @@ namespace DiskAccessLibrary.FileSystems.NTFS
                 AttributeRecord attributeListRecord = mftRecordSegment.GetImmediateAttributeRecord(AttributeType.AttributeList);
                 if (attributeListRecord == null)
                 {
-                    return new FileRecord(mftRecordSegment);
+                    return new FileRecord(m_volume, mftRecordSegment);
                 }
                 else
                 {
@@ -98,7 +100,7 @@ namespace DiskAccessLibrary.FileSystems.NTFS
                             throw new InvalidDataException("Invalid MFT record, missing segment");
                         }
                     }
-                    return new FileRecord(recordSegments);
+                    return new FileRecord(m_volume, recordSegments);
                 }
             }
             else
@@ -182,7 +184,7 @@ namespace DiskAccessLibrary.FileSystems.NTFS
                 AttributeRecord attributeListRecord = baseRecordSegment.GetImmediateAttributeRecord(AttributeType.AttributeList);
                 if (attributeListRecord == null)
                 {
-                    return new FileRecord(baseRecordSegment);
+                    return new FileRecord(m_volume, baseRecordSegment);
                 }
                 else
                 {
@@ -214,7 +216,7 @@ namespace DiskAccessLibrary.FileSystems.NTFS
                             return null;
                         }
                     }
-                    return new FileRecord(recordSegments);
+                    return new FileRecord(m_volume, recordSegments);
                 }
             }
             else

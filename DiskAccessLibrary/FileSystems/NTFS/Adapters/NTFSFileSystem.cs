@@ -233,7 +233,7 @@ namespace DiskAccessLibrary.FileSystems.NTFS
 
         public static FileSystemEntry ToFileSystemEntry(string path, FileRecord record)
         {
-            ulong size = record.IsDirectory ? 0 : record.DataRecord.DataRealSize;
+            ulong size = record.IsDirectory ? 0 : record.Data.RealSize;
             FileAttributes attributes = record.StandardInformation.FileAttributes;
             bool isHidden = (attributes & FileAttributes.Hidden) > 0;
             bool isReadonly = (attributes & FileAttributes.Readonly) > 0;
