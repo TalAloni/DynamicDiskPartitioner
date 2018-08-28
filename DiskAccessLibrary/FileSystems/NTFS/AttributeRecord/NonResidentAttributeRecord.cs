@@ -92,7 +92,7 @@ namespace DiskAccessLibrary.FileSystems.NTFS
             ByteWriter.WriteByte(buffer, 0x22, CompressionUnit);
             LittleEndianWriter.WriteUInt64(buffer, 0x28, allocatedLength);
             LittleEndianWriter.WriteUInt64(buffer, 0x30, FileSize);
-            LittleEndianWriter.WriteUInt64(buffer, 0x38, FileSize);
+            LittleEndianWriter.WriteUInt64(buffer, 0x38, ValidDataLength);
 
             int position = dataRunsOffset;
             foreach (DataRun run in m_dataRunSequence)
@@ -102,7 +102,6 @@ namespace DiskAccessLibrary.FileSystems.NTFS
                 position += runBytes.Length;
             }
             buffer[position] = 0; // Null termination
-
 
             return buffer;
         }
@@ -129,26 +128,38 @@ namespace DiskAccessLibrary.FileSystems.NTFS
             }
 
             byte[] result = new byte[count * volume.BytesPerCluster];
-            KeyValuePairList<long, int> sequence = m_dataRunSequence.TranslateToLCN(firstClusterVCN - LowestVCN, count);
-            long bytesRead = 0;
-            foreach (KeyValuePair<long, int> run in sequence)
+            ulong firstBytePosition = (ulong)firstClusterVCN * (uint)volume.BytesPerCluster;
+            if (firstBytePosition < ValidDataLength)
             {
-                byte[] clusters = volume.ReadClusters(run.Key, run.Value);
-                Array.Copy(clusters, 0, result, bytesRead, clusters.Length);
-                bytesRead += clusters.Length;
+                KeyValuePairList<long, int> sequence = m_dataRunSequence.TranslateToLCN(firstClusterVCN - LowestVCN, count);
+                long bytesRead = 0;
+                foreach (KeyValuePair<long, int> run in sequence)
+                {
+                    byte[] clusters = volume.ReadClusters(run.Key, run.Value);
+                    Array.Copy(clusters, 0, result, bytesRead, clusters.Length);
+                    bytesRead += clusters.Length;
+                }
             }
 
-            // If the last cluster is only partially used or we have been asked to read clusters beyond the last cluster, trim result.
-            // (Either of those cases could only be true if we have just read the last cluster).
+            int numberOfBytesToReturn = count * volume.BytesPerCluster;
             if (lastClusterVcnToRead == (long)HighestVCN)
             {
-                long bytesToUse = (long)(FileSize - (ulong)firstClusterVCN * (uint)volume.BytesPerCluster);
-                if (bytesToUse < result.Length)
+                numberOfBytesToReturn = (int)(FileSize - (ulong)firstClusterVCN * (uint)volume.BytesPerCluster);
+                // If the last cluster is only partially used or we have been asked to read clusters beyond the last cluster, trim result.
+                // (Either of those cases could only be true if we have just read the last cluster).
+                if (numberOfBytesToReturn < result.Length)
                 {
-                    byte[] resultTrimmed = new byte[bytesToUse];
-                    Array.Copy(result, resultTrimmed, bytesToUse);
-                    return resultTrimmed;
+                    byte[] resultTrimmed = new byte[numberOfBytesToReturn];
+                    Array.Copy(result, resultTrimmed, numberOfBytesToReturn);
+                    result = resultTrimmed;
                 }
+            }
+
+            if (firstBytePosition < ValidDataLength && ValidDataLength < firstBytePosition + (uint)numberOfBytesToReturn)
+            {
+                // Zero-out bytes outside ValidDataLength
+                int numberOfValidBytesInResult = (int)(ValidDataLength - firstBytePosition);
+                ByteWriter.WriteBytes(result, numberOfValidBytesInResult, new byte[result.Length - numberOfValidBytesInResult]);
             }
 
             return result;
@@ -167,9 +178,9 @@ namespace DiskAccessLibrary.FileSystems.NTFS
                 lastClusterVcnToWrite = firstClusterVCN + count - 1;
                 if (lastClusterVcnToWrite == HighestVCN)
                 {
-                    byte[] temp = new byte[paddedLength];
-                    Array.Copy(data, temp, data.Length);
-                    data = temp;
+                    byte[] paddedData = new byte[paddedLength];
+                    Array.Copy(data, paddedData, data.Length);
+                    data = paddedData;
                 }
                 else
                 {
@@ -189,6 +200,30 @@ namespace DiskAccessLibrary.FileSystems.NTFS
                 throw new ArgumentOutOfRangeException(message);
             }
 
+            ulong firstBytePosition = (ulong)firstClusterVCN * (uint)volume.BytesPerCluster;
+            if (firstBytePosition > ValidDataLength)
+            {
+                // We need to zero-fill all the the bytes up to ValidDataLength
+                long firstClusterToFillVCN = (long)(ValidDataLength / (uint)volume.BytesPerCluster);
+                long clusterCount = firstClusterVCN - firstClusterToFillVCN;
+                int transferSizeInClusters = Settings.MaximumTransferSizeLBA / volume.SectorsPerCluster;
+                for (long clusterToFillVCN = firstClusterToFillVCN; clusterToFillVCN < firstClusterVCN; clusterToFillVCN += transferSizeInClusters)
+                {
+                    int clustersToWrite = (int)Math.Min(transferSizeInClusters, firstClusterVCN - firstClusterToFillVCN);
+                    byte[] fillData = new byte[clustersToWrite * volume.BytesPerCluster];
+                    if (clusterToFillVCN == firstClusterToFillVCN)
+                    {
+                        int bytesToRetain = (int)(ValidDataLength % (uint)volume.BytesPerCluster);
+                        if (bytesToRetain > 0)
+                        {
+                            byte[] dataToRetain = ReadDataCluster(volume, firstClusterToFillVCN);
+                            Array.Copy(dataToRetain, 0, fillData, 0, bytesToRetain);
+                        }
+                    }
+                    WriteDataClusters(volume, clusterToFillVCN, fillData);
+                }
+            }
+
             KeyValuePairList<long, int> sequence = m_dataRunSequence.TranslateToLCN(firstClusterVCN, count);
             long bytesWritten = 0;
             foreach (KeyValuePair<long, int> run in sequence)
@@ -197,6 +232,11 @@ namespace DiskAccessLibrary.FileSystems.NTFS
                 Array.Copy(data, bytesWritten, clusters, 0, clusters.Length);
                 volume.WriteClusters(run.Key, clusters);
                 bytesWritten += clusters.Length;
+            }
+
+            if (firstBytePosition + (uint)data.Length > ValidDataLength)
+            {
+                ValidDataLength = firstBytePosition + (uint)data.Length;
             }
         }
 
