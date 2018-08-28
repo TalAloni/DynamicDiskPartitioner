@@ -77,6 +77,7 @@
     <Compile Include="FileSystems\NTFS\Enums\FileAttributes.cs" />
     <Compile Include="FileSystems\NTFS\Enums\FilenameNamespace.cs" />
     <Compile Include="FileSystems\NTFS\Enums\FileRecordFlags.cs" />
+    <Compile Include="FileSystems\NTFS\Enums\ResidentForm.cs" />
     <Compile Include="FileSystems\NTFS\FileRecord\FileRecord.cs" />
     <Compile Include="FileSystems\NTFS\FileRecord\FileRecordSegment.cs" />
     <Compile Include="FileSystems\NTFS\FileRecord\MultiSectorHelper.cs" />

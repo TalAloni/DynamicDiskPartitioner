@@ -7,23 +7,31 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
-using System.Text;
 using Utilities;
 
 namespace DiskAccessLibrary.FileSystems.NTFS
 {
+    /// <summary>
+    /// ATTRIBUTE_RECORD_HEADER: https://docs.microsoft.com/en-us/windows/desktop/DevNotes/attribute-record-header
+    /// </summary>
     public class ResidentAttributeRecord : AttributeRecord
     {
         public const int HeaderLength = 0x18;
 
         public byte[] Data;
-        public byte IndexedFlag;
+        private ResidentForm m_residentForm;
+        private byte m_reserved;
+
+        public ResidentAttributeRecord(AttributeType attributeType, string name, ushort instance) : base(attributeType, name, true, instance)
+        {
+        }
 
         public ResidentAttributeRecord(byte[] buffer, int offset) : base(buffer, offset)
         {
             uint dataLength = LittleEndianConverter.ToUInt32(buffer, offset + 0x10);
             ushort dataOffset = LittleEndianConverter.ToUInt16(buffer, offset + 0x14);
-            IndexedFlag = ByteReader.ReadByte(buffer, offset + 0x16);
+            m_residentForm = (ResidentForm)ByteReader.ReadByte(buffer, offset + 0x16);
+            m_reserved = ByteReader.ReadByte(buffer, offset + 0x17);
 
             if (dataOffset + dataLength > this.RecordLengthOnDisk)
             {
@@ -43,7 +51,8 @@ namespace DiskAccessLibrary.FileSystems.NTFS
 
             LittleEndianWriter.WriteUInt32(buffer, 0x10, dataLength);
             LittleEndianWriter.WriteUInt16(buffer, 0x14, dataOffset);
-            ByteWriter.WriteByte(buffer, 0x16, IndexedFlag);
+            ByteWriter.WriteByte(buffer, 0x16, (byte)m_residentForm);
+            ByteWriter.WriteByte(buffer, 0x17, m_reserved);
             ByteWriter.WriteBytes(buffer, dataOffset, Data);
 
             return buffer;
@@ -56,7 +65,7 @@ namespace DiskAccessLibrary.FileSystems.NTFS
 
         /// <summary>
         /// When reading attributes, they may contain additional padding,
-        /// so we should use StoredRecordLength to advance the buffer position instead.
+        /// so we should use RecordLengthOnDisk to advance the buffer position instead.
         /// </summary>
         public override uint RecordLength
         {
