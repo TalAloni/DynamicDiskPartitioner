@@ -11,8 +11,10 @@ using Utilities;
 
 namespace DiskAccessLibrary.FileSystems.NTFS
 {
-    // FileName attribute is always resident
-    public class FileNameAttributeRecord : ResidentAttributeRecord // This is the record itself (the data that is contained in the attribute)
+    /// <remarks>
+    /// FileName attribute is always resident.
+    /// </remarks>
+    public class FileNameAttributeRecord : ResidentAttributeRecord
     {
         public const int FixedLength = 0x42;
         public FileNameRecord Record;

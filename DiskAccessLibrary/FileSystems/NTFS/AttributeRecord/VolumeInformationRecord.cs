@@ -11,7 +11,9 @@ using Utilities;
 
 namespace DiskAccessLibrary.FileSystems.NTFS
 {
-    // VolumeInformation attribute is always resident
+    /// <remarks>
+    /// VolumeInformation attribute is always resident.
+    /// </remarks>
     public class VolumeInformationRecord : ResidentAttributeRecord
     {
         public byte MajorVersion;

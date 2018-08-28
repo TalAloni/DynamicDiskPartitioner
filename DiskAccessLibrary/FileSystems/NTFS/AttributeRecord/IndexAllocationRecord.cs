@@ -11,7 +11,9 @@ using Utilities;
 
 namespace DiskAccessLibrary.FileSystems.NTFS
 {
-    // IndexAllocation attribute is always non-resident
+    /// <remarks>
+    /// IndexAllocation attribute is always non-resident.
+    /// </remarks>
     public class IndexAllocationRecord : NonResidentAttributeRecord
     {
         public IndexAllocationRecord(byte[] buffer, int offset) : base(buffer, offset)
