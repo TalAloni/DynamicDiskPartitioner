@@ -11,34 +11,44 @@ using Utilities;
 
 namespace DiskAccessLibrary.FileSystems.NTFS
 {
+    /// <summary>
+    /// ATTRIBUTE_RECORD_HEADER: https://docs.microsoft.com/en-us/windows/desktop/DevNotes/attribute-record-header
+    /// </summary>
+    /// <remarks>
+    /// The maximum NTFS file size is 2^64 bytes, so the number of file clusters can be represented using long.
+    /// </remarks>
     public class NonResidentAttributeRecord : AttributeRecord
     {
         public const int HeaderLength = 0x40;
 
-        // the first and last VCNs of the attribute:
-        // Note: the maximum NTFS file size is 2^64 bytes, so total number of file clusters can be represented using long
-        public long LowestVCN;  // The lowest VCN covered by this attribute record, stored as unsigned, but is within the range of long, see note above. (a.k.a. LowVCN)
-        public long HighestVCN; // The highest VCN covered by this attribute record, stored as unsigned, but is within the range of long, see note above. (a.k.a. HighVCN)
-        //private ushort mappingPairsOffset;
-        public ushort CompressionUnitSize;
-        // 4 reserved bytes
-        // ulong AllocatedLength;       // An even multiple of the cluster size (not valid if the LowestVCN member is nonzero*)
-        public ulong FileSize;          // The real size of a file with all of its runs combined, not valid if the LowestVCN member is nonzero
-        public ulong ValidDataLength;   // Actual data written so far, (always less than or equal to the file size).
-                                        // Data beyond ValidDataLength should be treated as 0. (not valid if the LowestVCN member is nonzero*)
-        // * See: http://msdn.microsoft.com/en-us/library/bb470039%28v=vs.85%29.aspx
+        public long LowestVCN;  // The lowest VCN covered by this attribute record, stored as unsigned, but is within the range of long, see note above.
+        public long HighestVCN; // The highest VCN covered by this attribute record, stored as unsigned, but is within the range of long, see note above.
+        // ushort mappingPairsOffset;
+        public byte CompressionUnit;
+        // 5 reserved bytes
+        // ulong AllocatedLength;     // An even multiple of the cluster size (not valid if the LowestVCN member is nonzero).
+        public ulong FileSize;        // The real size of a file with all of its runs combined (not valid if the LowestVCN member is nonzero).
+        public ulong ValidDataLength; // Actual data written so far, (always less than or equal to the file size).
+                                      // Data beyond ValidDataLength should be treated as 0 (not valid if the LowestVCN member is nonzero).
+        // ulong TotalAllocated;      // Presented for the first file record of a compressed stream.
 
         private DataRunSequence m_dataRunSequence = new DataRunSequence();
         // Data run NULL terminator here
         // I've noticed that Windows Server 2003 puts 0x00 0x01 here for the $MFT FileRecord, seems to have no effect
-        // (I've set it to 0 for the $MFT FileRecord in the MFT and the MFT mirror, and chkdsk did not report a problem.
+        // (I've set it to 0x00 for the $MFT FileRecord in the MFT and the MFT mirror, and chkdsk did not report a problem.
+
+        public NonResidentAttributeRecord(AttributeType attributeType, string name, ushort instance) : base(attributeType, name, false, instance)
+        {
+            m_dataRunSequence = new DataRunSequence();
+            HighestVCN = -1; // This is the value that should be set when the attribute contain no data.
+        }
 
         public NonResidentAttributeRecord(byte[] buffer, int offset) : base(buffer, offset)
         {
             LowestVCN = (long)LittleEndianConverter.ToUInt64(buffer, offset + 0x10);
             HighestVCN = (long)LittleEndianConverter.ToUInt64(buffer, offset + 0x18);
             ushort mappingPairsOffset = LittleEndianConverter.ToUInt16(buffer, offset + 0x20);
-            CompressionUnitSize = LittleEndianConverter.ToUInt16(buffer, offset + 0x22);
+            CompressionUnit = ByteReader.ReadByte(buffer, offset + 0x22);
             ulong allocatedLength = LittleEndianConverter.ToUInt64(buffer, offset + 0x28);
             FileSize = LittleEndianConverter.ToUInt64(buffer, offset + 0x30);
             ValidDataLength = LittleEndianConverter.ToUInt64(buffer, offset + 0x38);
@@ -79,7 +89,7 @@ namespace DiskAccessLibrary.FileSystems.NTFS
             LittleEndianWriter.WriteInt64(buffer, 0x10, LowestVCN);
             LittleEndianWriter.WriteInt64(buffer, 0x18, HighestVCN);
             LittleEndianWriter.WriteUInt16(buffer, 0x20, mappingPairsOffset);
-            LittleEndianWriter.WriteUInt16(buffer, 0x22, CompressionUnitSize);
+            ByteWriter.WriteByte(buffer, 0x22, CompressionUnit);
             LittleEndianWriter.WriteUInt64(buffer, 0x28, allocatedLength);
             LittleEndianWriter.WriteUInt64(buffer, 0x30, FileSize);
             LittleEndianWriter.WriteUInt64(buffer, 0x38, FileSize);
@@ -238,6 +248,10 @@ namespace DiskAccessLibrary.FileSystems.NTFS
                 ulong bytesToAllocate = additionalLength - (uint)freeBytesInLastCluster;
 
                 long clustersToAllocate = (long)Math.Ceiling((double)bytesToAllocate / volume.BytesPerCluster);
+                if (clustersToAllocate > volume.NumberOfFreeClusters)
+                {
+                    throw new DiskFullException();
+                }
                 AllocateAdditionalClusters(volume, clustersToAllocate);
             }
 
@@ -247,30 +261,39 @@ namespace DiskAccessLibrary.FileSystems.NTFS
         // The maximum NTFS file size is 2^64 bytes, so total number of file clusters can be represented using long
         public void AllocateAdditionalClusters(NTFSVolume volume, long clustersToAllocate)
         {
-            long desiredStartLCN = DataRunSequence.DataLastLCN;
-            KeyValuePairList<long, long> freeClusterRunList = volume.AllocateClusters(desiredStartLCN, clustersToAllocate);
+            KeyValuePairList<long, long> freeClusterRunList;
+            if (DataRunSequence.Count == 0)
+            {
+                freeClusterRunList = volume.AllocateClusters(clustersToAllocate);
+            }
+            else
+            {
+                long desiredStartLCN = DataRunSequence.DataLastLCN;
+                freeClusterRunList = volume.AllocateClusters(desiredStartLCN, clustersToAllocate);
+
+                long firstRunStartLCN = freeClusterRunList[0].Key;
+                long firstRunLength = freeClusterRunList[0].Value;
+                if (firstRunStartLCN == desiredStartLCN)
+                {
+                    // Merge with last run
+                    DataRun lastRun = DataRunSequence[DataRunSequence.Count - 1];
+                    lastRun.RunLength += firstRunLength;
+                    HighestVCN += (long)firstRunLength;
+                    freeClusterRunList.RemoveAt(0);
+                }
+            }
+
             for (int index = 0; index < freeClusterRunList.Count; index++)
             {
                 long runStartLCN = freeClusterRunList[index].Key;
                 long runLength = freeClusterRunList[index].Value;
 
-                bool mergeWithLastRun = (index == 0 && runStartLCN == desiredStartLCN);
-                if (mergeWithLastRun)
-                {
-                    // we append this run to the last run
-                    DataRun lastRun = DataRunSequence[DataRunSequence.Count - 1];
-                    lastRun.RunLength += runLength;
-                    HighestVCN += (long)runLength;
-                }
-                else
-                {
-                    DataRun run = new DataRun();
-                    long previousLCN = DataRunSequence.LastDataRunStartLCN;
-                    run.RunOffset = runStartLCN - previousLCN;
-                    run.RunLength = runLength;
-                    HighestVCN += runLength;
-                    DataRunSequence.Add(run);
-                }
+                DataRun run = new DataRun();
+                long previousLCN = DataRunSequence.LastDataRunStartLCN;
+                run.RunOffset = runStartLCN - previousLCN;
+                run.RunLength = runLength;
+                HighestVCN += runLength;
+                DataRunSequence.Add(run);
             }
         }
 
@@ -286,7 +309,7 @@ namespace DiskAccessLibrary.FileSystems.NTFS
 
         /// <summary>
         /// When reading attributes, they may contain additional padding,
-        /// so we should use StoredRecordLength to advance the buffer position instead.
+        /// so we should use RecordLengthOnDisk to advance the buffer position instead.
         /// </summary>
         public override uint RecordLength
         {
