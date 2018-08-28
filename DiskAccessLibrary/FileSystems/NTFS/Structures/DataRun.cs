@@ -10,10 +10,12 @@ using System.IO;
 
 namespace DiskAccessLibrary.FileSystems.NTFS
 {
+    /// <remarks>
+    /// The maximum NTFS file size is 2^64 bytes, so total number of file clusters can be represented using long
+    /// https://docs.microsoft.com/en-us/previous-versions/windows/it-pro/windows-2000-server/cc938937(v=technet.10)
+    /// </remarks>
     public class DataRun
     {
-        // The maximum NTFS file size is 2^64 bytes, so total number of file clusters can be represented using long
-        // http://technet.microsoft.com/en-us/library/cc938937.aspx
         public long RunLength; // In clusters
         public long RunOffset; // In clusters, relative to previous data run start LCN
         public bool IsSparse;

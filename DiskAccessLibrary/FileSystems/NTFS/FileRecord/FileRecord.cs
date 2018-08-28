@@ -32,6 +32,9 @@ namespace DiskAccessLibrary.FileSystems.NTFS
             m_segments = segments;
         }
 
+        /// <remarks>
+        /// https://blogs.technet.microsoft.com/askcore/2009/10/16/the-four-stages-of-ntfs-file-growth/
+        /// </remarks>
         public void UpdateSegments(int maximumSegmentLength, int bytesPerSector, ushort minorNTFSVersion)
         {
             foreach (FileRecordSegment segment in m_segments)
@@ -323,13 +326,17 @@ namespace DiskAccessLibrary.FileSystems.NTFS
             }
         }
 
+        /// <remarks>
+        /// Only non-resident attributes can be fragmented.
+        /// References:
+        /// https://docs.microsoft.com/en-us/previous-versions/windows/it-pro/windows-2000-server/cc976808(v=technet.10)
+        /// https://blogs.technet.microsoft.com/askcore/2009/10/16/the-four-stages-of-ntfs-file-growth/
+        /// </remarks>
         public static List<AttributeRecord> GetAssembledAttributes(List<FileRecordSegment> segments)
         {
             List<AttributeRecord> result = new List<AttributeRecord>();
-            // we need to assemble fragmented attributes (if there are any)
+            // We need to assemble fragmented attributes (if there are any),
             // if two attributes have the same AttributeType and Name, then we need to assemble them back together.
-            // Note: only non-resident attributes can be fragmented
-            // Reference: http://technet.microsoft.com/en-us/library/cc976808.aspx
             Dictionary<KeyValuePair<AttributeType, string>, List<NonResidentAttributeRecord>> fragments = new Dictionary<KeyValuePair<AttributeType, string>, List<NonResidentAttributeRecord>>();
             foreach (FileRecordSegment segment in segments)
             {

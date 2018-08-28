@@ -161,8 +161,10 @@ namespace DiskAccessLibrary.FileSystems.NTFS
             }
         }
 
-        // The maximum NTFS file size is 2^64 bytes, so total number of file clusters can be represented using long
-        // http://technet.microsoft.com/en-us/library/cc938937.aspx
+        /// <remarks>
+        /// The maximum NTFS file size is 2^64 bytes, so total number of file clusters can be represented using long
+        /// https://docs.microsoft.com/en-us/previous-versions/windows/it-pro/windows-2000-server/cc938937(v=technet.10)
+        /// </remarks>
         public long DataClusterCount
         {
             get
