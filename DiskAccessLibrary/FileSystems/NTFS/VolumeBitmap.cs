@@ -268,17 +268,17 @@ namespace DiskAccessLibrary.FileSystems.NTFS
         private byte[] ReadDataCluster(long bitmapClusterVCN)
         {
             // VolumeBitmap data record is always non-resident (the NTFS v5.1 driver does not support a VolumeBitmap having a resident data record)
-            return FileRecord.Data.ReadCluster(bitmapClusterVCN);
+            return this.Data.ReadCluster(bitmapClusterVCN);
         }
 
         private byte[] ReadDataClusters(long bitmapClusterVCN, int count)
         {
-            return FileRecord.Data.ReadClusters(bitmapClusterVCN, count);
+            return this.Data.ReadClusters(bitmapClusterVCN, count);
         }
 
         private void WriteDataClusters(long bitmapClusterVCN, byte[] data)
         {
-            FileRecord.Data.WriteCluster(bitmapClusterVCN, data);
+            this.Data.WriteCluster(bitmapClusterVCN, data);
         }
 
         public long NumberOfFreeClusters

@@ -14,6 +14,7 @@ namespace DiskAccessLibrary.FileSystems.NTFS
     {
         private NTFSVolume m_volume;
         private FileRecord m_fileRecord;
+        private AttributeData m_data;
 
         public NTFSFile(NTFSVolume volume, long baseSegmentNumber)
         {
@@ -36,7 +37,7 @@ namespace DiskAccessLibrary.FileSystems.NTFS
             long clusterVCN = (long)(offset / (uint)m_volume.BytesPerCluster);
             int offsetInCluster = (int)(offset % (uint)m_volume.BytesPerCluster);
             int clusterCount = (int)Math.Ceiling((double)(offsetInCluster + length) / m_volume.BytesPerCluster);
-            byte[] clustersBytes = m_fileRecord.Data.ReadClusters(clusterVCN, clusterCount);
+            byte[] clustersBytes = this.Data.ReadClusters(clusterVCN, clusterCount);
             int readLength = clustersBytes.Length - offsetInCluster;
             if (readLength < length)
             {
@@ -49,7 +50,7 @@ namespace DiskAccessLibrary.FileSystems.NTFS
 
         public void WriteToFile(ulong offset, byte[] bytes)
         {
-            ulong currentSize = m_fileRecord.Data.RealSize;
+            ulong currentSize = this.Data.RealSize;
             if (offset + (uint)bytes.Length > currentSize)
             { 
                 // File needs to be extended
@@ -82,7 +83,7 @@ namespace DiskAccessLibrary.FileSystems.NTFS
                 }
                 else
                 {
-                    FileRecord.Data.WriteCluster(clusterVCN, clusterBytes);
+                    this.Data.WriteCluster(clusterVCN, clusterBytes);
                 }
                 clusterVCN++;
                 position += clusterBytes.Length;
@@ -98,7 +99,7 @@ namespace DiskAccessLibrary.FileSystems.NTFS
             int bytesLeftInCluster = m_volume.BytesPerCluster - offsetInCluster;
             int numberOfBytesToCopy = Math.Min(bytesLeftInCluster, bytes.Length);
 
-            byte[] clusterBytes = m_fileRecord.Data.ReadCluster(clusterVCN);
+            byte[] clusterBytes = this.Data.ReadCluster(clusterVCN);
             // last cluster could be partial
             if (clusterBytes.Length < offsetInCluster + numberOfBytesToCopy)
             {
@@ -108,23 +109,39 @@ namespace DiskAccessLibrary.FileSystems.NTFS
             }
 
             Array.Copy(bytes, 0, clusterBytes, offsetInCluster, numberOfBytesToCopy);
-            FileRecord.Data.WriteCluster(clusterVCN, clusterBytes);
+            this.Data.WriteCluster(clusterVCN, clusterBytes);
         }
 
         public void ExtendFile(ulong additionalLengthInBytes)
         {
-            m_fileRecord.Data.Extend(additionalLengthInBytes);
+            this.Data.Extend(additionalLengthInBytes);
             if (m_fileRecord.LongFileNameRecord != null)
             {
-                m_fileRecord.LongFileNameRecord.AllocatedSize = m_fileRecord.Data.AllocatedSize;
-                m_fileRecord.LongFileNameRecord.RealSize = m_fileRecord.Data.RealSize;
+                m_fileRecord.LongFileNameRecord.AllocatedSize = this.Data.AllocatedSize;
+                m_fileRecord.LongFileNameRecord.RealSize = this.Data.RealSize;
             }
             if (m_fileRecord.ShortFileNameRecord != null)
             {
-                m_fileRecord.ShortFileNameRecord.AllocatedSize = m_fileRecord.Data.AllocatedSize;
-                m_fileRecord.ShortFileNameRecord.RealSize = m_fileRecord.Data.RealSize;
+                m_fileRecord.ShortFileNameRecord.AllocatedSize = this.Data.AllocatedSize;
+                m_fileRecord.ShortFileNameRecord.RealSize = this.Data.RealSize;
             }
             m_volume.MasterFileTable.UpdateFileRecord(m_fileRecord);
+        }
+
+        public AttributeData Data
+        {
+            get
+            {
+                if (m_data == null)
+                {
+                    AttributeRecord record = m_fileRecord.DataRecord;
+                    if (record != null)
+                    {
+                        m_data = new AttributeData(m_volume, m_fileRecord, record);
+                    }
+                }
+                return m_data;
+            }
         }
 
         public NTFSVolume Volume
@@ -147,7 +164,7 @@ namespace DiskAccessLibrary.FileSystems.NTFS
         {
             get
             {
-                return m_fileRecord.Data.RealSize;
+                return this.Data.RealSize;
             }
         }
     }

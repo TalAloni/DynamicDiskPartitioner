@@ -33,6 +33,7 @@ namespace DiskAccessLibrary.FileSystems.NTFS
 
         private NTFSVolume m_volume;
         private FileRecord m_mftRecord;
+        private NTFSFile m_mftFile;
 
         public MasterFileTable(NTFSVolume volume) : this(volume, false, false)
         {
@@ -48,6 +49,7 @@ namespace DiskAccessLibrary.FileSystems.NTFS
         {
             m_volume = volume;
             m_mftRecord = ReadMftRecord(useMftMirror, manageMftMirror);
+            m_mftFile = new NTFSFile(m_volume, m_mftRecord);
             AttributeDataLengthToMakeNonResident = m_volume.BytesPerFileRecordSegment * 5 / 16; // We immitate the NTFS v5.1 driver
         }
 
@@ -68,7 +70,7 @@ namespace DiskAccessLibrary.FileSystems.NTFS
                 AttributeRecord attributeListRecord = mftRecordSegment.GetImmediateAttributeRecord(AttributeType.AttributeList);
                 if (attributeListRecord == null)
                 {
-                    return new FileRecord(m_volume, mftRecordSegment);
+                    return new FileRecord(mftRecordSegment);
                 }
                 else
                 {
@@ -98,7 +100,7 @@ namespace DiskAccessLibrary.FileSystems.NTFS
                             throw new InvalidDataException("Invalid MFT record, missing segment");
                         }
                     }
-                    return new FileRecord(m_volume, recordSegments);
+                    return new FileRecord(recordSegments);
                 }
             }
             else
@@ -148,7 +150,7 @@ namespace DiskAccessLibrary.FileSystems.NTFS
             // Note: File record always start at the beginning of a sector
             // Note: Record can span multiple clusters, or alternatively, several records can be stored in the same cluster
             long firstSectorIndex = segmentNumber * m_volume.SectorsPerFileRecordSegment;
-            byte[] segmentBytes = m_mftRecord.Data.ReadSectors(firstSectorIndex, m_volume.SectorsPerFileRecordSegment);
+            byte[] segmentBytes = m_mftFile.Data.ReadSectors(firstSectorIndex, m_volume.SectorsPerFileRecordSegment);
 
             if (FileRecordSegment.ContainsFileRecordSegment(segmentBytes))
             {
@@ -183,7 +185,7 @@ namespace DiskAccessLibrary.FileSystems.NTFS
                 AttributeRecord attributeListRecord = baseRecordSegment.GetImmediateAttributeRecord(AttributeType.AttributeList);
                 if (attributeListRecord == null)
                 {
-                    return new FileRecord(m_volume, baseRecordSegment);
+                    return new FileRecord(baseRecordSegment);
                 }
                 else
                 {
@@ -215,7 +217,7 @@ namespace DiskAccessLibrary.FileSystems.NTFS
                             return null;
                         }
                     }
-                    return new FileRecord(m_volume, recordSegments);
+                    return new FileRecord(recordSegments);
                 }
             }
             else
@@ -263,7 +265,7 @@ namespace DiskAccessLibrary.FileSystems.NTFS
             long firstSectorIndex = segmentNumber * m_volume.SectorsPerFileRecordSegment;
             byte[] recordSegmentBytes = recordSegment.GetBytes(m_volume.BytesPerFileRecordSegment, m_volume.BytesPerCluster, m_volume.MinorVersion);
 
-            m_mftRecord.Data.WriteSectors(firstSectorIndex, recordSegmentBytes);
+            m_mftFile.Data.WriteSectors(firstSectorIndex, recordSegmentBytes);
         }
 
         // In NTFS v3.1 the FileRecord's self reference SegmentNumber is 32 bits,

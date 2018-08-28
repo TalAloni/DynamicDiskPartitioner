@@ -16,19 +16,14 @@ namespace DiskAccessLibrary.FileSystems.NTFS
         private List<FileRecordSegment> m_segments;
         private List<AttributeRecord> m_attributes;
 
-        private NTFSVolume m_volume;
-        private AttributeData m_data;
-
-        public FileRecord(NTFSVolume volume, FileRecordSegment segment)
+        public FileRecord(FileRecordSegment segment)
         {
-            m_volume = volume;
             m_segments = new List<FileRecordSegment>();
             m_segments.Add(segment);
         }
 
-        public FileRecord(NTFSVolume volume, List<FileRecordSegment> segments)
+        public FileRecord(List<FileRecordSegment> segments)
         {
-            m_volume = volume;
             m_segments = segments;
         }
 
@@ -236,19 +231,11 @@ namespace DiskAccessLibrary.FileSystems.NTFS
             }
         }
 
-        public AttributeData Data
+        public AttributeRecord DataRecord
         {
             get
             {
-                if (m_data == null)
-                {
-                    AttributeRecord record = GetAttributeRecord(AttributeType.Data, String.Empty);
-                    if (record != null)
-                    {
-                        m_data = new AttributeData(m_volume, this, record);
-                    }
-                }
-                return m_data;
+                return GetAttributeRecord(AttributeType.Data, String.Empty);
             }
         }
 
@@ -256,9 +243,10 @@ namespace DiskAccessLibrary.FileSystems.NTFS
         {
             get
             {
-                if (this.Data.AttributeRecord is NonResidentAttributeRecord)
+                AttributeRecord dataRecord = this.DataRecord;
+                if (dataRecord is NonResidentAttributeRecord)
                 {
-                    return (NonResidentAttributeRecord)this.Data.AttributeRecord;
+                    return (NonResidentAttributeRecord)dataRecord;
                 }
                 else
                 {
