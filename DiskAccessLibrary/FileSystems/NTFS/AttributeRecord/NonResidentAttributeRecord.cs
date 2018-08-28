@@ -295,7 +295,7 @@ namespace DiskAccessLibrary.FileSystems.NTFS
             }
             else
             {
-                long desiredStartLCN = DataRunSequence.DataLastLCN;
+                long desiredStartLCN = DataRunSequence.DataLastLCN + 1;
                 freeClusterRunList = volume.AllocateClusters(desiredStartLCN, clustersToAllocate);
 
                 long firstRunStartLCN = freeClusterRunList[0].Key;
