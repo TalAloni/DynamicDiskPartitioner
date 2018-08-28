@@ -20,13 +20,13 @@ namespace DiskAccessLibrary.FileSystems.NTFS
         private NTFSVolume m_volume;
         private long? m_numberOfFreeClusters;
         private long m_searchStartIndex = 0;
-        private long m_numberOfUsableClustersInVolume; // This will correctly reflect the current number of clusters in the volume when extending the bitmap.
+        private long m_numberOfClustersInVolume; // This will correctly reflect the current number of clusters in the volume when extending the bitmap.
         private readonly int ExtendGranularity = 8; // The NTFS v5.1 driver extend the $Bitmap file in chunks of 8 bytes, let's immitate that.
 
         public VolumeBitmap(NTFSVolume volume) : base(volume, MasterFileTable.BitmapSegmentNumber)
         {
             m_volume = volume;
-            m_numberOfUsableClustersInVolume = m_volume.Size / m_volume.BytesPerCluster;
+            m_numberOfClustersInVolume = m_volume.Size / m_volume.BytesPerCluster;
         }
 
         /// <summary>
@@ -89,7 +89,7 @@ namespace DiskAccessLibrary.FileSystems.NTFS
             KeyValuePairList<long, long> result = new KeyValuePairList<long, long>();
 
             long leftToFind;
-            long endLCN = m_numberOfUsableClustersInVolume - 1;
+            long endLCN = m_numberOfClustersInVolume - 1;
             KeyValuePairList<long, long> segment = FindClustersToAllocate(desiredStartLCN, endLCN, numberOfClusters, out leftToFind);
             result.AddRange(segment);
 
@@ -167,7 +167,7 @@ namespace DiskAccessLibrary.FileSystems.NTFS
         private long CountNumberOfFreeClusters()
         {
             int transferSizeInClusters = Settings.MaximumTransferSizeLBA / m_volume.SectorsPerCluster;
-            long endLCN = m_numberOfUsableClustersInVolume - 1;
+            long endLCN = m_numberOfClustersInVolume - 1;
             long bitmapLastVCN = endLCN / (Volume.BytesPerCluster * 8);
             
             long result = 0;
@@ -242,7 +242,7 @@ namespace DiskAccessLibrary.FileSystems.NTFS
                 }
                 WriteToFile((ulong)(bitmapClusterVCN * m_volume.BytesPerCluster), bitmap);
                 m_numberOfFreeClusters += numberOfVolumeClustersToAllocate;
-                m_numberOfUsableClustersInVolume += numberOfVolumeClustersToAllocate;
+                m_numberOfClustersInVolume += numberOfVolumeClustersToAllocate;
                 numberOfAdditionalClusters -= numberOfVolumeClustersToAllocate;
             }
 
@@ -260,7 +260,7 @@ namespace DiskAccessLibrary.FileSystems.NTFS
                 }
                 WriteToFile(this.Length, bitmap);
                 m_numberOfFreeClusters += numberOfVolumeClustersToAllocate;
-                m_numberOfUsableClustersInVolume += numberOfVolumeClustersToAllocate;
+                m_numberOfClustersInVolume += numberOfVolumeClustersToAllocate;
                 numberOfAdditionalClusters -= numberOfVolumeClustersToAllocate;
             }
         }
