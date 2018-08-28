@@ -14,7 +14,7 @@ namespace DiskAccessLibrary.FileSystems.NTFS
 {
     public class MasterFileTable
     {
-        public const int LastReservedMftSegmentNumber = 23; // 12-23 are reserved for additional metafiles
+        public const int LastReservedMftSegmentNumber = 15; // 12-15 are reserved for additional metafiles
         
         public const long MasterFileTableSegmentNumber = 0;
         public const long MftMirrorSegmentNumber = 1;
@@ -31,37 +31,35 @@ namespace DiskAccessLibrary.FileSystems.NTFS
         // The $Extend Metafile is simply a directory index that contains information on where to locate the last four metafiles ($ObjId, $Quota, $Reparse and $UsnJrnl)
         public readonly int AttributeDataLengthToMakeNonResident;
 
-        public NTFSVolume m_volume;
-        private bool m_useMftMirror;
-        
+        private NTFSVolume m_volume;
         private FileRecord m_mftRecord;
 
-        public MasterFileTable(NTFSVolume volume, bool useMftMirror)
+        public MasterFileTable(NTFSVolume volume) : this(volume, false, false)
+        {
+        }
+
+        /// <param name="useMftMirror">Strap the MFT using the MFT mirror</param>
+        public MasterFileTable(NTFSVolume volume, bool useMftMirror) : this(volume, useMftMirror, false)
+        {
+        }
+
+        /// <param name="useMftMirror">Strap the MFT using the MFT mirror</param>
+        public MasterFileTable(NTFSVolume volume, bool useMftMirror, bool manageMftMirror)
         {
             m_volume = volume;
-            m_useMftMirror = useMftMirror;
-
-            m_mftRecord = ReadMftRecord();
+            m_mftRecord = ReadMftRecord(useMftMirror, manageMftMirror);
             AttributeDataLengthToMakeNonResident = m_volume.BytesPerFileRecordSegment * 5 / 16; // We immitate the NTFS v5.1 driver
         }
 
-        private FileRecord ReadMftRecord()
+        private FileRecord ReadMftRecord(bool useMftMirror, bool readMftMirror)
         {
             NTFSBootRecord bootRecord = m_volume.BootRecord;
 
             if (bootRecord != null)
             {
-                long mftStartLCN;
-                if (m_useMftMirror)
-                {
-                    mftStartLCN = (long)bootRecord.MftMirrorStartLCN;
-                }
-                else
-                {
-                    mftStartLCN = (long)bootRecord.MftStartLCN;
-                }
-                
-                FileRecordSegment mftRecordSegment = GetRecordSegmentOfMasterFileTable(mftStartLCN, MasterFileTableSegmentNumber);
+                long mftStartLCN = useMftMirror ? (long)bootRecord.MftMirrorStartLCN : (long)bootRecord.MftStartLCN;
+                long mftSegmentNumber = readMftMirror ? MftMirrorSegmentNumber : MasterFileTableSegmentNumber;
+                FileRecordSegment mftRecordSegment = ReadFileRecordSegment(mftStartLCN, mftSegmentNumber);
                 if (!mftRecordSegment.IsBaseFileRecord)
                 {
                     throw new InvalidDataException("Invalid MFT record, not a base record");
@@ -90,7 +88,7 @@ namespace DiskAccessLibrary.FileSystems.NTFS
 
                     foreach (MftSegmentReference reference in references)
                     {
-                        FileRecordSegment segment = GetRecordSegmentOfMasterFileTable(mftStartLCN, reference);
+                        FileRecordSegment segment = ReadFileRecordSegment(mftStartLCN, reference);
                         if (segment != null)
                         {
                             recordSegments.Add(segment);
@@ -109,9 +107,9 @@ namespace DiskAccessLibrary.FileSystems.NTFS
             }
         }
 
-        private FileRecordSegment GetRecordSegmentOfMasterFileTable(long mftStartLCN, MftSegmentReference reference)
+        private FileRecordSegment ReadFileRecordSegment(long mftStartLCN, MftSegmentReference reference)
         {
-            FileRecordSegment result = GetRecordSegmentOfMasterFileTable(mftStartLCN, reference.SegmentNumber);
+            FileRecordSegment result = ReadFileRecordSegment(mftStartLCN, reference.SegmentNumber);
             if (result.SequenceNumber != reference.SequenceNumber)
             {
                 // The file record segment has been modified, and an older version has been requested
@@ -121,13 +119,14 @@ namespace DiskAccessLibrary.FileSystems.NTFS
         }
 
         /// <summary>
-        /// We can't use GetFileRecordSegment before strapping the MFT
+        /// This method is used to read the record segment of the MFT itself.
+        /// Only after strapping the MFT we can use GetFileRecordSegment which relies on the MFT file record.
         /// </summary>
-        private FileRecordSegment GetRecordSegmentOfMasterFileTable(long mftStartLCN, long segmentNumber)
+        private FileRecordSegment ReadFileRecordSegment(long mftStartLCN, long segmentNumber)
         {
             long sectorIndex = mftStartLCN * m_volume.SectorsPerCluster + segmentNumber * m_volume.SectorsPerFileRecordSegment;
             byte[] bytes = m_volume.ReadSectors(sectorIndex, m_volume.SectorsPerFileRecordSegment);
-            FileRecordSegment result = new FileRecordSegment(bytes, 0, m_volume.BytesPerSector, MasterFileTableSegmentNumber);
+            FileRecordSegment result = new FileRecordSegment(bytes, 0, m_volume.BytesPerSector, segmentNumber);
             return result;
         }
 
