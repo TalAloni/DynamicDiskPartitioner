@@ -6,37 +6,25 @@
  */
 using System;
 using System.Collections.Generic;
-using System.Text;
 using Utilities;
 
 namespace DiskAccessLibrary.FileSystems.NTFS
 {
-    [Flags]
-    public enum IndexRootFlags : byte
-    { 
-        LargeIndex = 0x01, // denotes the presence of IndexAllocation record
-    }
-
-    // IndexRoot attribute is always resident
+    /// <remarks>
+    /// IndexRoot attribute is always resident.
+    /// </remarks>
     public class IndexRootRecord : ResidentAttributeRecord
     {
         public const string FileNameIndexName = "$I30";
-
-        /* Index root start */ 
+ 
         public AttributeType IndexedAttributeType; // FileName for directories
         public CollationRule CollationRule;
         public uint IndexAllocationEntryLength; // in bytes
         public byte ClustersPerIndexRecord;
         // 3 zero bytes
-        /* Index root end */
-        /* Index Header start */
-        public uint EntriesOffset; // relative to Index Header start offset
-        public uint IndexLength;  // including the Index Header
-        public uint AllocatedLength;
-        public IndexRootFlags IndexFlags;
-        // 3 zero bytes
-        /* Index Header end */
-
+        public IndexHeader IndexHeader;
+        // Index node
+        
         public List<IndexNodeEntry> IndexEntries = new List<IndexNodeEntry>();
         public List<FileNameIndexEntry> FileNameEntries = new List<FileNameIndexEntry>();
 
@@ -47,15 +35,11 @@ namespace DiskAccessLibrary.FileSystems.NTFS
             IndexAllocationEntryLength = LittleEndianConverter.ToUInt32(this.Data, 0x08);
             ClustersPerIndexRecord = ByteReader.ReadByte(this.Data, 0x0C);
             // 3 zero bytes (padding to 8-byte boundary)
-            EntriesOffset = LittleEndianConverter.ToUInt32(this.Data, 0x10);
-            IndexLength = LittleEndianConverter.ToUInt32(this.Data, 0x14);
-            AllocatedLength = LittleEndianConverter.ToUInt32(this.Data, 0x18);
-            IndexFlags = (IndexRootFlags)ByteReader.ReadByte(this.Data, 0x1C);
-            // 3 zero bytes (padding to 8-byte boundary)
-
+            IndexHeader = new IndexHeader(this.Data, 0x10);
+            
             if (Name == FileNameIndexName)
             {
-                int position = 0x10 + (int)EntriesOffset;
+                int position = 0x10 + (int)IndexHeader.EntriesOffset;
                 if (IsLargeIndex)
                 {
                     IndexNode node = new IndexNode(this.Data, position);
@@ -89,7 +73,7 @@ namespace DiskAccessLibrary.FileSystems.NTFS
         {
             get
             {
-                return (IndexFlags & IndexRootFlags.LargeIndex) > 0;
+                return (IndexHeader.IndexFlags & IndexHeaderFlags.LargeIndex) > 0;
             }
         }
     }
