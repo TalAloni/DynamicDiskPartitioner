@@ -1,4 +1,4 @@
-/* Copyright (C) 2014 Tal Aloni <tal.aloni.il@gmail.com>. All rights reserved.
+/* Copyright (C) 2014-2018 Tal Aloni <tal.aloni.il@gmail.com>. All rights reserved.
  * 
  * You can redistribute this program and/or modify it under the terms of
  * the GNU Lesser Public License as published by the Free Software Foundation,
@@ -6,7 +6,6 @@
  */
 using System;
 using System.Collections.Generic;
-using System.Text;
 using Utilities;
 
 namespace DiskAccessLibrary.FileSystems.NTFS
@@ -25,12 +24,13 @@ namespace DiskAccessLibrary.FileSystems.NTFS
             KeyValuePairList<MftSegmentReference, FileNameRecord> result = new KeyValuePairList<MftSegmentReference, FileNameRecord>();
             List<IndexNodeEntry> parents = new List<IndexNodeEntry>(rootRecord.IndexEntries);
             List<IndexRecord> leaves = new List<IndexRecord>();
+            NonResidentAttributeData attributeData = new NonResidentAttributeData(volume, this);
 
             int parentIndex = 0;
             while (parentIndex < parents.Count)
             {
                 IndexNodeEntry parent = parents[parentIndex];
-                byte[] clusters = this.ReadDataClusters(volume, parent.SubnodeVCN, rootRecord.ClustersPerIndexRecord);
+                byte[] clusters = attributeData.ReadClusters(parent.SubnodeVCN, rootRecord.ClustersPerIndexRecord);
                 IndexRecord record = new IndexRecord(clusters, 0);
                 if (record.HasChildren)
                 {

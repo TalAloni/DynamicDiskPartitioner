@@ -62,6 +62,7 @@
     <Compile Include="FileSystems\NTFS\Adapters\NTFSFileSystem.cs" />
     <Compile Include="FileSystems\NTFS\AttributeData\AttributeData.cs" />
     <Compile Include="FileSystems\NTFS\AttributeData\AttributeList.cs" />
+    <Compile Include="FileSystems\NTFS\AttributeData\NonResidentAttributeData.cs" />
     <Compile Include="FileSystems\NTFS\AttributeRecord\AttributeRecord.cs" />
     <Compile Include="FileSystems\NTFS\AttributeRecord\FileNameAttributeRecord.cs" />
     <Compile Include="FileSystems\NTFS\AttributeRecord\IndexAllocationRecord.cs" />

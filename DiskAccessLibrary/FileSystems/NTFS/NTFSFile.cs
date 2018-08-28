@@ -12,8 +12,8 @@ namespace DiskAccessLibrary.FileSystems.NTFS
 {
     public class NTFSFile
     {
-        NTFSVolume m_volume;
-        FileRecord m_fileRecord;
+        private NTFSVolume m_volume;
+        private FileRecord m_fileRecord;
 
         public NTFSFile(NTFSVolume volume, long baseSegmentNumber)
         {
@@ -111,10 +111,9 @@ namespace DiskAccessLibrary.FileSystems.NTFS
             FileRecord.Data.WriteCluster(clusterVCN, clusterBytes);
         }
 
-        /// <param name="additionalLength">In bytes</param>
-        public void ExtendFile(ulong additionalLength)
+        public void ExtendFile(ulong additionalLengthInBytes)
         {
-            m_fileRecord.Data.ExtendRecord(additionalLength);
+            m_fileRecord.Data.Extend(additionalLengthInBytes);
             if (m_fileRecord.LongFileNameRecord != null)
             {
                 m_fileRecord.LongFileNameRecord.AllocatedSize = m_fileRecord.Data.AllocatedSize;

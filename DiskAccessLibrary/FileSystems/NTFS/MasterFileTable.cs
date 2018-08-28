@@ -149,7 +149,7 @@ namespace DiskAccessLibrary.FileSystems.NTFS
             // Note: File record always start at the beginning of a sector
             // Note: Record can span multiple clusters, or alternatively, several records can be stored in the same cluster
             long firstSectorIndex = segmentNumber * m_volume.SectorsPerFileRecordSegment;
-            byte[] segmentBytes = m_mftRecord.NonResidentDataRecord.ReadDataSectors(m_volume, firstSectorIndex, m_volume.SectorsPerFileRecordSegment);
+            byte[] segmentBytes = m_mftRecord.Data.ReadSectors(firstSectorIndex, m_volume.SectorsPerFileRecordSegment);
 
             if (FileRecordSegment.ContainsFileRecordSegment(segmentBytes))
             {
@@ -262,10 +262,9 @@ namespace DiskAccessLibrary.FileSystems.NTFS
         {
             long segmentNumber = recordSegment.MftSegmentNumber;
             long firstSectorIndex = segmentNumber * m_volume.SectorsPerFileRecordSegment;
-
             byte[] recordSegmentBytes = recordSegment.GetBytes(m_volume.BytesPerFileRecordSegment, m_volume.BytesPerCluster, m_volume.MinorVersion);
 
-            m_mftRecord.NonResidentDataRecord.WriteDataSectors(m_volume, firstSectorIndex, recordSegmentBytes);
+            m_mftRecord.Data.WriteSectors(firstSectorIndex, recordSegmentBytes);
         }
 
         // In NTFS v3.1 the FileRecord's self reference SegmentNumber is 32 bits,

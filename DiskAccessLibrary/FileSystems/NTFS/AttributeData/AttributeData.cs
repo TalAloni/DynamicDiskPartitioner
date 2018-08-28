@@ -38,7 +38,8 @@ namespace DiskAccessLibrary.FileSystems.NTFS
         {
             if (m_attributeRecord is NonResidentAttributeRecord)
             {
-                return ((NonResidentAttributeRecord)m_attributeRecord).ReadDataClusters(m_volume, clusterVCN, count);
+                NonResidentAttributeData attributeData = new NonResidentAttributeData(m_volume, (NonResidentAttributeRecord)m_attributeRecord);
+                return attributeData.ReadClusters(clusterVCN, count);
             }
             else
             {
@@ -75,7 +76,8 @@ namespace DiskAccessLibrary.FileSystems.NTFS
         {
             if (m_attributeRecord is NonResidentAttributeRecord)
             {
-                ((NonResidentAttributeRecord)m_attributeRecord).WriteDataClusters(m_volume, clusterVCN, data);
+                NonResidentAttributeData attributeData = new NonResidentAttributeData(m_volume, (NonResidentAttributeRecord)m_attributeRecord);
+                attributeData.WriteClusters(clusterVCN, data);
             }
             else
             {
@@ -92,17 +94,44 @@ namespace DiskAccessLibrary.FileSystems.NTFS
             }
         }
 
-        public void ExtendRecord(ulong additionalLength)
+        public byte[] ReadSectors(long firstSectorIndex, int count)
+        {
+            if (m_attributeRecord is NonResidentAttributeRecord)
+            {
+                NonResidentAttributeData attributeData = new NonResidentAttributeData(m_volume, (NonResidentAttributeRecord)m_attributeRecord);
+                return attributeData.ReadSectors(firstSectorIndex, count);
+            }
+            else
+            {
+                throw new NotImplementedException();
+            }
+        }
+
+        public void WriteSectors(long firstSectorIndex, byte[] data)
+        {
+            if (m_attributeRecord is NonResidentAttributeRecord)
+            {
+                NonResidentAttributeData attributeData = new NonResidentAttributeData(m_volume, (NonResidentAttributeRecord)m_attributeRecord);
+                attributeData.WriteSectors(firstSectorIndex, data);
+            }
+            else
+            {
+                throw new NotImplementedException();
+            }
+        }
+
+        public void Extend(ulong additionalLengthInBytes)
         {
             ulong currentSize = this.RealSize;
             if (m_attributeRecord is NonResidentAttributeRecord)
             {
-                ((NonResidentAttributeRecord)m_attributeRecord).ExtendRecord(m_volume, additionalLength);
+                NonResidentAttributeData attributeData = new NonResidentAttributeData(m_volume, (NonResidentAttributeRecord)m_attributeRecord);
+                attributeData.Extend(additionalLengthInBytes);
             }
             else
             {
                 byte[] data = ((ResidentAttributeRecord)m_attributeRecord).Data;
-                ulong finalDataLength = (uint)data.Length + additionalLength;
+                ulong finalDataLength = (uint)data.Length + additionalLengthInBytes;
                 if (finalDataLength >= (ulong)m_volume.MasterFileTable.AttributeDataLengthToMakeNonResident)
                 {
                     // Convert the attribute to non-resident
@@ -113,17 +142,16 @@ namespace DiskAccessLibrary.FileSystems.NTFS
                     }
                     m_fileRecord.RemoveAttributeRecord(m_attributeRecord.AttributeType, m_attributeRecord.Name);
                     NonResidentAttributeRecord attributeRecord = new NonResidentAttributeRecord(m_attributeRecord.AttributeType, m_attributeRecord.Name, m_attributeRecord.Instance);
-                    attributeRecord.AllocateAdditionalClusters(m_volume, clustersToAllocate);
-                    attributeRecord.FileSize = finalDataLength;
-                    attributeRecord.ValidDataLength = (uint)data.Length;
-                    attributeRecord.WriteDataClusters(m_volume, 0, data);
+                    NonResidentAttributeData attributeData = new NonResidentAttributeData(m_volume, attributeRecord);
+                    attributeData.Extend(finalDataLength);
+                    attributeData.WriteClusters(0, data);
                     m_attributeRecord = attributeRecord;
                     m_fileRecord.Attributes.Add(m_attributeRecord);
                 }
                 else
                 {
                     int currentLength = data.Length;
-                    byte[] temp = new byte[currentLength + (int)additionalLength];
+                    byte[] temp = new byte[currentLength + (int)additionalLengthInBytes];
                     Array.Copy(data, temp, data.Length);
                     ((ResidentAttributeRecord)m_attributeRecord).Data = temp;
                 }
