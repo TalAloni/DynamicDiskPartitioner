@@ -298,6 +298,14 @@ namespace DiskAccessLibrary.FileSystems.NTFS
             }
         }
 
+        public long NumberOfFreeClusters
+        {
+            get
+            {
+                return m_bitmap.NumberOfFreeClusters;
+            }
+        }
+
         public long FreeSpace
         {
             get
@@ -378,6 +386,11 @@ namespace DiskAccessLibrary.FileSystems.NTFS
                 VolumeInformationRecord volumeInformationRecord = GetVolumeInformationRecord();
                 return volumeInformationRecord.MinorVersion;
             }
+        }
+
+        public KeyValuePairList<long, long> AllocateClusters(long numberOfClusters)
+        {
+            return m_bitmap.AllocateClusters(numberOfClusters);
         }
 
         public KeyValuePairList<long, long> AllocateClusters(long desiredStartLCN, long numberOfClusters)
