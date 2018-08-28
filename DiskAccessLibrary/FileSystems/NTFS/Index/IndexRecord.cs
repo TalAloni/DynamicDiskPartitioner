@@ -16,11 +16,7 @@ namespace DiskAccessLibrary.FileSystems.NTFS
         public const string ValidSignature = "INDX";
 
         /* Index Record Header start*/
-        /* Start of MULTI_SECTOR_HEADER */
-        public string Signature = ValidSignature;
-        // private ushort UpdateSequenceArrayOffset;
-        // private ushort UpdateSequenceArraySize; // Number of (2 byte) words
-        /* End of MULTI_SECTOR_HEADER */
+        // MULTI_SECTOR_HEADER
         public ulong LogFileSequenceNumber;
         public long RecordVCN; // Stored as unsigned, but is within the range of long
         /* Header */
@@ -39,13 +35,11 @@ namespace DiskAccessLibrary.FileSystems.NTFS
 
         public IndexRecord(byte[] buffer, int offset)
         {
-            Signature = ByteReader.ReadAnsiString(buffer, offset + 0x00, 4);
-            if (Signature != ValidSignature)
+            MultiSectorHeader multiSectorHeader = new MultiSectorHeader(buffer, offset + 0x00);
+            if (multiSectorHeader.Signature != ValidSignature)
             {
                 throw new InvalidDataException("Invalid INDX record signature");
             }
-            ushort updateSequenceArrayOffset = LittleEndianConverter.ToUInt16(buffer, offset + 0x04);
-            ushort updateSequenceArraySize = LittleEndianConverter.ToUInt16(buffer, offset + 0x06);
             LogFileSequenceNumber = LittleEndianConverter.ToUInt64(buffer, offset + 0x08);
             RecordVCN = (long)LittleEndianConverter.ToUInt64(buffer, offset + 0x10);
             EntriesOffset = LittleEndianConverter.ToUInt32(buffer, offset + 0x18);
@@ -53,19 +47,8 @@ namespace DiskAccessLibrary.FileSystems.NTFS
             AllocatedLength = LittleEndianConverter.ToUInt32(buffer, offset + 0x20);
             HasChildren = ByteReader.ReadByte(buffer, offset + 0x24) > 0;
 
-            int position = offset + updateSequenceArrayOffset;
-            UpdateSequenceNumber = LittleEndianConverter.ToUInt16(buffer, position);
-            position += 2;
-            List<byte[]> updateSequenceReplacementData = new List<byte[]>();
-            for (int index = 0; index < updateSequenceArraySize - 1; index++)
-            {
-                byte[] endOfSectorBytes = new byte[2];
-                endOfSectorBytes[0] = buffer[position + 0];
-                endOfSectorBytes[1] = buffer[position + 1];
-                updateSequenceReplacementData.Add(endOfSectorBytes);
-                position += 2;
-            }
-
+            int position = offset + multiSectorHeader.UpdateSequenceArrayOffset;
+            List<byte[]> updateSequenceReplacementData = MultiSectorHelper.ReadUpdateSequenceArray(buffer, position, multiSectorHeader.UpdateSequenceArraySize, out UpdateSequenceNumber);
             MultiSectorHelper.DecodeSegmentBuffer(buffer, offset, UpdateSequenceNumber, updateSequenceReplacementData);
 
             position = 0x18 + (int)EntriesOffset;

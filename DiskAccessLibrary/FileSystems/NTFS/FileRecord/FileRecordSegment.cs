@@ -19,11 +19,7 @@ namespace DiskAccessLibrary.FileSystems.NTFS
         public const int NTFS31UpdateSequenceArrayOffset = 0x30; // NTFS v3.1 and later   (XP and later)
 
         /* Start of header */
-        /* Start of MULTI_SECTOR_HEADER */
-        public string Signature = ValidSignature;
-        // ushort UpdateSequenceArrayOffset;
-        // ushort UpdateSequenceArraySize; // number of (2 byte) words
-        /* End of MULTI_SECTOR_HEADER */
+        // MULTI_SECTOR_HEADER
         public ulong LogFileSequenceNumber;
         public ushort SequenceNumber; // This value is incremented each time that a file record segment is freed
         public ushort HardLinkCount;
@@ -49,13 +45,11 @@ namespace DiskAccessLibrary.FileSystems.NTFS
 
         public FileRecordSegment(byte[] buffer, int offset, int bytesPerSector, long segmentNumber)
         {
-            Signature = ByteReader.ReadAnsiString(buffer, offset + 0x00, 4);
-            if (Signature != ValidSignature)
+            MultiSectorHeader multiSectorHeader = new MultiSectorHeader(buffer, offset + 0x00);
+            if (multiSectorHeader.Signature != ValidSignature)
             {
                 throw new InvalidDataException("Invalid FILE record signature");
             }
-            ushort updateSequenceArrayOffset = LittleEndianConverter.ToUInt16(buffer, offset + 0x04);
-            ushort updateSequenceArraySize = LittleEndianConverter.ToUInt16(buffer, offset + 0x06);
             LogFileSequenceNumber = LittleEndianConverter.ToUInt64(buffer, offset + 0x08);
             SequenceNumber = LittleEndianConverter.ToUInt16(buffer, offset + 0x10);
             HardLinkCount = LittleEndianConverter.ToUInt16(buffer, offset + 0x12);
@@ -69,23 +63,8 @@ namespace DiskAccessLibrary.FileSystems.NTFS
             // 2 zeros - padding
             MftSegmentNumberOnDisk = LittleEndianConverter.ToUInt32(buffer, offset + 0x2C);
 
-            // There is an UpdateSequenceNumber for the FileRecordSegment,
-            // and an entry in the UpdateSequenceArray for each sector of the record
-            // The last two bytes of each sector contains this entry for integrity-check purposes
-            int position = offset + updateSequenceArrayOffset;
-            UpdateSequenceNumber = LittleEndianConverter.ToUInt16(buffer, position);
-            position += 2;
-            // This stores the data that was supposed to be placed at the end of each sector, and was replaced with an UpdateSequenceNumber
-            List<byte[]> updateSequenceReplacementData = new List<byte[]>();
-            for (int index = 0; index < updateSequenceArraySize - 1; index++)
-            {
-                byte[] endOfSectorBytes = new byte[2];
-                endOfSectorBytes[0] = buffer[position + 0];
-                endOfSectorBytes[1] = buffer[position + 1];
-                updateSequenceReplacementData.Add(endOfSectorBytes);
-                position += 2;
-            }
-
+            int position = offset + multiSectorHeader.UpdateSequenceArrayOffset;
+            List<byte[]> updateSequenceReplacementData = MultiSectorHelper.ReadUpdateSequenceArray(buffer, position, multiSectorHeader.UpdateSequenceArraySize, out UpdateSequenceNumber);
             MultiSectorHelper.DecodeSegmentBuffer(buffer, offset, UpdateSequenceNumber, updateSequenceReplacementData);
 
             // read attributes
@@ -121,12 +100,11 @@ namespace DiskAccessLibrary.FileSystems.NTFS
                 updateSequenceArrayOffset = NTFS31UpdateSequenceArrayOffset;
             }
 
+            MultiSectorHeader multiSectorHeader = new MultiSectorHeader(ValidSignature, updateSequenceArrayOffset, updateSequenceArraySize);
             ushort firstAttributeOffset = GetFirstAttributeOffset(segmentLength, minorNTFSVersion);
 
             byte[] buffer = new byte[segmentLength];
-            ByteWriter.WriteAnsiString(buffer, 0, Signature, 4);
-            LittleEndianWriter.WriteUInt16(buffer, 0x04, updateSequenceArrayOffset);
-            LittleEndianWriter.WriteUInt16(buffer, 0x06, updateSequenceArraySize);
+            multiSectorHeader.WriteBytes(buffer, 0x00);
             LittleEndianWriter.WriteUInt64(buffer, 0x08, LogFileSequenceNumber);
             LittleEndianWriter.WriteUInt16(buffer, 0x10, SequenceNumber);
             LittleEndianWriter.WriteUInt16(buffer, 0x12, HardLinkCount);
@@ -158,17 +136,9 @@ namespace DiskAccessLibrary.FileSystems.NTFS
             uint segmentRealSize = (uint)position;
             LittleEndianWriter.WriteUInt32(buffer, 0x18, segmentRealSize);
 
-            // write UpdateSequenceNumber and UpdateSequenceReplacementData
+            // Write UpdateSequenceNumber and UpdateSequenceReplacementData
             List<byte[]> updateSequenceReplacementData = MultiSectorHelper.EncodeSegmentBuffer(buffer, 0, segmentLength, UpdateSequenceNumber);
-            position = updateSequenceArrayOffset;
-            LittleEndianWriter.WriteUInt16(buffer, position, UpdateSequenceNumber);
-            position += 2;
-            foreach (byte[] endOfSectorBytes in updateSequenceReplacementData)
-            {
-                ByteWriter.WriteBytes(buffer, position, endOfSectorBytes);
-                position += 2;
-            }
-
+            MultiSectorHelper.WriteUpdateSequenceArray(buffer, updateSequenceArrayOffset, updateSequenceArraySize, UpdateSequenceNumber, updateSequenceReplacementData);
             return buffer;
         }
 

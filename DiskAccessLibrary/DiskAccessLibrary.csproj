@@ -99,6 +99,7 @@
     <Compile Include="FileSystems\NTFS\Structures\DataRunSequence.cs" />
     <Compile Include="FileSystems\NTFS\Structures\FileNameRecord.cs" />
     <Compile Include="FileSystems\NTFS\Structures\MftSegmentReference.cs" />
+    <Compile Include="FileSystems\NTFS\Structures\MultiSectorHeader.cs" />
     <Compile Include="FileSystems\NTFS\VolumeBitmap.cs" />
     <Compile Include="Helpers\BasicDiskHelper.cs" />
     <Compile Include="Helpers\DiskExtentHelper.cs" />
