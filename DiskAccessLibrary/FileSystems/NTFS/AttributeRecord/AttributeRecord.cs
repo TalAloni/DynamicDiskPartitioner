@@ -144,6 +144,14 @@ namespace DiskAccessLibrary.FileSystems.NTFS
             }
         }
 
+        public uint RecordLengthOnDisk
+        {
+            get
+            {
+                return m_recordLengthOnDisk;
+            }
+        }
+
         /// <summary>
         /// When reading attributes, they may contain additional padding,
         /// so we should use RecordLengthOnDisk to advance the buffer position instead.
@@ -153,12 +161,9 @@ namespace DiskAccessLibrary.FileSystems.NTFS
             get;
         }
 
-        public uint RecordLengthOnDisk
+        public abstract ulong DataRealSize
         {
-            get
-            {
-                return m_recordLengthOnDisk;
-            }
+            get;
         }
     }
 }

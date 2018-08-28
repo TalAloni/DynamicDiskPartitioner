@@ -133,6 +133,14 @@ namespace DiskAccessLibrary.FileSystems.NTFS
             }
         }
 
+        public override ulong DataRealSize
+        {
+            get
+            {
+                return FileSize;
+            }
+        }
+
         public DataRunSequence DataRunSequence
         {
             get
