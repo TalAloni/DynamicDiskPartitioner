@@ -11,23 +11,19 @@ using Utilities;
 
 namespace DiskAccessLibrary.FileSystems.NTFS
 {
-    // http://blogs.technet.com/b/askcore/archive/2009/10/16/the-four-stages-of-ntfs-file-growth.aspx
-    // Notes: 
-    // 1. A file can only have one attribute list and the $ATTRIBUTE_LIST record must reside in the base record segment
-    // 2. AttributeList record is not necessarily resident.
-    // 3. AttributeList can point to both resident and non-resident records
-    public class AttributeList
+    /// <remarks>
+    /// 1. A file can only have one attribute list and the $ATTRIBUTE_LIST record must reside in the base record segment
+    /// 2. AttributeList data is not necessarily resident.
+    /// 3. AttributeList can point to both resident and non-resident records.
+    /// </remarks>
+    /// http://blogs.technet.com/b/askcore/archive/2009/10/16/the-four-stages-of-ntfs-file-growth.aspx
+    public class AttributeList : AttributeData
     {
-        private NTFSVolume m_volume;
-        private AttributeRecord m_record;
         public List<AttributeListEntry> Attributes = new List<AttributeListEntry>();
 
-        public AttributeList(NTFSVolume volume, AttributeRecord record)
+        public AttributeList(NTFSVolume volume, AttributeRecord attributeRecord) : base(volume, null, attributeRecord)
         {
-            m_volume = volume;
-            m_record = record;
-
-            byte[] data = m_record.GetData(volume);
+            byte[] data = ReadClusters(0, (int)ClusterCount);
 
             int position = 0;
             while (position < data.Length)

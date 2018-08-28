@@ -107,19 +107,6 @@ namespace DiskAccessLibrary.FileSystems.NTFS
             return buffer;
         }
 
-        /// <summary>
-        /// Will read all of the data the attribute have, this should only be used when the data length is manageable
-        /// </summary>
-        public override byte[] GetData(NTFSVolume volume)
-        {
-            long clusterCount = HighestVCN - LowestVCN + 1;
-            if (clusterCount > Int32.MaxValue)
-            {
-                throw new InvalidOperationException("Improper usage of GetData() method");
-            }
-            return ReadDataClusters(volume, LowestVCN, (int)clusterCount);
-        }
-
         /// <param name="clusterVCN">Cluster index</param>
         public byte[] ReadDataCluster(NTFSVolume volume, long clusterVCN)
         {

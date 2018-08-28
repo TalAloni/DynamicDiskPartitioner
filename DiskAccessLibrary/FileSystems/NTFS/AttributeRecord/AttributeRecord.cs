@@ -72,8 +72,6 @@ namespace DiskAccessLibrary.FileSystems.NTFS
             }
         }
 
-        public abstract byte[] GetData(NTFSVolume volume);
-
         public AttributeType AttributeType
         {
             get

@@ -58,11 +58,6 @@ namespace DiskAccessLibrary.FileSystems.NTFS
             return buffer;
         }
 
-        public override byte[] GetData(NTFSVolume volume)
-        {
-            return Data;
-        }
-
         /// <summary>
         /// When reading attributes, they may contain additional padding,
         /// so we should use RecordLengthOnDisk to advance the buffer position instead.
