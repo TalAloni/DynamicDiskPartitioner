@@ -6,25 +6,26 @@
  */
 using System;
 using System.Collections.Generic;
-using System.Text;
 using Utilities;
 
 namespace DiskAccessLibrary.FileSystems.NTFS
 {
-    // StandardInformation attribute is always resident
+    /// <remarks>
+    /// StandardInformation attribute is always resident.
+    /// </remarks>
     public class StandardInformationRecord : ResidentAttributeRecord
     {
         public const int Length = 0x30;
         public const int LengthExtended = 0x48; // Note: even on NTFS 3.x, a few metafiles will use shorter length records.
 
-        public DateTime CreationTime;
-        public DateTime ModificationTime;
-        public DateTime MftModificationTime;
-        public DateTime LastAccessTime;
+        public DateTime CreationTime;        // File creation time
+        public DateTime ModificationTime;    // Last time the DATA attribute was modified
+        public DateTime MftModificationTime; // Last time any attribute was modified.
+        public DateTime LastAccessTime;      // Last time the file was accessed.
         public FileAttributes FileAttributes;
         public uint MaximumVersionNumber;
         public uint VersionNumber;
-        public uint ClassID;
+        public uint ClassID; // NTFS v3.0+
         public uint OwnerID; // NTFS v3.0+
         public uint SecurityID; // NTFS v3.0+
         public ulong QuotaCharged; // NTFS v3.0+
