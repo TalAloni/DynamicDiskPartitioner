@@ -255,6 +255,14 @@ namespace DiskAccessLibrary.FileSystems.NTFS
             }
         }
 
+        public AttributeRecord BitmapRecord
+        {
+            get
+            {
+                return GetAttributeRecord(AttributeType.Bitmap, String.Empty);
+            }
+        }
+
         /// <summary>
         /// Segment number of base record
         /// </summary>

@@ -15,6 +15,7 @@ namespace DiskAccessLibrary.FileSystems.NTFS
         private NTFSVolume m_volume;
         private FileRecord m_fileRecord;
         private AttributeData m_data;
+        private BitmapData m_bitmap;
 
         public NTFSFile(NTFSVolume volume, long baseSegmentNumber)
         {
@@ -51,6 +52,7 @@ namespace DiskAccessLibrary.FileSystems.NTFS
                 m_fileRecord.ShortFileNameRecord.AllocatedSize = this.Data.AllocatedSize;
                 m_fileRecord.ShortFileNameRecord.RealSize = this.Data.RealSize;
             }
+            // Note that directory indexes are not being updated ATM
             m_volume.MasterFileTable.UpdateFileRecord(m_fileRecord);
         }
 
@@ -67,6 +69,23 @@ namespace DiskAccessLibrary.FileSystems.NTFS
                     }
                 }
                 return m_data;
+            }
+        }
+
+        public BitmapData Bitmap
+        {
+            get
+            {
+                if (m_bitmap == null)
+                {
+                    AttributeRecord record = m_fileRecord.BitmapRecord;
+                    if (record != null)
+                    {
+                        long numberOfUsableBits = (long)(Data.RealSize / (uint)m_volume.BytesPerFileRecordSegment);
+                        m_bitmap = new BitmapData(m_volume, m_fileRecord, record, numberOfUsableBits);
+                    }
+                }
+                return m_bitmap;
             }
         }
 

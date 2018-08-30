@@ -21,7 +21,7 @@ namespace DiskAccessLibrary.FileSystems.NTFS
         private long? m_numberOfFreeClusters;
         private long m_searchStartIndex = 0;
         private long m_numberOfClustersInVolume; // This will correctly reflect the current number of clusters in the volume when extending the bitmap.
-        private readonly int ExtendGranularity = 8; // The NTFS v5.1 driver extend the $Bitmap file in chunks of 8 bytes, let's immitate that.
+        private readonly int ExtendGranularity = 8; // The number of bytes added to the bitmap when extending it, MUST be multiple of 8.
 
         public VolumeBitmap(NTFSVolume volume) : base(volume, MasterFileTable.BitmapSegmentNumber)
         {
