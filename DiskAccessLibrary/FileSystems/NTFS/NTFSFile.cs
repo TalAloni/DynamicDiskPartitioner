@@ -28,88 +28,14 @@ namespace DiskAccessLibrary.FileSystems.NTFS
             m_fileRecord = fileRecord;
         }
 
-        public byte[] ReadFromFile(ulong offset, int length)
+        public byte[] ReadData(ulong offset, int length)
         {
-            if (offset >= this.Length)
-            {
-                return new byte[0];
-            }
-            long clusterVCN = (long)(offset / (uint)m_volume.BytesPerCluster);
-            int offsetInCluster = (int)(offset % (uint)m_volume.BytesPerCluster);
-            int clusterCount = (int)Math.Ceiling((double)(offsetInCluster + length) / m_volume.BytesPerCluster);
-            byte[] clustersBytes = this.Data.ReadClusters(clusterVCN, clusterCount);
-            int readLength = clustersBytes.Length - offsetInCluster;
-            if (readLength < length)
-            {
-                length = readLength;
-            }
-            byte[] result = new byte[length];
-            Array.Copy(clustersBytes, offsetInCluster, result, 0, length);
-            return result;
+            return this.Data.ReadBytes(offset, length);
         }
 
-        public void WriteToFile(ulong offset, byte[] bytes)
+        public void WriteData(ulong offset, byte[] data)
         {
-            ulong currentSize = this.Data.RealSize;
-            if (offset + (uint)bytes.Length > currentSize)
-            { 
-                // File needs to be extended
-                ulong additionalLength = offset + (uint)bytes.Length - currentSize;
-                ExtendFile(additionalLength);
-            }
-
-            int position = 0;
-            long clusterVCN = (long)(offset / (uint)m_volume.BytesPerCluster);
-            int offsetInCluster = (int)(offset % (uint)m_volume.BytesPerCluster);
-            if (offsetInCluster > 0)
-            {
-                int bytesLeftInCluster = m_volume.BytesPerCluster - offsetInCluster;
-                int numberOfBytesToCopy = Math.Min(bytesLeftInCluster, bytes.Length);
-                // Note: it's safe to send 'bytes' to ModifyCluster(), because it will ignore additional bytes after the first cluster
-                ModifyCluster(clusterVCN, offsetInCluster, bytes);
-                position += numberOfBytesToCopy;
-                clusterVCN++;
-            }
-
-            while (position < bytes.Length)
-            {
-                int bytesLeft = bytes.Length - position;
-                int numberOfBytesToCopy = Math.Min(m_volume.BytesPerCluster, bytesLeft);
-                byte[] clusterBytes = new byte[numberOfBytesToCopy];
-                Array.Copy(bytes, position, clusterBytes, 0, numberOfBytesToCopy);
-                if (numberOfBytesToCopy < m_volume.BytesPerCluster)
-                {
-                    ModifyCluster(clusterVCN, 0, clusterBytes);
-                }
-                else
-                {
-                    this.Data.WriteCluster(clusterVCN, clusterBytes);
-                }
-                clusterVCN++;
-                position += clusterBytes.Length;
-            }
-            m_volume.MasterFileTable.UpdateFileRecord(m_fileRecord);
-        }
-
-        /// <summary>
-        /// Will read cluster and then modify the given bytes
-        /// </summary>
-        private void ModifyCluster(long clusterVCN, int offsetInCluster, byte[] bytes)
-        {
-            int bytesLeftInCluster = m_volume.BytesPerCluster - offsetInCluster;
-            int numberOfBytesToCopy = Math.Min(bytesLeftInCluster, bytes.Length);
-
-            byte[] clusterBytes = this.Data.ReadCluster(clusterVCN);
-            // last cluster could be partial
-            if (clusterBytes.Length < offsetInCluster + numberOfBytesToCopy)
-            {
-                byte[] temp = new byte[offsetInCluster + numberOfBytesToCopy];
-                Array.Copy(clusterBytes, temp, clusterBytes.Length);
-                clusterBytes = temp;
-            }
-
-            Array.Copy(bytes, 0, clusterBytes, offsetInCluster, numberOfBytesToCopy);
-            this.Data.WriteCluster(clusterVCN, clusterBytes);
+            this.Data.WriteBytes(offset, data);
         }
 
         public void ExtendFile(ulong additionalLengthInBytes)

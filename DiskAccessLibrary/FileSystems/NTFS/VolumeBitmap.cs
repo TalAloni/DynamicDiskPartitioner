@@ -240,7 +240,7 @@ namespace DiskAccessLibrary.FileSystems.NTFS
                 {
                     ClearBit(bitmap, usedBitsInLastCluster + offset);
                 }
-                WriteToFile((ulong)(bitmapClusterVCN * m_volume.BytesPerCluster), bitmap);
+                WriteData((ulong)(bitmapClusterVCN * m_volume.BytesPerCluster), bitmap);
                 m_numberOfFreeClusters += numberOfVolumeClustersToAllocate;
                 m_numberOfClustersInVolume += numberOfVolumeClustersToAllocate;
                 numberOfAdditionalClusters -= numberOfVolumeClustersToAllocate;
@@ -258,7 +258,7 @@ namespace DiskAccessLibrary.FileSystems.NTFS
                     SetBit(bitmap, bitOffsetInBitmap);
                     bitOffsetInBitmap++;
                 }
-                WriteToFile(this.Length, bitmap);
+                WriteData(this.Length, bitmap);
                 m_numberOfFreeClusters += numberOfVolumeClustersToAllocate;
                 m_numberOfClustersInVolume += numberOfVolumeClustersToAllocate;
                 numberOfAdditionalClusters -= numberOfVolumeClustersToAllocate;
