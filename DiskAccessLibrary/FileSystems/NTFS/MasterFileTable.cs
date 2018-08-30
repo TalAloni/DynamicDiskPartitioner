@@ -15,7 +15,8 @@ namespace DiskAccessLibrary.FileSystems.NTFS
     public class MasterFileTable
     {
         internal const int LastReservedMftSegmentNumber = 15; // 12-15 are reserved for additional metafiles
-        
+        private const int ExtendGranularity = 16; // The number of records added to the MFT when extending it, MUST be multiple of 8
+
         private const long MasterFileTableSegmentNumber = 0;
         private const long MftMirrorSegmentNumber = 1;
         private const long LogFileSegmentNumber = 2;
@@ -266,6 +267,44 @@ namespace DiskAccessLibrary.FileSystems.NTFS
             byte[] recordSegmentBytes = recordSegment.GetBytes(m_volume.BytesPerFileRecordSegment, m_volume.BytesPerCluster, m_volume.MinorVersion);
 
             m_mftFile.Data.WriteSectors(firstSectorIndex, recordSegmentBytes);
+        }
+
+        public void Extend()
+        {
+            ulong additionalDataLength = (ulong)(m_volume.BytesPerFileRecordSegment * ExtendGranularity);
+            ulong additionalBitmapLength = ExtendGranularity / 8;
+            // We calculate the maximum possible number of free cluster required
+            long numberOfClustersRequiredForData = (long)Math.Ceiling((double)additionalDataLength / m_volume.BytesPerCluster);
+            long numberOfClustersRequiredForBitmap = (long)Math.Ceiling((double)additionalBitmapLength / m_volume.BytesPerCluster);
+            if (numberOfClustersRequiredForData + numberOfClustersRequiredForBitmap > m_volume.NumberOfFreeClusters)
+            {
+                throw new DiskFullException();
+            }
+
+            // We have to extend the bitmap first because one of the constructor parameters is the size of the data
+            if (additionalBitmapLength > 0)
+            {
+                m_mftFile.Bitmap.ExtendBitmap(ExtendGranularity);
+            }
+            // MFT Data: ValidDataLength must be equal to RealSize
+            ulong currentDataLength = m_mftFile.Data.RealSize;
+            m_mftFile.WriteData(currentDataLength, new byte[additionalDataLength]);
+
+            // The NTFS v5.1 driver does not bother updating the FileNameRecord
+            m_mftRecord.FileNameRecord.AllocatedSize = m_mftFile.Data.AllocatedSize;
+            m_mftRecord.FileNameRecord.RealSize = m_mftFile.Data.RealSize;
+            UpdateFileRecord(m_mftRecord);
+
+            // Update the MFT mirror
+            MasterFileTable mftMirror = new MasterFileTable(m_volume, true, true);
+            FileRecord mftRecordFromMirror = mftMirror.GetFileRecord(MasterFileTableSegmentNumber);
+            mftRecordFromMirror.RemoveAttributeRecord(AttributeType.Data, String.Empty);
+            mftRecordFromMirror.RemoveAttributeRecord(AttributeType.Bitmap, String.Empty);
+            mftRecordFromMirror.Attributes.Add(m_mftFile.Data.AttributeRecord);
+            mftRecordFromMirror.Attributes.Add(m_mftFile.Bitmap.AttributeRecord);
+            mftRecordFromMirror.FileNameRecord.AllocatedSize = m_mftFile.Data.AllocatedSize;
+            mftRecordFromMirror.FileNameRecord.RealSize = m_mftFile.Data.RealSize;
+            mftMirror.UpdateFileRecord(mftRecordFromMirror);
         }
 
         // In NTFS v3.1 the FileRecord's self reference SegmentNumber is 32 bits,
