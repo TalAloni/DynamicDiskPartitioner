@@ -11,13 +11,6 @@ using Utilities;
 
 namespace DiskAccessLibrary.FileSystems.NTFS
 {
-    [Flags]
-    public enum IndexEntryFlags : ushort
-    {
-        PointsToSubnode = 0x01,
-        LastEntryInNode = 0x02,
-    }
-
     public class IndexNodeEntry // intermediate node entry
     {
         public MftSegmentReference SegmentReference; // 0 for self reference

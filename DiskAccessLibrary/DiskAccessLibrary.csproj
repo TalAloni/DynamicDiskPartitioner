@@ -79,6 +79,7 @@
     <Compile Include="FileSystems\NTFS\Enums\FileAttributes.cs" />
     <Compile Include="FileSystems\NTFS\Enums\FilenameNamespace.cs" />
     <Compile Include="FileSystems\NTFS\Enums\FileRecordFlags.cs" />
+    <Compile Include="FileSystems\NTFS\Enums\IndexEntryFlags.cs" />
     <Compile Include="FileSystems\NTFS\Enums\IndexHeaderFlags.cs" />
     <Compile Include="FileSystems\NTFS\Enums\ResidentForm.cs" />
     <Compile Include="FileSystems\NTFS\FileRecord\FileRecord.cs" />
