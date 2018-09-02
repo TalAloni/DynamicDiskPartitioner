@@ -118,7 +118,7 @@ namespace DiskAccessLibrary.FileSystems.NTFS
                 IndexRootRecord indexRoot = (IndexRootRecord)record.GetAttributeRecord(AttributeType.IndexRoot, IndexRootRecord.FileNameIndexName);
                 IndexAllocationRecord indexAllocation = (IndexAllocationRecord)record.GetAttributeRecord(AttributeType.IndexAllocation, IndexRootRecord.FileNameIndexName);
                 
-                if (indexRoot.IsLargeIndex)
+                if (indexRoot.IsParentNode)
                 {
                     if (indexAllocation != null)
                     {

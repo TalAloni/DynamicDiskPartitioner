@@ -38,5 +38,13 @@ namespace DiskAccessLibrary.FileSystems.NTFS
             LittleEndianWriter.WriteUInt32(buffer, offset + 0x08, AllocatedLength);
             ByteWriter.WriteByte(buffer, offset + 0x0C, (byte)IndexFlags);
         }
+
+        public bool IsParentNode
+        {
+            get
+            {
+                return (IndexFlags & IndexHeaderFlags.ParentNode) > 0;
+            }
+        }
     }
 }

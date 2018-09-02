@@ -1,4 +1,4 @@
-/* Copyright (C) 2014 Tal Aloni <tal.aloni.il@gmail.com>. All rights reserved.
+/* Copyright (C) 2014-2018 Tal Aloni <tal.aloni.il@gmail.com>. All rights reserved.
  * 
  * You can redistribute this program and/or modify it under the terms of
  * the GNU Lesser Public License as published by the Free Software Foundation,
@@ -40,7 +40,7 @@ namespace DiskAccessLibrary.FileSystems.NTFS
             if (Name == FileNameIndexName)
             {
                 int position = 0x10 + (int)IndexHeader.EntriesOffset;
-                if (IsLargeIndex)
+                if (IsParentNode)
                 {
                     IndexNode node = new IndexNode(this.Data, position);
                     IndexEntries = node.Entries;
@@ -55,7 +55,7 @@ namespace DiskAccessLibrary.FileSystems.NTFS
 
         public KeyValuePairList<MftSegmentReference, FileNameRecord> GetSmallIndexEntries()
         {
-            if (IsLargeIndex)
+            if (IsParentNode)
             {
                 throw new ArgumentException("Not a small index");
             }
@@ -69,11 +69,11 @@ namespace DiskAccessLibrary.FileSystems.NTFS
             return result;
         }
 
-        public bool IsLargeIndex
+        public bool IsParentNode
         {
             get
             {
-                return (IndexHeader.IndexFlags & IndexHeaderFlags.LargeIndex) > 0;
+                return IndexHeader.IsParentNode;
             }
         }
     }

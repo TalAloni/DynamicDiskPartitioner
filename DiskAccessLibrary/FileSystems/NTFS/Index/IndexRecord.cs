@@ -15,20 +15,11 @@ namespace DiskAccessLibrary.FileSystems.NTFS
     {
         public const string ValidSignature = "INDX";
 
-        /* Index Record Header start*/
         // MULTI_SECTOR_HEADER
         public ulong LogFileSequenceNumber;
         public long RecordVCN; // Stored as unsigned, but is within the range of long
-        /* Header */
-        /* Index Header start */
-        public uint EntriesOffset; // Relative to Index record header start offset
-        public uint IndexLength;  // Including the Index record header
-        public uint AllocatedLength; // Including the Index record header
-        public bool HasChildren; // Level?
-        // 3 zero bytes (padding)
-        /* Index Header end */
+        public IndexHeader IndexHeader;
         public ushort UpdateSequenceNumber;
-        /* Index Record Header end*/
 
         public List<IndexNodeEntry> IndexEntries = new List<IndexNodeEntry>();
         public List<FileNameIndexEntry> FileNameEntries = new List<FileNameIndexEntry>();
@@ -42,17 +33,14 @@ namespace DiskAccessLibrary.FileSystems.NTFS
             }
             LogFileSequenceNumber = LittleEndianConverter.ToUInt64(buffer, offset + 0x08);
             RecordVCN = (long)LittleEndianConverter.ToUInt64(buffer, offset + 0x10);
-            EntriesOffset = LittleEndianConverter.ToUInt32(buffer, offset + 0x18);
-            IndexLength = LittleEndianConverter.ToUInt32(buffer, offset + 0x1C);
-            AllocatedLength = LittleEndianConverter.ToUInt32(buffer, offset + 0x20);
-            HasChildren = ByteReader.ReadByte(buffer, offset + 0x24) > 0;
+            IndexHeader = new IndexHeader(buffer, offset + 0x18);
 
             int position = offset + multiSectorHeader.UpdateSequenceArrayOffset;
             List<byte[]> updateSequenceReplacementData = MultiSectorHelper.ReadUpdateSequenceArray(buffer, position, multiSectorHeader.UpdateSequenceArraySize, out UpdateSequenceNumber);
             MultiSectorHelper.DecodeSegmentBuffer(buffer, offset, UpdateSequenceNumber, updateSequenceReplacementData);
 
-            position = 0x18 + (int)EntriesOffset;
-            if (HasChildren)
+            position = 0x18 + (int)IndexHeader.EntriesOffset;
+            if (IndexHeader.IsParentNode)
             {
                 IndexNode node = new IndexNode(buffer, position);
                 IndexEntries = node.Entries;
@@ -61,6 +49,14 @@ namespace DiskAccessLibrary.FileSystems.NTFS
             {
                 FileNameIndexLeafNode leaf = new FileNameIndexLeafNode(buffer, position);
                 FileNameEntries = leaf.Entries;
+            }
+        }
+
+        public bool IsParentNode
+        {
+            get
+            {
+                return IndexHeader.IsParentNode;
             }
         }
     }

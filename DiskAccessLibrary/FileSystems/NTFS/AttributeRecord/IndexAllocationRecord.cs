@@ -32,7 +32,7 @@ namespace DiskAccessLibrary.FileSystems.NTFS
                 IndexNodeEntry parent = parents[parentIndex];
                 byte[] clusters = attributeData.ReadClusters(parent.SubnodeVCN, rootRecord.ClustersPerIndexRecord);
                 IndexRecord record = new IndexRecord(clusters, 0);
-                if (record.HasChildren)
+                if (record.IsParentNode)
                 {
                     foreach (IndexNodeEntry node in record.IndexEntries)
                     {
