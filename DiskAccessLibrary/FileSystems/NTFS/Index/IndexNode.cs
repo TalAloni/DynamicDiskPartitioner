@@ -22,7 +22,7 @@ namespace DiskAccessLibrary.FileSystems.NTFS
             while (true)
             {
                 IndexNodeEntry node = new IndexNodeEntry(buffer, ref position);
-                if (node.IsLastEntry && !node.PointsToSubnode)
+                if (node.IsLastEntry && !node.ParentNodeForm)
                 {
                     break;
                 }

@@ -1,4 +1,4 @@
-/* Copyright (C) 2014 Tal Aloni <tal.aloni.il@gmail.com>. All rights reserved.
+/* Copyright (C) 2014-2018 Tal Aloni <tal.aloni.il@gmail.com>. All rights reserved.
  * 
  * You can redistribute this program and/or modify it under the terms of
  * the GNU Lesser Public License as published by the Free Software Foundation,
@@ -19,7 +19,7 @@ namespace DiskAccessLibrary.FileSystems.NTFS
         public IndexEntryFlags Flags;
         // 2 zero bytes (padding)
         public byte[] Key;
-        public long SubnodeVCN; // if PointsToSubnode flag is set, stored as ulong but can be represented using long
+        public long SubnodeVCN; // if ParentNodeForm flag is set, stored as ulong but can be represented using long
 
         public IndexNodeEntry(byte[] buffer, ref int offset)
         {
@@ -28,7 +28,7 @@ namespace DiskAccessLibrary.FileSystems.NTFS
             ushort keyLength = LittleEndianConverter.ToUInt16(buffer, offset + 0x0A);
             Flags = (IndexEntryFlags)LittleEndianConverter.ToUInt16(buffer, offset + 0x0C);
             Key = ByteReader.ReadBytes(buffer, offset + 0x10, keyLength);
-            if (PointsToSubnode)
+            if (ParentNodeForm)
             {
                 // key is padded to align to 8 byte boundary
                 int keyLengthWithPadding = (int)Math.Ceiling((double)keyLength / 8) * 8;
@@ -45,11 +45,11 @@ namespace DiskAccessLibrary.FileSystems.NTFS
             }
         }
 
-        public bool PointsToSubnode
+        public bool ParentNodeForm
         {
             get
             {
-                return ((Flags & IndexEntryFlags.PointsToSubnode) > 0);
+                return ((Flags & IndexEntryFlags.ParentNodeForm) > 0);
             }
         }
     }
