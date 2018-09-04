@@ -10,6 +10,9 @@ using Utilities;
 
 namespace DiskAccessLibrary.FileSystems.NTFS
 {
+    /// <summary>
+    /// MFT_SEGMENT_REFERENCE: https://docs.microsoft.com/en-us/windows/desktop/devnotes/mft-segment-reference
+    /// </summary>
     public class MftSegmentReference
     {
         public const int Length = 8;

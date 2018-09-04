@@ -34,13 +34,12 @@ namespace DiskAccessLibrary.FileSystems.NTFS
         public ushort NextAttributeInstance; // Starting from 0
         // 2 bytes padding
         public uint MftSegmentNumberOnDisk; // Self-reference, NTFS v3.0+
-
         public ushort UpdateSequenceNumber; // a.k.a. USN
+        // byte[] UpdateSequenceReplacementData
         /* End of header */
+        private List<AttributeRecord> m_immediateAttributes = new List<AttributeRecord>(); // Attribute records that are stored in the base file record
 
         private long m_mftSegmentNumber; // We use our own segment number to support NTFS v3.0 (note that MftSegmentNumberOnDisk is UInt32, which is another reason to avoid it)
-
-        private List<AttributeRecord> m_immediateAttributes = new List<AttributeRecord>(); // Attribute records that are stored in the base file record
 
         public FileRecordSegment(byte[] buffer, int bytesPerSector, long segmentNumber) : this(buffer, 0, bytesPerSector, segmentNumber)
         { 

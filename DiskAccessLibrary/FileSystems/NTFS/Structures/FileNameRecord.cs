@@ -11,7 +11,6 @@ using Utilities;
 
 namespace DiskAccessLibrary.FileSystems.NTFS
 {
-    // FileName attribute is always resident
     // This is the record itself (the data that is contained in the attribute / index key)
     public class FileNameRecord
     {
