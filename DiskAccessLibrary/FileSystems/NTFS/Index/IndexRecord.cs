@@ -20,9 +20,8 @@ namespace DiskAccessLibrary.FileSystems.NTFS
         public long RecordVCN; // Stored as unsigned, but is within the range of long
         public IndexHeader IndexHeader;
         public ushort UpdateSequenceNumber;
-
-        public List<IndexNodeEntry> IndexEntries = new List<IndexNodeEntry>();
-        public List<FileNameIndexEntry> FileNameEntries = new List<FileNameIndexEntry>();
+        // byte[] UpdateSequenceReplacementData
+        public List<IndexEntry> IndexEntries = new List<IndexEntry>();
 
         public IndexRecord(byte[] buffer, int offset)
         {
@@ -39,17 +38,8 @@ namespace DiskAccessLibrary.FileSystems.NTFS
             List<byte[]> updateSequenceReplacementData = MultiSectorHelper.ReadUpdateSequenceArray(buffer, position, multiSectorHeader.UpdateSequenceArraySize, out UpdateSequenceNumber);
             MultiSectorHelper.DecodeSegmentBuffer(buffer, offset, UpdateSequenceNumber, updateSequenceReplacementData);
 
-            position = 0x18 + (int)IndexHeader.EntriesOffset;
-            if (IndexHeader.IsParentNode)
-            {
-                IndexNode node = new IndexNode(buffer, position);
-                IndexEntries = node.Entries;
-            }
-            else
-            {
-                FileNameIndexLeafNode leaf = new FileNameIndexLeafNode(buffer, position);
-                FileNameEntries = leaf.Entries;
-            }
+            int entriesOffset = 0x18 + (int)IndexHeader.EntriesOffset;
+            IndexEntries = IndexEntry.ReadIndexEntries(buffer, entriesOffset);
         }
 
         public bool IsParentNode

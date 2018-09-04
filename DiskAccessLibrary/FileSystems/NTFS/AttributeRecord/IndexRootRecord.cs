@@ -15,7 +15,7 @@ namespace DiskAccessLibrary.FileSystems.NTFS
     /// </remarks>
     public class IndexRootRecord : ResidentAttributeRecord
     {
-        public const string FileNameIndexName = "$I30";
+        public const int FixedLength = 32;
  
         public AttributeType IndexedAttributeType; // FileName for directories
         public CollationRule CollationRule;
@@ -23,11 +23,8 @@ namespace DiskAccessLibrary.FileSystems.NTFS
         public byte ClustersPerIndexRecord;
         // 3 zero bytes
         public IndexHeader IndexHeader;
-        // Index node
+        public List<IndexEntry> IndexEntries = new List<IndexEntry>();
         
-        public List<IndexNodeEntry> IndexEntries = new List<IndexNodeEntry>();
-        public List<FileNameIndexEntry> FileNameEntries = new List<FileNameIndexEntry>();
-
         public IndexRootRecord(byte[] buffer, int offset) : base(buffer, offset)
         {
             IndexedAttributeType = (AttributeType)LittleEndianConverter.ToUInt32(this.Data, 0x00);
@@ -36,37 +33,22 @@ namespace DiskAccessLibrary.FileSystems.NTFS
             ClustersPerIndexRecord = ByteReader.ReadByte(this.Data, 0x0C);
             // 3 zero bytes (padding to 8-byte boundary)
             IndexHeader = new IndexHeader(this.Data, 0x10);
-            
-            if (Name == FileNameIndexName)
-            {
-                int position = 0x10 + (int)IndexHeader.EntriesOffset;
-                if (IsParentNode)
-                {
-                    IndexNode node = new IndexNode(this.Data, position);
-                    IndexEntries = node.Entries;
-                }
-                else
-                {
-                    FileNameIndexLeafNode leaf = new FileNameIndexLeafNode(this.Data, position);
-                    FileNameEntries = leaf.Entries;
-                }
-            }
+
+            int entriesOffset = 0x10 + (int)IndexHeader.EntriesOffset;
+            IndexEntries = IndexEntry.ReadIndexEntries(this.Data, entriesOffset);
         }
 
-        public KeyValuePairList<MftSegmentReference, FileNameRecord> GetSmallIndexEntries()
+        public override byte[] GetBytes(int bytesPerCluster)
         {
-            if (IsParentNode)
-            {
-                throw new ArgumentException("Not a small index");
-            }
-
-            KeyValuePairList<MftSegmentReference, FileNameRecord> result = new KeyValuePairList<MftSegmentReference, FileNameRecord>();
-
-            foreach (FileNameIndexEntry entry in FileNameEntries)
-            {
-                result.Add(entry.FileReference, entry.Record);
-            }
-            return result;
+            int dataLength = FixedLength + IndexEntry.GetLength(IndexEntries);
+            this.Data = new byte[dataLength];
+            LittleEndianWriter.WriteUInt32(this.Data, 0x00, (uint)IndexedAttributeType);
+            LittleEndianWriter.WriteUInt32(this.Data, 0x04, (uint)CollationRule);
+            LittleEndianWriter.WriteUInt32(this.Data, 0x08, (uint)IndexAllocationEntryLength);
+            ByteWriter.WriteByte(this.Data, 0x0C, ClustersPerIndexRecord);
+            IndexHeader.WriteBytes(this.Data, 0x10);
+            IndexEntry.WriteIndexEntries(this.Data, 0x20, IndexEntries);
+            return base.GetBytes(bytesPerCluster);
         }
 
         public bool IsParentNode

@@ -111,35 +111,20 @@ namespace DiskAccessLibrary.FileSystems.NTFS
 
         private KeyValuePairList<MftSegmentReference, FileNameRecord> GetFileNameRecordsInDirectory(long directoryBaseSegmentNumber)
         {
-            FileRecord record = m_mft.GetFileRecord(directoryBaseSegmentNumber);
+            FileRecord fileRecord = m_mft.GetFileRecord(directoryBaseSegmentNumber);
             KeyValuePairList<MftSegmentReference, FileNameRecord> result = null;
-            if (record != null && record.IsDirectory)
+            if (fileRecord != null && fileRecord.IsDirectory)
             {
-                IndexRootRecord indexRoot = (IndexRootRecord)record.GetAttributeRecord(AttributeType.IndexRoot, IndexRootRecord.FileNameIndexName);
-                IndexAllocationRecord indexAllocation = (IndexAllocationRecord)record.GetAttributeRecord(AttributeType.IndexAllocation, IndexRootRecord.FileNameIndexName);
+                IndexData indexData = new IndexData(this, fileRecord, AttributeType.FileName);
+                result = indexData.GetAllFileNameRecords();
                 
-                if (indexRoot.IsParentNode)
+                for (int index = 0; index < result.Count; index++)
                 {
-                    if (indexAllocation != null)
+                    if (result[index].Value.Namespace == FilenameNamespace.DOS)
                     {
-                        result = indexAllocation.GetAllEntries(this, indexRoot);
-                    }
-                }
-                else
-                {
-                    result = indexRoot.GetSmallIndexEntries();
-                }
-
-                if (result != null)
-                {
-                    for (int index = 0; index < result.Count; index++)
-                    {
-                        if (result[index].Value.Namespace == FilenameNamespace.DOS)
-                        {
-                            // The same FileRecord can have multiple entries, each with its own namespace
-                            result.RemoveAt(index);
-                            index--;
-                        }
+                        // The same FileRecord can have multiple entries, each with its own namespace
+                        result.RemoveAt(index);
+                        index--;
                     }
                 }
             }
