@@ -12,6 +12,8 @@ namespace DiskAccessLibrary.FileSystems.NTFS
 {
     public class IndexHeader
     {
+        public const int Length = 16;
+
         public uint EntriesOffset; // Relative to Index Header start offset
         public uint IndexLength;   // Including the Index Header
         public uint AllocatedLength;
