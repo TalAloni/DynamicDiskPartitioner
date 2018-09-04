@@ -42,7 +42,7 @@ namespace DiskAccessLibrary.FileSystems.NTFS
                 }
                 if (record != null)
                 {
-                    if (record.ParentDirMftSegmentNumber == directoryBaseSegmentNumber)
+                    if (record.ParentDirectoryReference.SegmentNumber == directoryBaseSegmentNumber)
                     {
                         if (record.IsInUse && (includeMetaFiles || !record.IsMetaFile))
                         {

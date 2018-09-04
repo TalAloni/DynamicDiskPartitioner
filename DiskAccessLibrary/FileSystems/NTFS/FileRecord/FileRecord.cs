@@ -185,7 +185,7 @@ namespace DiskAccessLibrary.FileSystems.NTFS
             }
         }
 
-        public long ParentDirMftSegmentNumber
+        public MftSegmentReference ParentDirectoryReference
         {
             get
             {
@@ -197,11 +197,11 @@ namespace DiskAccessLibrary.FileSystems.NTFS
 
                 if (fileNameRecord != null)
                 {
-                    return fileNameRecord.ParentDirectory.SegmentNumber;
+                    return fileNameRecord.ParentDirectory;
                 }
                 else
                 {
-                    return 0;
+                    return null;
                 }
             }
         }
