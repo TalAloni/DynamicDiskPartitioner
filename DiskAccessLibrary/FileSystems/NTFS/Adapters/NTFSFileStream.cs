@@ -44,15 +44,7 @@ namespace DiskAccessLibrary.FileSystems.NTFS
 
         public override void SetLength(long value)
         {
-            if (value > (long)m_file.Length)
-            {
-                ulong additionalLength = (ulong)value - m_file.Length;
-                m_file.ExtendFile(additionalLength);
-            }
-            else if (value < (long)m_file.Length)
-            {
-                throw new NotImplementedException();
-            }
+            m_file.SetLength((ulong)value);
         }
 
         public override int Read(byte[] buffer, int offset, int count)

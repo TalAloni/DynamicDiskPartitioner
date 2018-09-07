@@ -39,9 +39,22 @@ namespace DiskAccessLibrary.FileSystems.NTFS
             this.Data.WriteBytes(offset, data);
         }
 
-        public void ExtendFile(ulong additionalLengthInBytes)
+        public void SetLength(ulong newLengthInBytes)
         {
-            this.Data.Extend(additionalLengthInBytes);
+            if (newLengthInBytes > this.Data.RealSize)
+            {
+                ulong additionalLengthInBytes = newLengthInBytes - this.Data.RealSize;
+                this.Data.Extend(additionalLengthInBytes);
+            }
+            else if (newLengthInBytes < this.Data.RealSize)
+            {
+                this.Data.Truncate(newLengthInBytes);
+            }
+            else
+            {
+                return;
+            }
+
             if (m_fileRecord.LongFileNameRecord != null)
             {
                 m_fileRecord.LongFileNameRecord.AllocatedSize = this.Data.AllocatedSize;
