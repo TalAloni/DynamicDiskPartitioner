@@ -18,6 +18,36 @@ namespace DiskAccessLibrary.FileSystems.NTFS
         {
         }
 
+        public DataRunSequence(byte[] buffer, int offset, int length) : base()
+        {
+            int position = offset;
+            while (position < offset + length)
+            {
+                DataRun run = new DataRun(buffer, position);
+                position += run.RecordLengthOnDisk;
+
+                // Length 1 means there was only a header byte (i.e. terminator)
+                if (run.RecordLengthOnDisk == 1)
+                {
+                    break;
+                }
+
+                this.Add(run);
+            }
+        }
+
+        public void WriteBytes(byte[] buffer, int offset)
+        {
+            foreach (DataRun run in this)
+            {
+                run.WriteBytes(buffer, offset);
+                offset += run.RecordLength;
+            }
+            buffer[offset] = 0; // Sequence terminator
+            // I've noticed that Windows Server 2003 puts 0x00 0x01 as sequence terminator for the $MFT FileRecord, seems to have no effect
+            // (I've set it to 0x00 for the $MFT FileRecord in the MFT and the MFT mirror, and chkdsk did not report a problem.
+        }
+
         public void Truncate(long newClusterCount)
         {
             long clustersCovered = 0;

@@ -31,16 +31,12 @@ namespace DiskAccessLibrary.FileSystems.NTFS
         public ulong ValidDataLength; // Actual data written so far, (always less than or equal to the file size).
                                       // Data beyond ValidDataLength should be treated as 0 (not valid if the LowestVCN member is nonzero).
         // ulong TotalAllocated;      // Presented for the first file record of a compressed stream.
-
-        private DataRunSequence m_dataRunSequence = new DataRunSequence();
-        // Data run NULL terminator here
-        // I've noticed that Windows Server 2003 puts 0x00 0x01 here for the $MFT FileRecord, seems to have no effect
-        // (I've set it to 0x00 for the $MFT FileRecord in the MFT and the MFT mirror, and chkdsk did not report a problem.
+        private DataRunSequence m_dataRunSequence;
 
         public NonResidentAttributeRecord(AttributeType attributeType, string name, ushort instance) : base(attributeType, name, false, instance)
         {
+            HighestVCN = -1; // This is the value that should be set when the attribute contains no data.
             m_dataRunSequence = new DataRunSequence();
-            HighestVCN = -1; // This is the value that should be set when the attribute contain no data.
         }
 
         public NonResidentAttributeRecord(byte[] buffer, int offset) : base(buffer, offset)
@@ -52,22 +48,7 @@ namespace DiskAccessLibrary.FileSystems.NTFS
             ulong allocatedLength = LittleEndianConverter.ToUInt64(buffer, offset + 0x28);
             FileSize = LittleEndianConverter.ToUInt64(buffer, offset + 0x30);
             ValidDataLength = LittleEndianConverter.ToUInt64(buffer, offset + 0x38);
-
-            int position = offset + mappingPairsOffset;
-            while (position < offset + this.RecordLengthOnDisk)
-            {
-                DataRun run = new DataRun();
-                int length = run.Read(buffer, position);
-                position += length;
-
-                // Length 1 means there was only a header byte (i.e. terminator)
-                if (length == 1)
-                {
-                    break;
-                }
-
-                m_dataRunSequence.Add(run);
-            }
+            m_dataRunSequence = new DataRunSequence(buffer, offset + mappingPairsOffset, (int)this.RecordLengthOnDisk - mappingPairsOffset);
 
             if ((HighestVCN - LowestVCN + 1) != m_dataRunSequence.DataClusterCount)
             {
@@ -93,16 +74,7 @@ namespace DiskAccessLibrary.FileSystems.NTFS
             LittleEndianWriter.WriteUInt64(buffer, 0x28, allocatedLength);
             LittleEndianWriter.WriteUInt64(buffer, 0x30, FileSize);
             LittleEndianWriter.WriteUInt64(buffer, 0x38, ValidDataLength);
-
-            int position = dataRunsOffset;
-            foreach (DataRun run in m_dataRunSequence)
-            { 
-                byte[] runBytes = run.GetBytes();
-                Array.Copy(runBytes, 0, buffer, position, runBytes.Length);
-                position += runBytes.Length;
-            }
-            buffer[position] = 0; // Null termination
-
+            m_dataRunSequence.WriteBytes(buffer, dataRunsOffset);
             return buffer;
         }
 

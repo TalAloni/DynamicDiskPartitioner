@@ -19,9 +19,13 @@ namespace DiskAccessLibrary.FileSystems.NTFS
         public long RunLength; // In clusters
         public long RunOffset; // In clusters, relative to previous data run start LCN
         public bool IsSparse;
+        private int m_recordLengthOnDisk;
 
-        /// <returns>Record length</returns>
-        public int Read(byte[] buffer, int offset)
+        public DataRun()
+        {
+        }
+
+        public DataRun(byte[] buffer, int offset)
         {
             int runOffsetSize = buffer[offset] >> 4;
             int runLengthSize = buffer[offset] & 0x0F;
@@ -33,31 +37,34 @@ namespace DiskAccessLibrary.FileSystems.NTFS
             }
             RunOffset = ReadVarLong(ref buffer, offset + 1 + runLengthSize, runOffsetSize);
             IsSparse = (runOffsetSize == 0);
-
-            return 1 + runLengthSize + runOffsetSize;
+            m_recordLengthOnDisk = 1 + runLengthSize + runOffsetSize;
         }
 
-        public byte[] GetBytes()
+        public void WriteBytes(byte[] buffer, int offset)
         {
             if (IsSparse)
             {
                 RunOffset = 0;
             }
 
-            byte[] buffer = new byte[RecordLength];
-            int runLengthSize = WriteVarLong(buffer, 1, RunLength);
+            int runLengthSize = WriteVarLong(buffer, offset + 1, RunLength);
             int runOffsetSize;
             if (IsSparse)
             {
                 runOffsetSize = 0;
             }
             else
-            { 
-                runOffsetSize = WriteVarLong(buffer, 1 + runLengthSize, RunOffset);
+            {
+                runOffsetSize = WriteVarLong(buffer, offset + 1 + runLengthSize, RunOffset);
             }
 
-            buffer[0] = (byte)((runLengthSize & 0x0F) | ((runOffsetSize << 4) & 0xF0));
+            buffer[offset + 0] = (byte)((runLengthSize & 0x0F) | ((runOffsetSize << 4) & 0xF0));
+        }
 
+        public byte[] GetBytes()
+        {
+            byte[] buffer = new byte[RecordLength];
+            WriteBytes(buffer, 0);
             return buffer;
         }
 
@@ -135,8 +142,16 @@ namespace DiskAccessLibrary.FileSystems.NTFS
             return len;
         }
 
+        public int RecordLengthOnDisk
+        {
+            get
+            {
+                return m_recordLengthOnDisk;
+            }
+        }
+
         /// <summary>
-        /// Length of the DataRun record inside the non-resident attribute record
+        /// Length of the DataRun record
         /// </summary>
         public int RecordLength
         {
