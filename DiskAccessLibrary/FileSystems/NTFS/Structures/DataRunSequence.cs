@@ -18,6 +18,25 @@ namespace DiskAccessLibrary.FileSystems.NTFS
         {
         }
 
+        public void Truncate(long newClusterCount)
+        {
+            long clustersCovered = 0;
+            for (int index = 0; index < this.Count; index++)
+            {
+                DataRun run = this[index];
+                if (clustersCovered >= newClusterCount)
+                {
+                    this.RemoveRange(index, this.Count - index);
+                    return;
+                }
+                else if (clustersCovered + run.RunLength > newClusterCount)
+                {
+                    run.RunLength = newClusterCount - clustersCovered;
+                }
+                clustersCovered += run.RunLength;
+            }
+        }
+
         /// <param name="startClusterOffset">Distance from LowestVCN</param>
         public KeyValuePairList<long, int> TranslateToLCN(long startClusterOffset, int clusterCount)
         {

@@ -244,6 +244,23 @@ namespace DiskAccessLibrary.FileSystems.NTFS
             m_volume.MasterFileTable.UpdateFileRecord(m_fileRecord);
         }
 
+        public void Truncate(ulong newLengthInBytes)
+        {
+            ulong currentSize = this.RealSize;
+            if (m_attributeRecord is NonResidentAttributeRecord)
+            {
+                NonResidentAttributeData attributeData = new NonResidentAttributeData(m_volume, (NonResidentAttributeRecord)m_attributeRecord);
+                attributeData.Truncate(newLengthInBytes);
+            }
+            else
+            {
+                byte[] data = ((ResidentAttributeRecord)m_attributeRecord).Data;
+                byte[] temp = new byte[newLengthInBytes];
+                Array.Copy(data, temp, temp.Length);
+                ((ResidentAttributeRecord)m_attributeRecord).Data = temp;
+            }
+        }
+
         public ulong AllocatedSize
         {
             get

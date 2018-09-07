@@ -230,6 +230,28 @@ namespace DiskAccessLibrary.FileSystems.NTFS
             }
         }
 
+        public void Truncate(ulong newLengthInBytes)
+        {
+            long clustersToKeep = (long)Math.Ceiling((double)newLengthInBytes / m_volume.BytesPerCluster);
+            if (clustersToKeep < ClusterCount)
+            {
+                KeyValuePairList<long, int> clustersToDeallocate = m_record.DataRunSequence.TranslateToLCN(clustersToKeep, (int)(ClusterCount - clustersToKeep));
+                m_record.DataRunSequence.Truncate(clustersToKeep);
+                m_record.HighestVCN = clustersToKeep - 1;
+
+                foreach(KeyValuePair<long, int> runToDeallocate in clustersToDeallocate)
+                {
+                    m_volume.DeallocateClusters(runToDeallocate.Key, runToDeallocate.Value);
+                }
+            }
+
+            m_record.FileSize = newLengthInBytes;
+            if (m_record.ValidDataLength > newLengthInBytes)
+            {
+                m_record.ValidDataLength = newLengthInBytes;
+            }
+        }
+
         public long LowestVCN
         {
             get
