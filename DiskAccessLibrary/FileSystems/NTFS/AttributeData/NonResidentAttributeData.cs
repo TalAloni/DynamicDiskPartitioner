@@ -54,17 +54,13 @@ namespace DiskAccessLibrary.FileSystems.NTFS
             }
 
             int numberOfBytesToReturn = count * m_volume.BytesPerCluster;
-            if (lastClusterVcnToRead == (long)HighestVCN)
+            if (firstBytePosition + (uint)numberOfBytesToReturn > FileSize)
             {
-                numberOfBytesToReturn = (int)(FileSize - (ulong)firstClusterVCN * (uint)m_volume.BytesPerCluster);
                 // If the last cluster is only partially used or we have been asked to read clusters beyond the last cluster, trim result.
-                // (Either of those cases could only be true if we have just read the last cluster).
-                if (numberOfBytesToReturn < result.Length)
-                {
-                    byte[] resultTrimmed = new byte[numberOfBytesToReturn];
-                    Array.Copy(result, resultTrimmed, numberOfBytesToReturn);
-                    result = resultTrimmed;
-                }
+                numberOfBytesToReturn = (int)(FileSize - (ulong)firstClusterVCN * (uint)m_volume.BytesPerCluster);
+                byte[] resultTrimmed = new byte[numberOfBytesToReturn];
+                Array.Copy(result, resultTrimmed, numberOfBytesToReturn);
+                result = resultTrimmed;
             }
 
             if (firstBytePosition < ValidDataLength && ValidDataLength < firstBytePosition + (uint)numberOfBytesToReturn)
@@ -180,13 +176,10 @@ namespace DiskAccessLibrary.FileSystems.NTFS
 
         public void Extend(ulong additionalLengthInBytes)
         {
-            long numberOfClusters = (long)Math.Ceiling((double)FileSize / m_volume.BytesPerCluster);
-            int freeBytesInLastCluster = (int)(numberOfClusters * m_volume.BytesPerCluster - (long)FileSize);
-
-            if (additionalLengthInBytes > (uint)freeBytesInLastCluster)
+            ulong freeBytesInCurrentAllocation = AllocatedLength - FileSize;
+            if (additionalLengthInBytes > freeBytesInCurrentAllocation)
             {
-                ulong bytesToAllocate = additionalLengthInBytes - (uint)freeBytesInLastCluster;
-
+                ulong bytesToAllocate = additionalLengthInBytes - freeBytesInCurrentAllocation;
                 long clustersToAllocate = (long)Math.Ceiling((double)bytesToAllocate / m_volume.BytesPerCluster);
                 if (clustersToAllocate > m_volume.NumberOfFreeClusters)
                 {
@@ -250,6 +243,22 @@ namespace DiskAccessLibrary.FileSystems.NTFS
             get
             {
                 return m_record.HighestVCN;
+            }
+        }
+
+        public long ClusterCount
+        {
+            get
+            {
+                return m_record.DataClusterCount;
+            }
+        }
+
+        public ulong AllocatedLength
+        {
+            get
+            {
+                return (ulong)(m_record.DataClusterCount * m_volume.BytesPerCluster);
             }
         }
 
