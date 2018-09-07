@@ -373,14 +373,19 @@ namespace DiskAccessLibrary.FileSystems.NTFS
             }
         }
 
-        public KeyValuePairList<long, long> AllocateClusters(long numberOfClusters)
+        internal KeyValuePairList<long, long> AllocateClusters(long numberOfClusters)
         {
             return m_bitmap.AllocateClusters(numberOfClusters);
         }
 
-        public KeyValuePairList<long, long> AllocateClusters(long desiredStartLCN, long numberOfClusters)
+        internal KeyValuePairList<long, long> AllocateClusters(long desiredStartLCN, long numberOfClusters)
         {
             return m_bitmap.AllocateClusters(desiredStartLCN, numberOfClusters);
+        }
+
+        internal void DeallocateClusters(long startLCN, long numberOfClusters)
+        {
+            m_bitmap.DeallocateClusters(startLCN, numberOfClusters);
         }
 
         private static KeyValuePair<MftSegmentReference, FileNameRecord>? FindFileNameRecord(KeyValuePairList<MftSegmentReference, FileNameRecord> records, string name)

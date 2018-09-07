@@ -162,6 +162,30 @@ namespace DiskAccessLibrary.FileSystems.NTFS
             return result;
         }
 
+        public void DeallocateClusters(long startLCN, long numberOfClusters)
+        {
+            long bitmapVCN = (long)(startLCN / (uint)(m_volume.BytesPerCluster * 8));
+            int bitOffsetInBitmap = (int)(startLCN % (uint)(m_volume.BytesPerCluster * 8));
+            int bitsToDeallocateInFirstCluster = m_volume.BytesPerCluster * 8 - bitOffsetInBitmap;
+            int bitmapClustersToRead = 1;
+            if (numberOfClusters > bitsToDeallocateInFirstCluster)
+            {
+                bitmapClustersToRead += (int)Math.Ceiling((double)(numberOfClusters - bitsToDeallocateInFirstCluster) / m_volume.BytesPerCluster * 8);
+            }
+
+            byte[] bitmap = ReadDataClusters(bitmapVCN, bitmapClustersToRead);
+            for (int offset = 0; offset < numberOfClusters; offset++)
+            {
+                ClearBit(bitmap, bitOffsetInBitmap + offset);
+            }
+            WriteDataClusters(bitmapVCN, bitmap);
+
+            if (m_numberOfFreeClusters != null)
+            {
+                m_numberOfFreeClusters += numberOfClusters;
+            }
+        }
+
         // Each bit in the $Bitmap file represents a cluster.
         // The size of the $Bitmap file is always a multiple of 8 bytes, extra bits are always set to 1.
         private long CountNumberOfFreeClusters()
