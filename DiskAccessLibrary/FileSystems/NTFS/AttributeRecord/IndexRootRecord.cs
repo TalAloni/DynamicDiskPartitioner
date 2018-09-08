@@ -17,10 +17,10 @@ namespace DiskAccessLibrary.FileSystems.NTFS
     {
         public const int FixedLength = 32;
  
-        public AttributeType IndexedAttributeType; // FileName for directories
+        public AttributeType IndexedAttributeType;
         public CollationRule CollationRule;
-        public uint IndexAllocationEntryLength; // in bytes
-        public byte ClustersPerIndexRecord;
+        public uint BytesPerIndexRecord;
+        public byte BlocksPerIndexRecord; // In units of clusters when BytesPerIndexRecord >= Volume.BytesPerCluster, otherwise in units of 512 byte blocks.
         // 3 zero bytes
         public IndexHeader IndexHeader;
         public List<IndexEntry> IndexEntries = new List<IndexEntry>();
@@ -29,8 +29,8 @@ namespace DiskAccessLibrary.FileSystems.NTFS
         {
             IndexedAttributeType = (AttributeType)LittleEndianConverter.ToUInt32(this.Data, 0x00);
             CollationRule = (CollationRule)LittleEndianConverter.ToUInt32(this.Data, 0x04);
-            IndexAllocationEntryLength = LittleEndianConverter.ToUInt32(this.Data, 0x08);
-            ClustersPerIndexRecord = ByteReader.ReadByte(this.Data, 0x0C);
+            BytesPerIndexRecord = LittleEndianConverter.ToUInt32(this.Data, 0x08);
+            BlocksPerIndexRecord = ByteReader.ReadByte(this.Data, 0x0C);
             // 3 zero bytes (padding to 8-byte boundary)
             IndexHeader = new IndexHeader(this.Data, 0x10);
 
@@ -44,8 +44,8 @@ namespace DiskAccessLibrary.FileSystems.NTFS
             this.Data = new byte[dataLength];
             LittleEndianWriter.WriteUInt32(this.Data, 0x00, (uint)IndexedAttributeType);
             LittleEndianWriter.WriteUInt32(this.Data, 0x04, (uint)CollationRule);
-            LittleEndianWriter.WriteUInt32(this.Data, 0x08, (uint)IndexAllocationEntryLength);
-            ByteWriter.WriteByte(this.Data, 0x0C, ClustersPerIndexRecord);
+            LittleEndianWriter.WriteUInt32(this.Data, 0x08, (uint)BytesPerIndexRecord);
+            ByteWriter.WriteByte(this.Data, 0x0C, BlocksPerIndexRecord);
             IndexHeader.WriteBytes(this.Data, 0x10);
             IndexEntry.WriteIndexEntries(this.Data, 0x20, IndexEntries);
             return base.GetBytes(bytesPerCluster);

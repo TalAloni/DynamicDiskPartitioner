@@ -14,10 +14,11 @@ namespace DiskAccessLibrary.FileSystems.NTFS
     public class IndexRecord
     {
         public const string ValidSignature = "INDX";
+        public const int BytesPerIndexRecordBlock = 512;
 
         // MULTI_SECTOR_HEADER
         public ulong LogFileSequenceNumber;
-        public long RecordVCN; // Stored as unsigned, but is within the range of long
+        public long RecordVBN; // Stored as unsigned, but is within the range of long
         public IndexHeader IndexHeader;
         public ushort UpdateSequenceNumber;
         // byte[] UpdateSequenceReplacementData
@@ -31,7 +32,7 @@ namespace DiskAccessLibrary.FileSystems.NTFS
                 throw new InvalidDataException("Invalid INDX record signature");
             }
             LogFileSequenceNumber = LittleEndianConverter.ToUInt64(buffer, offset + 0x08);
-            RecordVCN = (long)LittleEndianConverter.ToUInt64(buffer, offset + 0x10);
+            RecordVBN = (long)LittleEndianConverter.ToUInt64(buffer, offset + 0x10);
             IndexHeader = new IndexHeader(buffer, offset + 0x18);
 
             int position = offset + multiSectorHeader.UpdateSequenceArrayOffset;

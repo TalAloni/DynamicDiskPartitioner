@@ -60,7 +60,17 @@ namespace DiskAccessLibrary.FileSystems.NTFS
                 {
                     IndexEntry parent = parents[0];
                     parents.RemoveAt(0);
-                    byte[] recordBytes = indexAllocationData.ReadClusters(parent.SubnodeVCN, m_rootRecord.ClustersPerIndexRecord);
+                    long subnodeVBN = parent.SubnodeVBN;
+                    if (m_rootRecord.BytesPerIndexRecord >= m_volume.BytesPerCluster)
+                    {
+                        // The VBN is a VCN so we need to translate to sector number
+                        subnodeVBN *= m_volume.SectorsPerCluster;
+                    }
+                    else
+                    {
+                        subnodeVBN = subnodeVBN * IndexRecord.BytesPerIndexRecordBlock / m_volume.BytesPerSector;
+                    }
+                    byte[] recordBytes = indexAllocationData.ReadSectors(subnodeVBN, this.SectorsPerIndexRecord);
                     IndexRecord record = new IndexRecord(recordBytes, 0);
                     if (record.IsParentNode)
                     {
@@ -83,6 +93,14 @@ namespace DiskAccessLibrary.FileSystems.NTFS
                 }
             }
             return result;
+        }
+
+        public int SectorsPerIndexRecord
+        {
+            get
+            {
+                return (int)m_rootRecord.BytesPerIndexRecord / m_volume.BytesPerSector;
+            }
         }
     }
 }

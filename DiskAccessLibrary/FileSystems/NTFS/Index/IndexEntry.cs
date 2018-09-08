@@ -20,7 +20,9 @@ namespace DiskAccessLibrary.FileSystems.NTFS
         public IndexEntryFlags Flags;
         // 2 zero bytes (padding)
         public byte[] Key;
-        public long SubnodeVCN; // if ParentNodeForm flag is set, stored as ulong but can be represented using long
+        /// <summary>In units of clusters when IndexRootRecord.BytesPerIndexRecord >= Volume.BytesPerCluster, otherwise in units of 512 byte blocks.</summary>
+        /// <remarks>Present if ParentNodeForm flag is set</remarks>
+        public long SubnodeVBN; // Stored as ulong but can be represented using long
 
         public IndexEntry()
         {
@@ -31,7 +33,7 @@ namespace DiskAccessLibrary.FileSystems.NTFS
         public IndexEntry(byte[] buffer, ref int offset)
         {
             FileReference = new MftSegmentReference(buffer, offset + 0x00);
-            ushort recordLength = LittleEndianConverter.ToUInt16(buffer, offset + 0x08);
+            ushort entryLength = LittleEndianConverter.ToUInt16(buffer, offset + 0x08);
             ushort keyLength = LittleEndianConverter.ToUInt16(buffer, offset + 0x0A);
             Flags = (IndexEntryFlags)LittleEndianConverter.ToUInt16(buffer, offset + 0x0C);
             Key = ByteReader.ReadBytes(buffer, offset + 0x10, keyLength);
@@ -39,9 +41,9 @@ namespace DiskAccessLibrary.FileSystems.NTFS
             {
                 // Key is padded to align to 8 byte boundary
                 int keyLengthWithPadding = (int)Math.Ceiling((double)keyLength / 8) * 8;
-                SubnodeVCN = (long)LittleEndianConverter.ToUInt64(buffer, offset + 0x10 + keyLengthWithPadding);
+                SubnodeVBN = (long)LittleEndianConverter.ToUInt64(buffer, offset + 0x10 + keyLengthWithPadding);
             }
-            offset += recordLength;
+            offset += entryLength;
         }
 
         public void WriteBytes(byte[] buffer, int offset)
@@ -54,7 +56,7 @@ namespace DiskAccessLibrary.FileSystems.NTFS
             ByteWriter.WriteBytes(buffer, offset + 0x10, Key);
             if (ParentNodeForm)
             {
-                LittleEndianWriter.WriteUInt64(buffer, offset + entryLength - 8, (ulong)SubnodeVCN);
+                LittleEndianWriter.WriteUInt64(buffer, offset + entryLength - 8, (ulong)SubnodeVBN);
             }
         }
 
