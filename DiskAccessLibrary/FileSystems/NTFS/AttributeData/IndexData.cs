@@ -6,6 +6,7 @@
  */
 using System;
 using System.Collections.Generic;
+using System.IO;
 using Utilities;
 
 namespace DiskAccessLibrary.FileSystems.NTFS
@@ -17,6 +18,8 @@ namespace DiskAccessLibrary.FileSystems.NTFS
         private AttributeType m_indexedAttributeType; // Type of the attribute being indexed
         private string m_indexName;
         private IndexRootRecord m_rootRecord;
+        private NonResidentAttributeRecord m_indexAllocationRecord;
+        private NonResidentAttributeData m_indexAllocationData;
 
         public IndexData(NTFSVolume volume, FileRecord fileRecord, AttributeType indexedAttributeType)
         {
@@ -25,6 +28,15 @@ namespace DiskAccessLibrary.FileSystems.NTFS
             m_indexedAttributeType = indexedAttributeType;
             m_indexName = "$I" + ((uint)indexedAttributeType).ToString("X");
             m_rootRecord = (IndexRootRecord)m_fileRecord.GetAttributeRecord(AttributeType.IndexRoot, m_indexName);
+            if (m_rootRecord.IsParentNode)
+            {
+                m_indexAllocationRecord = (IndexAllocationRecord)m_fileRecord.GetAttributeRecord(AttributeType.IndexAllocation, m_indexName);
+                if (m_indexAllocationRecord == null)
+                {
+                    throw new InvalidDataException("Missing Index Allocation Record");
+                }
+                m_indexAllocationData = new NonResidentAttributeData(m_volume, m_indexAllocationRecord);
+            }
         }
 
         public KeyValuePairList<MftSegmentReference, FileNameRecord> GetAllFileNameRecords()
@@ -52,26 +64,13 @@ namespace DiskAccessLibrary.FileSystems.NTFS
             }
             else
             {
-                IndexAllocationRecord indexAllocationRecord = (IndexAllocationRecord)m_fileRecord.GetAttributeRecord(AttributeType.IndexAllocation, m_indexName);
-                NonResidentAttributeData indexAllocationData = new NonResidentAttributeData(m_volume, indexAllocationRecord);
                 List<IndexEntry> parents = new List<IndexEntry>(m_rootRecord.IndexEntries);
 
                 while (parents.Count > 0)
                 {
                     IndexEntry parent = parents[0];
                     parents.RemoveAt(0);
-                    long subnodeVBN = parent.SubnodeVBN;
-                    if (m_rootRecord.BytesPerIndexRecord >= m_volume.BytesPerCluster)
-                    {
-                        // The VBN is a VCN so we need to translate to sector number
-                        subnodeVBN *= m_volume.SectorsPerCluster;
-                    }
-                    else
-                    {
-                        subnodeVBN = subnodeVBN * IndexRecord.BytesPerIndexRecordBlock / m_volume.BytesPerSector;
-                    }
-                    byte[] recordBytes = indexAllocationData.ReadSectors(subnodeVBN, this.SectorsPerIndexRecord);
-                    IndexRecord record = new IndexRecord(recordBytes, 0);
+                    IndexRecord record = ReadIndexRecord(parent.SubnodeVBN);
                     if (record.IsParentNode)
                     {
                         parents.InsertRange(0, record.IndexEntries);
@@ -93,6 +92,22 @@ namespace DiskAccessLibrary.FileSystems.NTFS
                 }
             }
             return result;
+        }
+
+        public IndexRecord ReadIndexRecord(long subnodeVBN)
+        {
+            if (m_rootRecord.BytesPerIndexRecord >= m_volume.BytesPerCluster)
+            {
+                // The VBN is a VCN so we need to translate to sector number
+                subnodeVBN *= m_volume.SectorsPerCluster;
+            }
+            else
+            {
+                subnodeVBN = subnodeVBN * IndexRecord.BytesPerIndexRecordBlock / m_volume.BytesPerSector;
+            }
+            byte[] recordBytes = m_indexAllocationData.ReadSectors(subnodeVBN, this.SectorsPerIndexRecord);
+            IndexRecord record = new IndexRecord(recordBytes, 0);
+            return record;
         }
 
         public int SectorsPerIndexRecord
