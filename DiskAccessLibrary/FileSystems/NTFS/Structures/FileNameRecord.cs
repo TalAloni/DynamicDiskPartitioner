@@ -1,4 +1,4 @@
-/* Copyright (C) 2014 Tal Aloni <tal.aloni.il@gmail.com>. All rights reserved.
+/* Copyright (C) 2014-2018 Tal Aloni <tal.aloni.il@gmail.com>. All rights reserved.
  * 
  * You can redistribute this program and/or modify it under the terms of
  * the GNU Lesser Public License as published by the Free Software Foundation,
@@ -36,9 +36,9 @@ namespace DiskAccessLibrary.FileSystems.NTFS
             LastAccessTime = StandardInformationRecord.ReadDateTime(buffer, offset + 0x20);
             AllocatedSize = LittleEndianConverter.ToUInt64(buffer, offset + 0x28);
             RealSize = LittleEndianConverter.ToUInt64(buffer, offset + 0x30);
-            byte fnLen = ByteReader.ReadByte(buffer, offset + 0x40);
+            byte fileNameLength = ByteReader.ReadByte(buffer, offset + 0x40);
             Namespace = (FilenameNamespace)ByteReader.ReadByte(buffer, offset + 0x41);
-            FileName = Encoding.Unicode.GetString(buffer, offset + 0x42, fnLen * 2);
+            FileName = Encoding.Unicode.GetString(buffer, offset + 0x42, fileNameLength * 2);
         }
 
         public byte[] GetBytes()
@@ -57,6 +57,12 @@ namespace DiskAccessLibrary.FileSystems.NTFS
             ByteWriter.WriteBytes(buffer, 0x42, Encoding.Unicode.GetBytes(FileName));
 
             return buffer;
+        }
+
+        public static string ReadFileName(byte[] buffer, int offset)
+        {
+            byte fileNameLength = ByteReader.ReadByte(buffer, offset + 0x40);
+            return Encoding.Unicode.GetString(buffer, offset + 0x42, fileNameLength * 2);
         }
     }
 }
