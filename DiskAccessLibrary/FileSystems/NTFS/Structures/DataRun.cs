@@ -142,14 +142,6 @@ namespace DiskAccessLibrary.FileSystems.NTFS
             return len;
         }
 
-        public int RecordLengthOnDisk
-        {
-            get
-            {
-                return m_recordLengthOnDisk;
-            }
-        }
-
         /// <summary>
         /// Length of the DataRun record
         /// </summary>
@@ -160,6 +152,14 @@ namespace DiskAccessLibrary.FileSystems.NTFS
                 int runLengthSize = VarLongSize(RunLength);
                 int runOffsetSize = VarLongSize(RunOffset);
                 return 1 + runLengthSize + runOffsetSize;
+            }
+        }
+
+        public int RecordLengthOnDisk
+        {
+            get
+            {
+                return m_recordLengthOnDisk;
             }
         }
     }

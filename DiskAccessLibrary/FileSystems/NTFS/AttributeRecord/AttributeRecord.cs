@@ -104,6 +104,28 @@ namespace DiskAccessLibrary.FileSystems.NTFS
             }
         }
 
+        public abstract ulong DataRealSize
+        {
+            get;
+        }
+
+        /// <summary>
+        /// When reading attributes, they may contain additional padding,
+        /// so we should use RecordLengthOnDisk to advance the buffer position instead.
+        /// </summary>
+        public abstract uint RecordLength
+        {
+            get;
+        }
+
+        public uint RecordLengthOnDisk
+        {
+            get
+            {
+                return m_recordLengthOnDisk;
+            }
+        }
+
         public static AttributeRecord FromBytes(byte[] buffer, int offset)
         {
             AttributeType attributeType = (AttributeType)LittleEndianConverter.ToUInt32(buffer, offset + 0x00);
@@ -142,28 +164,6 @@ namespace DiskAccessLibrary.FileSystems.NTFS
                     return new NonResidentAttributeRecord(buffer, offset);
                 }
             }
-        }
-
-        public uint RecordLengthOnDisk
-        {
-            get
-            {
-                return m_recordLengthOnDisk;
-            }
-        }
-
-        /// <summary>
-        /// When reading attributes, they may contain additional padding,
-        /// so we should use RecordLengthOnDisk to advance the buffer position instead.
-        /// </summary>
-        public abstract uint RecordLength
-        {
-            get;
-        }
-
-        public abstract ulong DataRealSize
-        {
-            get;
         }
     }
 }
