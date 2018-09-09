@@ -32,43 +32,43 @@ namespace DiskAccessLibrary.FileSystems.NTFS
         /// .
         /// </remarks>
         /// <returns>Record index</returns>
-        public long? AllocateRecord(NTFSVolume volume)
+        public long? AllocateRecord()
         {
-            long? recordIndex = AllocateRecord(volume, m_searchStartIndex);
+            long? recordIndex = AllocateRecord(m_searchStartIndex);
             if (recordIndex.HasValue)
             {
                 m_searchStartIndex = recordIndex.Value + 1;
             }
             else
             {
-                recordIndex = AllocateRecord(volume, 0, m_searchStartIndex - 1);
+                recordIndex = AllocateRecord(0, m_searchStartIndex - 1);
                 m_searchStartIndex = recordIndex.Value + 1;
             }
             return recordIndex;
         }
 
         /// <returns>Record index</returns>
-        public long? AllocateRecord(NTFSVolume volume, long searchStartIndex)
+        public long? AllocateRecord(long searchStartIndex)
         {
-            return AllocateRecord(volume, searchStartIndex, m_numberOfUsableBits - 1);
+            return AllocateRecord(searchStartIndex, m_numberOfUsableBits - 1);
         }
 
         /// <returns>Record index</returns>
-        public long? AllocateRecord(NTFSVolume volume, long searchStartIndex, long searchEndIndex)
+        public long? AllocateRecord(long searchStartIndex, long searchEndIndex)
         {
             long bufferedVCN = -1;
             byte[] bufferedClusterBytes = null;
 
             for (long index = searchStartIndex; index <= searchEndIndex; index++)
             {
-                long currentVCN = index / (volume.BytesPerCluster * 8);
+                long currentVCN = index / (Volume.BytesPerCluster * 8);
                 if (currentVCN != bufferedVCN)
                 {
                     bufferedClusterBytes = ReadCluster(currentVCN);
                     bufferedVCN = currentVCN;
                 }
 
-                int bitOffsetInBitmap = (int)(index % (volume.BytesPerCluster * 8));
+                int bitOffsetInBitmap = (int)(index % (Volume.BytesPerCluster * 8));
                 if (IsBitClear(bufferedClusterBytes, bitOffsetInBitmap))
                 {
                     return index;
