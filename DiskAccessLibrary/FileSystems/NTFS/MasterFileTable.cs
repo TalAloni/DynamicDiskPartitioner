@@ -30,7 +30,7 @@ namespace DiskAccessLibrary.FileSystems.NTFS
         private const long UpCaseSegmentNumber = 10;
         private const long ExtendSegmentNumber = 11;
         // The $Extend Metafile is simply a directory index that contains information on where to locate the last four metafiles ($ObjId, $Quota, $Reparse and $UsnJrnl)
-        internal readonly int AttributeDataLengthToMakeNonResident;
+        internal readonly int AttributeRecordLengthToMakeNonResident;
 
         private NTFSVolume m_volume;
         private FileRecord m_mftRecord;
@@ -51,7 +51,7 @@ namespace DiskAccessLibrary.FileSystems.NTFS
             m_volume = volume;
             m_mftRecord = ReadMftRecord(useMftMirror, manageMftMirror);
             m_mftFile = new NTFSFile(m_volume, m_mftRecord);
-            AttributeDataLengthToMakeNonResident = m_volume.BytesPerFileRecordSegment * 5 / 16; // We immitate the NTFS v5.1 driver
+            AttributeRecordLengthToMakeNonResident = m_volume.BytesPerFileRecordSegment * 5 / 16; // We immitate the NTFS v5.1 driver
         }
 
         private FileRecord ReadMftRecord(bool useMftMirror, bool readMftMirror)

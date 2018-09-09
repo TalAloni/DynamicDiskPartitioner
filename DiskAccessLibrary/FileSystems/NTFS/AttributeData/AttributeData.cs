@@ -217,7 +217,8 @@ namespace DiskAccessLibrary.FileSystems.NTFS
             {
                 byte[] data = ((ResidentAttributeRecord)m_attributeRecord).Data;
                 ulong finalDataLength = (uint)data.Length + additionalLengthInBytes;
-                if (finalDataLength >= (ulong)m_volume.MasterFileTable.AttributeDataLengthToMakeNonResident)
+                ulong finalRecordLength = m_attributeRecord.RecordLength + additionalLengthInBytes;
+                if (finalRecordLength >= (ulong)m_volume.MasterFileTable.AttributeRecordLengthToMakeNonResident)
                 {
                     // Convert the attribute to non-resident
                     long clustersToAllocate = (long)Math.Ceiling((double)finalDataLength / m_volume.BytesPerCluster);
