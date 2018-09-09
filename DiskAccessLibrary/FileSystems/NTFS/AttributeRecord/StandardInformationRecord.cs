@@ -1,4 +1,4 @@
-/* Copyright (C) 2014 Tal Aloni <tal.aloni.il@gmail.com>. All rights reserved.
+/* Copyright (C) 2014-2018 Tal Aloni <tal.aloni.il@gmail.com>. All rights reserved.
  * 
  * You can redistribute this program and/or modify it under the terms of
  * the GNU Lesser Public License as published by the Free Software Foundation,
@@ -15,8 +15,8 @@ namespace DiskAccessLibrary.FileSystems.NTFS
     /// </remarks>
     public class StandardInformationRecord : ResidentAttributeRecord
     {
-        public const int Length = 0x30;
-        public const int LengthExtended = 0x48; // Note: even on NTFS 3.x, a few metafiles will use shorter length records.
+        public const int RecordDataLengthNTFS12 = 0x30;
+        public const int RecordDataLengthNTFS30 = 0x48; // Note: even on NTFS 3.x, a few metafiles will use shorter length records.
 
         public DateTime CreationTime;        // File creation time
         public DateTime ModificationTime;    // Last time the DATA attribute was modified
@@ -41,7 +41,7 @@ namespace DiskAccessLibrary.FileSystems.NTFS
             MaximumVersionNumber = LittleEndianConverter.ToUInt32(this.Data, 0x24);
             VersionNumber = LittleEndianConverter.ToUInt32(this.Data, 0x28);
             ClassID = LittleEndianConverter.ToUInt32(this.Data, 0x2C);
-            if (this.Data.Length == LengthExtended)
+            if (this.Data.Length == RecordDataLengthNTFS30)
             {
                 OwnerID = LittleEndianConverter.ToUInt32(this.Data, 0x30);
                 SecurityID = LittleEndianConverter.ToUInt32(this.Data, 0x34);
@@ -52,7 +52,7 @@ namespace DiskAccessLibrary.FileSystems.NTFS
 
         public override byte[] GetBytes(int bytesPerCluster)
         {
-            this.Data = new byte[LengthExtended];
+            this.Data = new byte[RecordDataLengthNTFS30];
             WriteDateTime(this.Data, 0x00, CreationTime);
             WriteDateTime(this.Data, 0x08, ModificationTime);
             WriteDateTime(this.Data, 0x10, MftModificationTime);
