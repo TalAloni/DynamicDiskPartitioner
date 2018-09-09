@@ -30,6 +30,12 @@ namespace DiskAccessLibrary.FileSystems.NTFS
             Key = new byte[0];
         }
 
+        public IndexEntry(MftSegmentReference fileReference, byte[] key)
+        {
+            FileReference = fileReference;
+            Key = key;
+        }
+
         public IndexEntry(byte[] buffer, ref int offset)
         {
             FileReference = new MftSegmentReference(buffer, offset + 0x00);
