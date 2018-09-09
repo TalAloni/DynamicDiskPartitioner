@@ -23,7 +23,7 @@ namespace DiskAccessLibrary.FileSystems.NTFS
         public byte MinorVersion;
         public VolumeFlags VolumeFlags;
 
-        public VolumeInformationRecord(ushort instance) : base(AttributeType.VolumeInformation, String.Empty, instance)
+        public VolumeInformationRecord(string name, ushort instance) : base(AttributeType.VolumeInformation, name, instance)
         {
             MajorVersion = 3;
             MinorVersion = 1;

@@ -18,6 +18,10 @@ namespace DiskAccessLibrary.FileSystems.NTFS
     {
         public FileNameRecord Record;
 
+        public FileNameAttributeRecord(string name, ushort instance) : base(AttributeType.FileName, name, instance)
+        {
+        }
+
         public FileNameAttributeRecord(byte[] buffer, int offset) : base(buffer, offset)
         {
             Record = new FileNameRecord(this.Data, 0);

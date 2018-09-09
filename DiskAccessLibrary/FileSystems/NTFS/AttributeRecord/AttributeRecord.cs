@@ -126,6 +126,25 @@ namespace DiskAccessLibrary.FileSystems.NTFS
             }
         }
 
+        public static AttributeRecord Create(AttributeType type, string name, ushort instance)
+        {
+            switch (type)
+            {
+                case AttributeType.StandardInformation:
+                    return new StandardInformationRecord(name, instance);
+                case AttributeType.FileName:
+                    return new FileNameAttributeRecord(name, instance);
+                case AttributeType.VolumeInformation:
+                    return new VolumeInformationRecord(name, instance);
+                case AttributeType.IndexRoot:
+                    return new IndexRootRecord(name, instance);
+                case AttributeType.IndexAllocation:
+                    return new IndexAllocationRecord(name, instance);
+                default:
+                    return new ResidentAttributeRecord(type, name, instance);
+            }
+        }
+
         public static AttributeRecord FromBytes(byte[] buffer, int offset)
         {
             AttributeType attributeType = (AttributeType)LittleEndianConverter.ToUInt32(buffer, offset + 0x00);

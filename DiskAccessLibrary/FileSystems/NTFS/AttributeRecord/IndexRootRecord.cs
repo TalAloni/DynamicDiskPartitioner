@@ -23,7 +23,13 @@ namespace DiskAccessLibrary.FileSystems.NTFS
         public byte BlocksPerIndexRecord; // In units of clusters when BytesPerIndexRecord >= Volume.BytesPerCluster, otherwise in units of 512 byte blocks.
         // 3 zero bytes
         public IndexHeader IndexHeader;
-        public List<IndexEntry> IndexEntries = new List<IndexEntry>();
+        public List<IndexEntry> IndexEntries;
+
+        public IndexRootRecord(string name, ushort instance) : base(AttributeType.IndexRoot, name, instance)
+        {
+            IndexHeader = new IndexHeader();
+            IndexEntries = new List<IndexEntry>();
+        }
         
         public IndexRootRecord(byte[] buffer, int offset) : base(buffer, offset)
         {

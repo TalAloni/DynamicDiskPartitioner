@@ -15,6 +15,10 @@ namespace DiskAccessLibrary.FileSystems.NTFS
     /// </remarks>
     public class IndexAllocationRecord : NonResidentAttributeRecord
     {
+        public IndexAllocationRecord(string name, ushort instance) : base(AttributeType.IndexAllocation, name, instance)
+        {
+        }
+
         public IndexAllocationRecord(byte[] buffer, int offset) : base(buffer, offset)
         {
         }
