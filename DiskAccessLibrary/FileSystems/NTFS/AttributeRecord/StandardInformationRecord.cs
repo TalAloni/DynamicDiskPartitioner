@@ -56,7 +56,7 @@ namespace DiskAccessLibrary.FileSystems.NTFS
 
         public override byte[] GetBytes(int bytesPerCluster)
         {
-            this.Data = new byte[RecordDataLengthNTFS30];
+            this.Data = new byte[this.DataLength];
             WriteDateTime(this.Data, 0x00, CreationTime);
             WriteDateTime(this.Data, 0x08, ModificationTime);
             WriteDateTime(this.Data, 0x10, MftModificationTime);
@@ -71,6 +71,14 @@ namespace DiskAccessLibrary.FileSystems.NTFS
             LittleEndianWriter.WriteUInt64(this.Data, 0x40, UpdateSequenceNumber);
 
             return base.GetBytes(bytesPerCluster);
+        }
+
+        public override ulong DataLength
+        {
+            get
+            {
+                return RecordDataLengthNTFS30;
+            }
         }
 
         public static DateTime ReadDateTime(byte[] buffer, int offset)

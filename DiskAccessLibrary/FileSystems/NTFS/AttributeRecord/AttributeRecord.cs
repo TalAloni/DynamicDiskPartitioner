@@ -104,7 +104,7 @@ namespace DiskAccessLibrary.FileSystems.NTFS
             }
         }
 
-        public abstract ulong DataRealSize
+        public abstract ulong DataLength
         {
             get;
         }

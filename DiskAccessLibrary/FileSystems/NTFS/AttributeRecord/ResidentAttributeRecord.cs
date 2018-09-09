@@ -43,8 +43,7 @@ namespace DiskAccessLibrary.FileSystems.NTFS
 
         public override byte[] GetBytes(int bytesPerCluster)
         {
-            uint length = this.RecordLength;
-            byte[] buffer = new byte[length];
+            byte[] buffer = new byte[this.RecordLength];
             WriteHeader(buffer, HeaderLength);
             uint dataLength = (uint)Data.Length;
             ushort dataOffset = (ushort)(HeaderLength + Name.Length * 2);
@@ -58,6 +57,14 @@ namespace DiskAccessLibrary.FileSystems.NTFS
             return buffer;
         }
 
+        public override ulong DataLength
+        {
+            get
+            {
+                return (ulong)Data.Length;
+            }
+        }
+
         /// <summary>
         /// When reading attributes, they may contain additional padding,
         /// so we should use RecordLengthOnDisk to advance the buffer position instead.
@@ -66,18 +73,10 @@ namespace DiskAccessLibrary.FileSystems.NTFS
         {
             get 
             {
-                uint length = (uint)(AttributeRecord.AttributeRecordHeaderLength + 8 + Name.Length * 2 + Data.Length);
+                uint length = (uint)(AttributeRecord.AttributeRecordHeaderLength + 8 + Name.Length * 2 + (int)this.DataLength);
                 // Each record is aligned to 8-byte boundary
                 length = (uint)Math.Ceiling((double)length / 8) * 8;
                 return length;
-            }
-        }
-
-        public override ulong DataRealSize
-        {
-            get
-            {
-                return (ulong)Data.Length;
             }
         }
     }

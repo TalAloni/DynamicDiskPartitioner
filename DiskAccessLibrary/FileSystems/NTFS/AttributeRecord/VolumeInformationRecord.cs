@@ -38,12 +38,20 @@ namespace DiskAccessLibrary.FileSystems.NTFS
 
         public override byte[] GetBytes(int bytesPerCluster)
         {
-            this.Data = new byte[RecordDataLength];
+            this.Data = new byte[this.DataLength];
             ByteWriter.WriteByte(this.Data, 0x08, MajorVersion);
             ByteWriter.WriteByte(this.Data, 0x09, MinorVersion);
             LittleEndianWriter.WriteUInt16(this.Data, 0x0A, (ushort)VolumeFlags);
 
             return base.GetBytes(bytesPerCluster);
+        }
+
+        public override ulong DataLength
+        {
+            get
+            {
+                return RecordDataLength;
+            }
         }
     }
 }

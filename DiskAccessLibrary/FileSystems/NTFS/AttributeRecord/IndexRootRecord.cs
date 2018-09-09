@@ -40,8 +40,7 @@ namespace DiskAccessLibrary.FileSystems.NTFS
 
         public override byte[] GetBytes(int bytesPerCluster)
         {
-            int dataLength = FixedLength + IndexEntry.GetLength(IndexEntries);
-            this.Data = new byte[dataLength];
+            this.Data = new byte[this.DataLength];
             LittleEndianWriter.WriteUInt32(this.Data, 0x00, (uint)IndexedAttributeType);
             LittleEndianWriter.WriteUInt32(this.Data, 0x04, (uint)CollationRule);
             LittleEndianWriter.WriteUInt32(this.Data, 0x08, (uint)BytesPerIndexRecord);
@@ -49,6 +48,14 @@ namespace DiskAccessLibrary.FileSystems.NTFS
             IndexHeader.WriteBytes(this.Data, 0x10);
             IndexEntry.WriteIndexEntries(this.Data, 0x20, IndexEntries);
             return base.GetBytes(bytesPerCluster);
+        }
+
+        public override ulong DataLength
+        {
+            get
+            {
+                return (ulong)(FixedLength + IndexEntry.GetLength(IndexEntries));
+            }
         }
 
         public bool IsParentNode

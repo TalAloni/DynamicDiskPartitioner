@@ -105,7 +105,7 @@ namespace DiskAccessLibrary.FileSystems.NTFS
             }
         }
 
-        public override ulong DataRealSize
+        public override ulong DataLength
         {
             get
             {
