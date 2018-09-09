@@ -16,21 +16,23 @@ namespace DiskAccessLibrary.FileSystems.NTFS
     /// </remarks>
     public class VolumeNameRecord : ResidentAttributeRecord
     {
-        public string VolumeName;
+        public const int MaxVolumeNameLength = 32;
+
+        private string m_volumeName;
 
         public VolumeNameRecord(string name, ushort instance) : base(AttributeType.VolumeName, name, instance)
         {
-            VolumeName = String.Empty;
+            m_volumeName = String.Empty;
         }
 
         public VolumeNameRecord(byte[] buffer, int offset) : base(buffer, offset)
         {
-            VolumeName = Encoding.Unicode.GetString(this.Data);
+            m_volumeName = Encoding.Unicode.GetString(this.Data);
         }
 
         public override byte[] GetBytes(int bytesPerCluster)
         {
-            this.Data = Encoding.Unicode.GetBytes(VolumeName);
+            this.Data = Encoding.Unicode.GetBytes(m_volumeName);
 
             return base.GetBytes(bytesPerCluster);
         }
@@ -39,7 +41,23 @@ namespace DiskAccessLibrary.FileSystems.NTFS
         {
             get
             {
-                return (ulong)VolumeName.Length * 2;
+                return (ulong)m_volumeName.Length * 2;
+            }
+        }
+
+        public string VolumeName
+        {
+            get
+            {
+                return m_volumeName;
+            }
+            set
+            {
+                if (value.Length > MaxVolumeNameLength)
+                {
+                    throw new ArgumentException("Volume name length is limited to 32 characters");
+                }
+                m_volumeName = value;
             }
         }
     }
