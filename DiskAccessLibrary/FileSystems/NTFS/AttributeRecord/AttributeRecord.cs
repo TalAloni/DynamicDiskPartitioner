@@ -134,6 +134,8 @@ namespace DiskAccessLibrary.FileSystems.NTFS
                     return new StandardInformationRecord(name, instance);
                 case AttributeType.FileName:
                     return new FileNameAttributeRecord(name, instance);
+                case AttributeType.VolumeName:
+                    return new VolumeNameRecord(name, instance);
                 case AttributeType.VolumeInformation:
                     return new VolumeInformationRecord(name, instance);
                 case AttributeType.IndexRoot:
@@ -158,6 +160,10 @@ namespace DiskAccessLibrary.FileSystems.NTFS
                 else if (attributeType == AttributeType.FileName)
                 {
                     return new FileNameAttributeRecord(buffer, offset);
+                }
+                else if (attributeType == AttributeType.VolumeName)
+                {
+                    return new VolumeNameRecord(buffer, offset);
                 }
                 else if (attributeType == AttributeType.VolumeInformation)
                 {

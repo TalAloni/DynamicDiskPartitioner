@@ -192,6 +192,20 @@ namespace DiskAccessLibrary.FileSystems.NTFS
             m_volume.WriteSectors(sectorIndex, data);
         }
 
+        public VolumeNameRecord GetVolumeNameRecord()
+        {
+            FileRecord volumeRecord = m_mft.GetVolumeRecord();
+            if (volumeRecord != null)
+            {
+                VolumeNameRecord volumeNameRecord = (VolumeNameRecord)volumeRecord.GetAttributeRecord(AttributeType.VolumeName, String.Empty);
+                return volumeNameRecord;
+            }
+            else
+            {
+                throw new InvalidDataException("Invalid NTFS volume record");
+            }
+        }
+
         public VolumeInformationRecord GetVolumeInformationRecord()
         {
             FileRecord volumeRecord = m_mft.GetVolumeRecord();
