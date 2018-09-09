@@ -43,7 +43,7 @@ namespace DiskAccessLibrary.FileSystems.NTFS
 
         public byte[] GetBytes()
         {
-            byte[] buffer = new byte[FixedLength + FileName.Length * 2];
+            byte[] buffer = new byte[this.Length];
 
             ParentDirectory.WriteBytes(buffer, 0x00);
             StandardInformationRecord.WriteDateTime(buffer, 0x08, CreationTime);
@@ -57,6 +57,14 @@ namespace DiskAccessLibrary.FileSystems.NTFS
             ByteWriter.WriteBytes(buffer, 0x42, Encoding.Unicode.GetBytes(FileName));
 
             return buffer;
+        }
+
+        public int Length
+        {
+            get
+            {
+                return FixedLength + FileName.Length * 2;
+            }
         }
 
         public static string ReadFileName(byte[] buffer, int offset)
