@@ -309,6 +309,22 @@ namespace DiskAccessLibrary.FileSystems.NTFS
             }
         }
 
+        protected NTFSVolume Volume
+        {
+            get
+            {
+                return m_volume;
+            }
+        }
+
+        protected FileRecord FileRecord
+        {
+            get
+            {
+                return m_fileRecord;
+            }
+        }
+
         public AttributeRecord AttributeRecord
         {
             get
