@@ -31,6 +31,10 @@ namespace DiskAccessLibrary.FileSystems.NTFS
         public ulong QuotaCharged; // NTFS v3.0+
         public ulong UpdateSequenceNumber; // a.k.a. USN, NTFS v3.0+
 
+        public StandardInformationRecord(ushort instance) : base(AttributeType.StandardInformation, String.Empty, instance)
+        {
+        }
+
         public StandardInformationRecord(byte[] buffer, int offset) : base(buffer, offset)
         {
             CreationTime = ReadDateTime(this.Data, 0x00);
@@ -40,9 +44,9 @@ namespace DiskAccessLibrary.FileSystems.NTFS
             FileAttributes = (FileAttributes)LittleEndianConverter.ToUInt32(this.Data, 0x20);
             MaximumVersionNumber = LittleEndianConverter.ToUInt32(this.Data, 0x24);
             VersionNumber = LittleEndianConverter.ToUInt32(this.Data, 0x28);
-            ClassID = LittleEndianConverter.ToUInt32(this.Data, 0x2C);
             if (this.Data.Length == RecordDataLengthNTFS30)
             {
+                ClassID = LittleEndianConverter.ToUInt32(this.Data, 0x2C);
                 OwnerID = LittleEndianConverter.ToUInt32(this.Data, 0x30);
                 SecurityID = LittleEndianConverter.ToUInt32(this.Data, 0x34);
                 QuotaCharged = LittleEndianConverter.ToUInt64(this.Data, 0x38);
