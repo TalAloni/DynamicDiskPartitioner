@@ -22,38 +22,44 @@ namespace DiskAccessLibrary.FileSystems.NTFS
         public static List<AttributeRecord> GetAssembledAttributes(List<FileRecordSegment> segments)
         {
             List<AttributeRecord> result = new List<AttributeRecord>();
-            // We need to assemble fragmented attributes (if there are any),
-            // if two attributes have the same AttributeType and Name, then we need to assemble them back together.
-            Dictionary<KeyValuePair<AttributeType, string>, List<NonResidentAttributeRecord>> fragments = new Dictionary<KeyValuePair<AttributeType, string>, List<NonResidentAttributeRecord>>();
+            // If two non-resident attributes have the same AttributeType and Name, then we need to assemble them back together.
+            // Additional fragments immediately follow after the initial fragment.
+            AttributeType currentAttributeType = AttributeType.None;
+            string currentAttributeName = String.Empty;
+            List<NonResidentAttributeRecord> fragments = new List<NonResidentAttributeRecord>();
             foreach (FileRecordSegment segment in segments)
             {
                 foreach (AttributeRecord attribute in segment.ImmediateAttributes)
                 {
+                    bool additionalFragment = (attribute is NonResidentAttributeRecord) && (fragments.Count > 0) &&
+                                              (attribute.AttributeType == currentAttributeType) && (attribute.Name == currentAttributeName);
+
+                    if (!additionalFragment && fragments.Count > 0)
+                    {
+                        NonResidentAttributeRecord assembledAttribute = AssembleFragments(fragments);
+                        result.Add(assembledAttribute);
+                        fragments.Clear();
+                    }
+
                     if (attribute is ResidentAttributeRecord)
                     {
                         result.Add(attribute);
                     }
                     else
                     {
-                        KeyValuePair<AttributeType, string> key = new KeyValuePair<AttributeType, string>(attribute.AttributeType, attribute.Name);
-                        if (fragments.ContainsKey(key))
+                        fragments.Add((NonResidentAttributeRecord)attribute);
+                        if (!additionalFragment)
                         {
-                            fragments[key].Add((NonResidentAttributeRecord)attribute);
-                        }
-                        else
-                        {
-                            List<NonResidentAttributeRecord> attributeFragments = new List<NonResidentAttributeRecord>();
-                            attributeFragments.Add((NonResidentAttributeRecord)attribute);
-                            fragments.Add(key, attributeFragments);
+                            currentAttributeType = attribute.AttributeType;
+                            currentAttributeName = attribute.Name;
                         }
                     }
                 }
             }
 
-            // assemble all non-resident attributes
-            foreach (List<NonResidentAttributeRecord> attributeFragments in fragments.Values)
+            if (fragments.Count > 0)
             {
-                NonResidentAttributeRecord assembledAttribute = AssembleFragments(attributeFragments);
+                NonResidentAttributeRecord assembledAttribute = AssembleFragments(fragments);
                 result.Add(assembledAttribute);
             }
 
