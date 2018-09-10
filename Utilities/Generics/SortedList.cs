@@ -124,6 +124,11 @@ namespace Utilities
 
         public static int FindIndexForSortedInsert(List<T> list, Comparer<T> comparer, T item)
         {
+            return FindIndexForSortedInsert(list, comparer.Compare, item);
+        }
+
+        public static int FindIndexForSortedInsert(List<T> list, Comparison<T> compare, T item)
+        {
             if (list.Count == 0)
             {
                 return 0;
@@ -136,7 +141,7 @@ namespace Utilities
             {
                 int middleIndex = (lowerIndex + upperIndex) / 2;
                 T middle = list[middleIndex];
-                comparisonResult = comparer.Compare(middle, item);
+                comparisonResult = compare(middle, item);
                 if (comparisonResult == 0)
                 {
                     return middleIndex;
@@ -154,7 +159,7 @@ namespace Utilities
             // At this point any entry following 'middle' is greater than 'item',
             // and any entry preceding 'middle' is lesser than 'item'.
             // So we either put 'item' before or after 'middle'.
-            comparisonResult = comparer.Compare(list[lowerIndex], item);
+            comparisonResult = compare(list[lowerIndex], item);
             if (comparisonResult < 0) // middle < item
             {
                 return lowerIndex + 1;
