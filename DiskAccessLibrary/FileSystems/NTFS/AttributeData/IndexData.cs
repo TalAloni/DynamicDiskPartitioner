@@ -26,7 +26,7 @@ namespace DiskAccessLibrary.FileSystems.NTFS
             m_volume = volume;
             m_fileRecord = fileRecord;
             m_indexedAttributeType = indexedAttributeType;
-            m_indexName = "$I" + ((uint)indexedAttributeType).ToString("X");
+            m_indexName = IndexHelper.GetIndexName(indexedAttributeType);
             m_rootRecord = (IndexRootRecord)m_fileRecord.GetAttributeRecord(AttributeType.IndexRoot, m_indexName);
             if (m_rootRecord.IsParentNode)
             {

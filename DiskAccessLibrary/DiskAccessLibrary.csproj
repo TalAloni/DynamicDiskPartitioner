@@ -92,6 +92,7 @@
     <Compile Include="FileSystems\NTFS\Index\CollationHelper.cs" />
     <Compile Include="FileSystems\NTFS\Index\IndexEntry.cs" />
     <Compile Include="FileSystems\NTFS\Index\IndexHeader.cs" />
+    <Compile Include="FileSystems\NTFS\Index\IndexHelper.cs" />
     <Compile Include="FileSystems\NTFS\Index\IndexRecord.cs" />
     <Compile Include="FileSystems\NTFS\MasterFileTable.cs" />
     <Compile Include="FileSystems\NTFS\NTFSBootRecord.cs" />
