@@ -21,7 +21,7 @@ namespace DiskAccessLibrary.FileSystems.NTFS
         public DateTime ModificationTime;
         public DateTime MftModificationTime;
         public DateTime LastAccessTime;
-        public ulong AllocatedSize; // of the file
+        public ulong AllocatedLength; // of the file
         public ulong FileSize; // of the file
         public FileAttributes FileAttributes;
         public ushort PackedEASize;
@@ -37,7 +37,7 @@ namespace DiskAccessLibrary.FileSystems.NTFS
             ModificationTime = StandardInformationRecord.ReadDateTime(buffer, offset + 0x10);
             MftModificationTime = StandardInformationRecord.ReadDateTime(buffer, offset + 0x18);
             LastAccessTime = StandardInformationRecord.ReadDateTime(buffer, offset + 0x20);
-            AllocatedSize = LittleEndianConverter.ToUInt64(buffer, offset + 0x28);
+            AllocatedLength = LittleEndianConverter.ToUInt64(buffer, offset + 0x28);
             FileSize = LittleEndianConverter.ToUInt64(buffer, offset + 0x30);
             FileAttributes = (FileAttributes)LittleEndianConverter.ToUInt32(buffer, offset + 0x38);
             PackedEASize = LittleEndianConverter.ToUInt16(buffer, offset + 0x3C);
@@ -55,7 +55,7 @@ namespace DiskAccessLibrary.FileSystems.NTFS
             StandardInformationRecord.WriteDateTime(buffer, 0x10, ModificationTime);
             StandardInformationRecord.WriteDateTime(buffer, 0x18, MftModificationTime);
             StandardInformationRecord.WriteDateTime(buffer, 0x20, LastAccessTime);
-            LittleEndianWriter.WriteUInt64(buffer, 0x28, AllocatedSize);
+            LittleEndianWriter.WriteUInt64(buffer, 0x28, AllocatedLength);
             LittleEndianWriter.WriteUInt64(buffer, 0x30, FileSize);
             LittleEndianWriter.WriteUInt32(buffer, 0x38, (uint)FileAttributes);
             LittleEndianWriter.WriteUInt16(buffer, 0x3C, PackedEASize);
