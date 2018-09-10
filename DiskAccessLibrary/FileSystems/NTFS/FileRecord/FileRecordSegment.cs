@@ -31,8 +31,8 @@ namespace DiskAccessLibrary.FileSystems.NTFS
         public ushort ReferenceCount;
         // ushort FirstAttributeOffset;
         private FileRecordFlags m_flags;
-        // uint SegmentRealSize;
-        // uint SegmentAllocatedSize;
+        // uint SegmentLength; // FirstFreeByte
+        // uint SegmentAllocatedLength; // BytesAvailable
         private MftSegmentReference BaseFileRecordSegment; // If this is the base file record, the value is 0
         public ushort NextAttributeInstance; // Starting from 0
         // 2 bytes padding
@@ -60,8 +60,8 @@ namespace DiskAccessLibrary.FileSystems.NTFS
             ReferenceCount = LittleEndianConverter.ToUInt16(buffer, offset + 0x12);
             ushort firstAttributeOffset = LittleEndianConverter.ToUInt16(buffer, offset + 0x14);
             m_flags = (FileRecordFlags)LittleEndianConverter.ToUInt16(buffer, offset + 0x16);
-            uint segmentRealSize = LittleEndianConverter.ToUInt32(buffer, offset + 0x18);
-            uint segmentAllocatedSize = LittleEndianConverter.ToUInt32(buffer, offset + 0x1C);
+            uint segmentLength = LittleEndianConverter.ToUInt32(buffer, offset + 0x18);
+            uint segmentAllocatedLength = LittleEndianConverter.ToUInt32(buffer, offset + 0x1C);
 
             BaseFileRecordSegment = new MftSegmentReference(buffer, offset + 0x20);
             NextAttributeInstance = LittleEndianConverter.ToUInt16(buffer, offset + 0x28);
@@ -138,8 +138,8 @@ namespace DiskAccessLibrary.FileSystems.NTFS
             position += marker.Length;
             position += 4; // record (length) is aligned to 8-byte boundary
 
-            uint segmentRealSize = (uint)position;
-            LittleEndianWriter.WriteUInt32(buffer, 0x18, segmentRealSize);
+            uint segmentLength = (uint)position;
+            LittleEndianWriter.WriteUInt32(buffer, 0x18, segmentLength);
 
             // Write UpdateSequenceNumber and UpdateSequenceReplacementData
             List<byte[]> updateSequenceReplacementData = MultiSectorHelper.EncodeSegmentBuffer(buffer, 0, bytesPerFileRecordSegment, UpdateSequenceNumber);
