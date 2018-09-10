@@ -262,7 +262,7 @@ namespace DiskAccessLibrary.FileSystems.NTFS
             }
         }
 
-        public ulong AllocatedSize
+        public ulong AllocatedLength
         {
             get
             {
