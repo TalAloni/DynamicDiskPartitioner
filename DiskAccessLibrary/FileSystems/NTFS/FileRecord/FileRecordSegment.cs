@@ -33,7 +33,7 @@ namespace DiskAccessLibrary.FileSystems.NTFS
         private FileRecordFlags m_flags;
         // uint SegmentLength; // FirstFreeByte
         // uint SegmentAllocatedLength; // BytesAvailable
-        private MftSegmentReference BaseFileRecordSegment; // If this is the base file record, the value is 0
+        private MftSegmentReference m_baseFileRecordSegment; // If this is the base file record, the value is 0
         public ushort NextAttributeInstance; // Starting from 0
         // 2 bytes padding
         public uint MftSegmentNumberOnDisk; // Self-reference, NTFS v3.0+
@@ -44,8 +44,18 @@ namespace DiskAccessLibrary.FileSystems.NTFS
 
         private long m_mftSegmentNumber; // We use our own segment number to support NTFS v3.0 (note that MftSegmentNumberOnDisk is UInt32, which is another reason to avoid it)
 
+        public FileRecordSegment(long segmentNumber) : this(segmentNumber, new MftSegmentReference(0, 0))
+        {
+        }
+
+        public FileRecordSegment(long segmentNumber, MftSegmentReference baseFileRecordSegment)
+        {
+            m_mftSegmentNumber = segmentNumber;
+            m_baseFileRecordSegment = baseFileRecordSegment;
+        }
+
         public FileRecordSegment(byte[] buffer, int bytesPerSector, long segmentNumber) : this(buffer, 0, bytesPerSector, segmentNumber)
-        { 
+        {
         }
 
         public FileRecordSegment(byte[] buffer, int offset, int bytesPerSector, long segmentNumber)
@@ -62,8 +72,7 @@ namespace DiskAccessLibrary.FileSystems.NTFS
             m_flags = (FileRecordFlags)LittleEndianConverter.ToUInt16(buffer, offset + 0x16);
             uint segmentLength = LittleEndianConverter.ToUInt32(buffer, offset + 0x18);
             uint segmentAllocatedLength = LittleEndianConverter.ToUInt32(buffer, offset + 0x1C);
-
-            BaseFileRecordSegment = new MftSegmentReference(buffer, offset + 0x20);
+            m_baseFileRecordSegment = new MftSegmentReference(buffer, offset + 0x20);
             NextAttributeInstance = LittleEndianConverter.ToUInt16(buffer, offset + 0x28);
             // 2 bytes padding
             MftSegmentNumberOnDisk = LittleEndianConverter.ToUInt32(buffer, offset + 0x2C);
@@ -117,7 +126,7 @@ namespace DiskAccessLibrary.FileSystems.NTFS
             LittleEndianWriter.WriteUInt16(buffer, 0x16, (ushort)m_flags);
 
             LittleEndianWriter.WriteInt32(buffer, 0x1C, bytesPerFileRecordSegment);
-            BaseFileRecordSegment.WriteBytes(buffer, 0x20);
+            m_baseFileRecordSegment.WriteBytes(buffer, 0x20);
             LittleEndianWriter.WriteUInt16(buffer, 0x28, NextAttributeInstance);
             if (minorNTFSVersion == 1)
             {
@@ -171,7 +180,14 @@ namespace DiskAccessLibrary.FileSystems.NTFS
             }
             set
             {
-                m_flags &= ~FileRecordFlags.InUse;
+                if (value)
+                {
+                    m_flags |= FileRecordFlags.InUse;
+                }
+                else
+                {
+                    m_flags &= ~FileRecordFlags.InUse;
+                }
             }
         }
 
@@ -180,6 +196,17 @@ namespace DiskAccessLibrary.FileSystems.NTFS
             get
             {
                 return (m_flags & FileRecordFlags.IsDirectory) != 0;
+            }
+            set
+            {
+                if (value)
+                {
+                    m_flags |= FileRecordFlags.IsDirectory;
+                }
+                else
+                {
+                    m_flags &= FileRecordFlags.IsDirectory;
+                }
             }
         }
         
@@ -199,7 +226,7 @@ namespace DiskAccessLibrary.FileSystems.NTFS
         {
             get
             {
-                return (BaseFileRecordSegment.SegmentNumber == 0 && BaseFileRecordSegment.SequenceNumber == 0);
+                return (m_baseFileRecordSegment.SegmentNumber == 0 && m_baseFileRecordSegment.SequenceNumber == 0);
             }
         }
 
