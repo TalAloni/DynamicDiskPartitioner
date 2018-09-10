@@ -80,7 +80,7 @@ namespace DiskAccessLibrary.FileSystems.NTFS
 
         public void ExtendBitmap(long numberOfBits)
         {
-            long numberOfUnusedBits = (long)(this.RealSize * 8 - (ulong)m_numberOfUsableBits);
+            long numberOfUnusedBits = (long)(this.Length * 8 - (ulong)m_numberOfUsableBits);
             if (numberOfBits > numberOfUnusedBits)
             {
                 long additionalBits = numberOfBits - numberOfUnusedBits;

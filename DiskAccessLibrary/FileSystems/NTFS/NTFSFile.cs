@@ -41,12 +41,12 @@ namespace DiskAccessLibrary.FileSystems.NTFS
 
         public void SetLength(ulong newLengthInBytes)
         {
-            if (newLengthInBytes > this.Data.RealSize)
+            if (newLengthInBytes > this.Data.Length)
             {
-                ulong additionalLengthInBytes = newLengthInBytes - this.Data.RealSize;
+                ulong additionalLengthInBytes = newLengthInBytes - this.Data.Length;
                 this.Data.Extend(additionalLengthInBytes);
             }
-            else if (newLengthInBytes < this.Data.RealSize)
+            else if (newLengthInBytes < this.Data.Length)
             {
                 this.Data.Truncate(newLengthInBytes);
             }
@@ -58,12 +58,12 @@ namespace DiskAccessLibrary.FileSystems.NTFS
             if (m_fileRecord.LongFileNameRecord != null)
             {
                 m_fileRecord.LongFileNameRecord.AllocatedLength = this.Data.AllocatedLength;
-                m_fileRecord.LongFileNameRecord.FileSize = this.Data.RealSize;
+                m_fileRecord.LongFileNameRecord.FileSize = this.Data.Length;
             }
             if (m_fileRecord.ShortFileNameRecord != null)
             {
                 m_fileRecord.ShortFileNameRecord.AllocatedLength = this.Data.AllocatedLength;
-                m_fileRecord.ShortFileNameRecord.FileSize = this.Data.RealSize;
+                m_fileRecord.ShortFileNameRecord.FileSize = this.Data.Length;
             }
             // Note that directory indexes are not being updated ATM
             m_volume.MasterFileTable.UpdateFileRecord(m_fileRecord);
@@ -94,7 +94,7 @@ namespace DiskAccessLibrary.FileSystems.NTFS
                     AttributeRecord record = m_fileRecord.BitmapRecord;
                     if (record != null)
                     {
-                        long numberOfUsableBits = (long)(Data.RealSize / (uint)m_volume.BytesPerFileRecordSegment);
+                        long numberOfUsableBits = (long)(Data.Length / (uint)m_volume.BytesPerFileRecordSegment);
                         m_bitmap = new BitmapData(m_volume, m_fileRecord, record, numberOfUsableBits);
                     }
                 }
@@ -122,7 +122,7 @@ namespace DiskAccessLibrary.FileSystems.NTFS
         {
             get
             {
-                return this.Data.RealSize;
+                return this.Data.Length;
             }
         }
     }

@@ -31,7 +31,7 @@ namespace DiskAccessLibrary.FileSystems.NTFS
 
         public byte[] ReadBytes(ulong offset, int length)
         {
-            if (offset >= this.RealSize)
+            if (offset >= this.Length)
             {
                 return new byte[0];
             }
@@ -51,7 +51,7 @@ namespace DiskAccessLibrary.FileSystems.NTFS
 
         public void WriteBytes(ulong offset, byte[] data)
         {
-            ulong currentSize = this.RealSize;
+            ulong currentSize = this.Length;
             if (offset + (uint)data.Length > currentSize)
             {
                 // Data needs to be extended
@@ -207,7 +207,7 @@ namespace DiskAccessLibrary.FileSystems.NTFS
 
         public void Extend(ulong additionalLengthInBytes)
         {
-            ulong currentSize = this.RealSize;
+            ulong currentSize = this.Length;
             if (m_attributeRecord is NonResidentAttributeRecord)
             {
                 NonResidentAttributeData attributeData = new NonResidentAttributeData(m_volume, (NonResidentAttributeRecord)m_attributeRecord);
@@ -247,7 +247,7 @@ namespace DiskAccessLibrary.FileSystems.NTFS
 
         public void Truncate(ulong newLengthInBytes)
         {
-            ulong currentSize = this.RealSize;
+            ulong currentSize = this.Length;
             if (m_attributeRecord is NonResidentAttributeRecord)
             {
                 NonResidentAttributeData attributeData = new NonResidentAttributeData(m_volume, (NonResidentAttributeRecord)m_attributeRecord);
@@ -277,7 +277,7 @@ namespace DiskAccessLibrary.FileSystems.NTFS
             }
         }
 
-        public ulong RealSize
+        public ulong Length
         {
             get
             {
