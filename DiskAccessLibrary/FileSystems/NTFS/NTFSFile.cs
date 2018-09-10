@@ -58,12 +58,12 @@ namespace DiskAccessLibrary.FileSystems.NTFS
             if (m_fileRecord.LongFileNameRecord != null)
             {
                 m_fileRecord.LongFileNameRecord.AllocatedSize = this.Data.AllocatedSize;
-                m_fileRecord.LongFileNameRecord.RealSize = this.Data.RealSize;
+                m_fileRecord.LongFileNameRecord.FileSize = this.Data.RealSize;
             }
             if (m_fileRecord.ShortFileNameRecord != null)
             {
                 m_fileRecord.ShortFileNameRecord.AllocatedSize = this.Data.AllocatedSize;
-                m_fileRecord.ShortFileNameRecord.RealSize = this.Data.RealSize;
+                m_fileRecord.ShortFileNameRecord.FileSize = this.Data.RealSize;
             }
             // Note that directory indexes are not being updated ATM
             m_volume.MasterFileTable.UpdateFileRecord(m_fileRecord);

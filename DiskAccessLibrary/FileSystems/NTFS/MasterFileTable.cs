@@ -292,7 +292,7 @@ namespace DiskAccessLibrary.FileSystems.NTFS
 
             // The NTFS v5.1 driver does not bother updating the FileNameRecord
             m_mftRecord.FileNameRecord.AllocatedSize = m_mftFile.Data.AllocatedSize;
-            m_mftRecord.FileNameRecord.RealSize = m_mftFile.Data.RealSize;
+            m_mftRecord.FileNameRecord.FileSize = m_mftFile.Data.RealSize;
             UpdateFileRecord(m_mftRecord);
 
             // Update the MFT mirror
@@ -303,7 +303,7 @@ namespace DiskAccessLibrary.FileSystems.NTFS
             mftRecordFromMirror.Attributes.Add(m_mftFile.Data.AttributeRecord);
             mftRecordFromMirror.Attributes.Add(m_mftFile.Bitmap.AttributeRecord);
             mftRecordFromMirror.FileNameRecord.AllocatedSize = m_mftFile.Data.AllocatedSize;
-            mftRecordFromMirror.FileNameRecord.RealSize = m_mftFile.Data.RealSize;
+            mftRecordFromMirror.FileNameRecord.FileSize = m_mftFile.Data.RealSize;
             mftMirror.UpdateFileRecord(mftRecordFromMirror);
         }
 
