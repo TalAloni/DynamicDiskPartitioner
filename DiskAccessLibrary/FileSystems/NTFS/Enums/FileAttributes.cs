@@ -17,5 +17,8 @@ namespace DiskAccessLibrary.FileSystems.NTFS
         Compressed = 0x00000800,  // FILE_ATTRIBUTE_COMPRESSED
         Offline = 0x00001000,     // FILE_ATTRIBUTE_OFFLINE
         PropertySet = 0x00002000, // FILE_ATTRIBUTE_PROPERTY_SET
+
+        /// <remarks>This flag should only be used in FileNameRecord, and should not be used in StandardInformationRecord</remarks>
+        FileNameIndexPresent = 0x10000000, // DUP_FILE_NAME_INDEX_PRESENT
     }
 }
