@@ -14,6 +14,8 @@ namespace DiskAccessLibrary.FileSystems.NTFS
     public class IndexRecord
     {
         public const string ValidSignature = "INDX";
+        public const int IndexHeaderOffset = 0x18;
+        public const int UpdateSequenceArrayOffset = 0x28;
         public const int BytesPerIndexRecordBlock = 512;
 
         // MULTI_SECTOR_HEADER
@@ -22,7 +24,14 @@ namespace DiskAccessLibrary.FileSystems.NTFS
         public IndexHeader IndexHeader;
         public ushort UpdateSequenceNumber;
         // byte[] UpdateSequenceReplacementData
-        public List<IndexEntry> IndexEntries = new List<IndexEntry>();
+        // Padding to align to 8-byte boundary
+        public List<IndexEntry> IndexEntries;
+
+        public IndexRecord()
+        {
+            IndexHeader = new IndexHeader();
+            IndexEntries = new List<IndexEntry>();
+        }
 
         public IndexRecord(byte[] buffer, int offset)
         {
@@ -41,6 +50,32 @@ namespace DiskAccessLibrary.FileSystems.NTFS
 
             int entriesOffset = 0x18 + (int)IndexHeader.EntriesOffset;
             IndexEntries = IndexEntry.ReadIndexEntries(buffer, entriesOffset);
+        }
+
+        public byte[] GetBytes(int bytesPerIndexRecord)
+        {
+            int strideCount = bytesPerIndexRecord / MultiSectorHelper.BytesPerStride;
+            ushort updateSequenceArraySize = (ushort)(1 + strideCount);
+            MultiSectorHeader multiSectorHeader = new MultiSectorHeader(ValidSignature, UpdateSequenceArrayOffset, updateSequenceArraySize);
+
+            int updateSequenceArrayPaddedLength = (int)Math.Ceiling((double)(updateSequenceArraySize * 2) / 8) * 8;
+
+            IndexHeader.EntriesOffset = (uint)(IndexHeader.Length + updateSequenceArrayPaddedLength);
+            IndexHeader.TotalLength = (uint)(IndexHeader.Length + updateSequenceArrayPaddedLength + IndexEntry.GetLength(IndexEntries));
+            IndexHeader.AllocatedLength = (uint)(bytesPerIndexRecord - IndexHeaderOffset);
+
+            byte[] buffer = new byte[bytesPerIndexRecord];
+            multiSectorHeader.WriteBytes(buffer, 0x00);
+            LittleEndianWriter.WriteUInt64(buffer, 0x08, LogFileSequenceNumber);
+            LittleEndianWriter.WriteUInt64(buffer, 0x10, (ulong)RecordVBN);
+            IndexHeader.WriteBytes(buffer, 0x18);
+
+            IndexEntry.WriteIndexEntries(buffer, UpdateSequenceArrayOffset + updateSequenceArrayPaddedLength, IndexEntries);
+
+            // Write UpdateSequenceNumber and UpdateSequenceReplacementData
+            List<byte[]> updateSequenceReplacementData = MultiSectorHelper.EncodeSegmentBuffer(buffer, 0, bytesPerIndexRecord, UpdateSequenceNumber);
+            MultiSectorHelper.WriteUpdateSequenceArray(buffer, UpdateSequenceArrayOffset, updateSequenceArraySize, UpdateSequenceNumber, updateSequenceReplacementData);
+            return buffer;
         }
 
         public bool IsParentNode
