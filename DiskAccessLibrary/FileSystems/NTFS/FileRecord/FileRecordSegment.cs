@@ -36,13 +36,13 @@ namespace DiskAccessLibrary.FileSystems.NTFS
         private MftSegmentReference m_baseFileRecordSegment; // If this is the base file record, the value is 0
         public ushort NextAttributeInstance; // Starting from 0
         // 2 bytes padding
-        public uint MftSegmentNumberOnDisk; // Self-reference, NTFS v3.0+
+        private uint m_segmentNumberOnDisk; // Self-reference, NTFS v3.0+
         public ushort UpdateSequenceNumber; // a.k.a. USN
         // byte[] UpdateSequenceReplacementData
         /* End of header */
         private List<AttributeRecord> m_immediateAttributes = new List<AttributeRecord>(); // Attribute records that are stored in the base file record
 
-        private long m_mftSegmentNumber; // We use our own segment number to support NTFS v3.0 (note that MftSegmentNumberOnDisk is UInt32, which is another reason to avoid it)
+        private long m_segmentNumber; // We use our own segment number to support NTFS v3.0 (note that SegmentNumberOnDisk is UInt32, which is another reason to avoid it)
 
         public FileRecordSegment(long segmentNumber) : this(segmentNumber, new MftSegmentReference(0, 0))
         {
@@ -50,7 +50,7 @@ namespace DiskAccessLibrary.FileSystems.NTFS
 
         public FileRecordSegment(long segmentNumber, MftSegmentReference baseFileRecordSegment)
         {
-            m_mftSegmentNumber = segmentNumber;
+            m_segmentNumber = segmentNumber;
             m_baseFileRecordSegment = baseFileRecordSegment;
         }
 
@@ -75,7 +75,7 @@ namespace DiskAccessLibrary.FileSystems.NTFS
             m_baseFileRecordSegment = new MftSegmentReference(buffer, offset + 0x20);
             NextAttributeInstance = LittleEndianConverter.ToUInt16(buffer, offset + 0x28);
             // 2 bytes padding
-            MftSegmentNumberOnDisk = LittleEndianConverter.ToUInt32(buffer, offset + 0x2C);
+            m_segmentNumberOnDisk = LittleEndianConverter.ToUInt32(buffer, offset + 0x2C);
 
             int position = offset + multiSectorHeader.UpdateSequenceArrayOffset;
             List<byte[]> updateSequenceReplacementData = MultiSectorHelper.ReadUpdateSequenceArray(buffer, position, multiSectorHeader.UpdateSequenceArraySize, out UpdateSequenceNumber);
@@ -95,7 +95,7 @@ namespace DiskAccessLibrary.FileSystems.NTFS
                 }
             }
 
-            m_mftSegmentNumber = segmentNumber;
+            m_segmentNumber = segmentNumber;
         }
 
         /// <param name="segmentLength">This refers to the maximum length of FileRecord as defined in the Volume's BootRecord</param>
@@ -130,7 +130,7 @@ namespace DiskAccessLibrary.FileSystems.NTFS
             LittleEndianWriter.WriteUInt16(buffer, 0x28, NextAttributeInstance);
             if (minorNTFSVersion == 1)
             {
-                LittleEndianWriter.WriteUInt32(buffer, 0x2C, MftSegmentNumberOnDisk);
+                LittleEndianWriter.WriteUInt32(buffer, 0x2C, (uint)m_segmentNumber);
             }
 
             // write attributes
@@ -239,25 +239,11 @@ namespace DiskAccessLibrary.FileSystems.NTFS
             }
         }
 
-        public override bool Equals(object obj)
-        {
-            if (obj is FileRecordSegment)
-            {
-                return ((FileRecordSegment)obj).MftSegmentNumber == MftSegmentNumber;
-            }
-            return base.Equals(obj);
-        }
-
-        public override int GetHashCode()
-        {
-            return MftSegmentNumber.GetHashCode();
-        }
-
-        public long MftSegmentNumber
+        public long SegmentNumber
         {
             get
             {
-                return m_mftSegmentNumber;
+                return m_segmentNumber;
             }
         }
 
@@ -310,11 +296,11 @@ namespace DiskAccessLibrary.FileSystems.NTFS
             return (fileSignature == ValidSignature);
         }
 
-        public static bool ContainsMftSegmentNumber(List<FileRecordSegment> list, long mftSegmentNumber)
+        public static bool ContainsSegmentNumber(List<FileRecordSegment> list, long segmentNumber)
         {
             foreach (FileRecordSegment segment in list)
             {
-                if (segment.MftSegmentNumber == mftSegmentNumber)
+                if (segment.SegmentNumber == segmentNumber)
                 {
                     return true;
                 }

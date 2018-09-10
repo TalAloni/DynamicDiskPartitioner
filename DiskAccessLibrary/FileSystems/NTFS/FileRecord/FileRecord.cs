@@ -278,7 +278,7 @@ namespace DiskAccessLibrary.FileSystems.NTFS
         {
             get
             {
-                return m_segments[0].MftSegmentNumber;
+                return m_segments[0].SegmentNumber;
             }
         }
 

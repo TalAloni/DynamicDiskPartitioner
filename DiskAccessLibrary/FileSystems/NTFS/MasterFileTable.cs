@@ -248,7 +248,7 @@ namespace DiskAccessLibrary.FileSystems.NTFS
             
             foreach (FileRecordSegment segment in record.Segments)
             {
-                if (segment.MftSegmentNumber >= 0)
+                if (segment.SegmentNumber >= 0)
                 {
                     UpdateFileRecordSegment(segment);
                 }
@@ -262,7 +262,7 @@ namespace DiskAccessLibrary.FileSystems.NTFS
 
         public void UpdateFileRecordSegment(FileRecordSegment recordSegment)
         {
-            long segmentNumber = recordSegment.MftSegmentNumber;
+            long segmentNumber = recordSegment.SegmentNumber;
             long firstSectorIndex = segmentNumber * m_volume.SectorsPerFileRecordSegment;
             byte[] recordSegmentBytes = recordSegment.GetBytes(m_volume.BytesPerFileRecordSegment, m_volume.BytesPerCluster, m_volume.MinorVersion);
 
