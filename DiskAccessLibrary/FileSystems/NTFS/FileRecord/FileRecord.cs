@@ -11,7 +11,10 @@ using Utilities;
 
 namespace DiskAccessLibrary.FileSystems.NTFS
 {
-    public class FileRecord // A collection of base record segment and zero or more file record segments making up this file record
+    /// <summary>
+    /// A collection of base record segment and zero or more file record segments making up this file record.
+    /// </summary>
+    public class FileRecord
     {
         private List<FileRecordSegment> m_segments;
         private List<AttributeRecord> m_attributes;
@@ -73,6 +76,47 @@ namespace DiskAccessLibrary.FileSystems.NTFS
             return FileRecordHelper.GetAssembledAttributes(m_segments);
         }
 
+        public AttributeRecord GetAttributeRecord(AttributeType type, string name)
+        {
+            foreach (AttributeRecord attribute in this.Attributes)
+            {
+                if (attribute.AttributeType == type && attribute.Name == name)
+                {
+                    return attribute;
+                }
+            }
+
+            return null;
+        }
+
+        public void RemoveAttributeRecord(AttributeType attributeType, string name)
+        {
+            for (int index = 0; index < Attributes.Count; index++)
+            {
+                if (Attributes[index].AttributeType == attributeType && Attributes[index].Name == name)
+                {
+                    Attributes.RemoveAt(index);
+                    break;
+                }
+            }
+        }
+
+        public FileNameRecord GetFileNameRecord(FilenameNamespace filenameNamespace)
+        {
+            foreach (AttributeRecord attribute in this.Attributes)
+            {
+                if (attribute is FileNameAttributeRecord)
+                {
+                    FileNameRecord fileNameAttribute = ((FileNameAttributeRecord)attribute).Record;
+                    if (fileNameAttribute.Namespace == filenameNamespace)
+                    {
+                        return fileNameAttribute;
+                    }
+                }
+            }
+            return null;
+        }
+
         public List<FileRecordSegment> Segments
         {
             get
@@ -106,22 +150,6 @@ namespace DiskAccessLibrary.FileSystems.NTFS
                 }
                 return null;
             }
-        }
-
-        public FileNameRecord GetFileNameRecord(FilenameNamespace filenameNamespace)
-        {
-            foreach (AttributeRecord attribute in this.Attributes)
-            {
-                if (attribute is FileNameAttributeRecord)
-                {
-                    FileNameRecord fileNameAttribute = ((FileNameAttributeRecord)attribute).Record;
-                    if (fileNameAttribute.Namespace == filenameNamespace)
-                    {
-                        return fileNameAttribute;
-                    }
-                }
-            }
-            return null;
         }
 
         public FileNameRecord LongFileNameRecord
@@ -202,31 +230,6 @@ namespace DiskAccessLibrary.FileSystems.NTFS
                 else
                 {
                     return null;
-                }
-            }
-        }
-
-        public AttributeRecord GetAttributeRecord(AttributeType type, string name)
-        {
-            foreach (AttributeRecord attribute in this.Attributes)
-            {
-                if (attribute.AttributeType == type && attribute.Name == name)
-                {
-                    return attribute;
-                }
-            }
-
-            return null;
-        }
-
-        public void RemoveAttributeRecord(AttributeType attributeType, string name)
-        {
-            for (int index = 0; index < Attributes.Count; index++)
-            {
-                if (Attributes[index].AttributeType == attributeType && Attributes[index].Name == name)
-                {
-                    Attributes.RemoveAt(index);
-                    break;
                 }
             }
         }
