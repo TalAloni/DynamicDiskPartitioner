@@ -30,6 +30,10 @@ namespace DiskAccessLibrary.FileSystems.NTFS
         public FilenameNamespace Namespace; // Type of filename (e.g. 8.3, long filename etc.)
         public string FileName;
 
+        public FileNameRecord()
+        {
+        }
+
         public FileNameRecord(byte[] buffer, int offset)
         {
             ParentDirectory = new MftSegmentReference(buffer, offset + 0x00);
