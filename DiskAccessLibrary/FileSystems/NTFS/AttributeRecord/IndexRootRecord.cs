@@ -15,7 +15,7 @@ namespace DiskAccessLibrary.FileSystems.NTFS
     /// </remarks>
     public class IndexRootRecord : ResidentAttributeRecord
     {
-        public const int FixedLength = 32;
+        public const int IndexHeaderOffset = 0x10;
  
         public AttributeType IndexedAttributeType;
         public CollationRule CollationRule;
@@ -40,19 +40,23 @@ namespace DiskAccessLibrary.FileSystems.NTFS
             // 3 zero bytes (padding to 8-byte boundary)
             IndexHeader = new IndexHeader(this.Data, 0x10);
 
-            int entriesOffset = 0x10 + (int)IndexHeader.EntriesOffset;
+            int entriesOffset = IndexHeaderOffset + (int)IndexHeader.EntriesOffset;
             IndexEntries = IndexEntry.ReadIndexEntries(this.Data, entriesOffset);
         }
 
         public override byte[] GetBytes(int bytesPerCluster)
         {
             this.Data = new byte[this.DataLength];
+            IndexHeader.EntriesOffset = IndexHeader.Length;
+            IndexHeader.TotalLength = (uint)this.Data.Length - IndexHeaderOffset;
+            IndexHeader.AllocatedLength = (uint)this.Data.Length - IndexHeaderOffset;
+
             LittleEndianWriter.WriteUInt32(this.Data, 0x00, (uint)IndexedAttributeType);
             LittleEndianWriter.WriteUInt32(this.Data, 0x04, (uint)CollationRule);
             LittleEndianWriter.WriteUInt32(this.Data, 0x08, (uint)BytesPerIndexRecord);
             ByteWriter.WriteByte(this.Data, 0x0C, BlocksPerIndexRecord);
             IndexHeader.WriteBytes(this.Data, 0x10);
-            IndexEntry.WriteIndexEntries(this.Data, 0x20, IndexEntries);
+            IndexEntry.WriteIndexEntries(this.Data, IndexHeaderOffset + IndexHeader.Length, IndexEntries);
             return base.GetBytes(bytesPerCluster);
         }
 
@@ -60,7 +64,7 @@ namespace DiskAccessLibrary.FileSystems.NTFS
         {
             get
             {
-                return (ulong)(FixedLength + IndexEntry.GetLength(IndexEntries));
+                return (ulong)(IndexHeaderOffset + IndexHeader.Length + IndexEntry.GetLength(IndexEntries));
             }
         }
 
@@ -69,6 +73,10 @@ namespace DiskAccessLibrary.FileSystems.NTFS
             get
             {
                 return IndexHeader.IsParentNode;
+            }
+            set
+            {
+                IndexHeader.IsParentNode = value;
             }
         }
     }
