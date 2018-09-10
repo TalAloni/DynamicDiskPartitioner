@@ -353,6 +353,14 @@ namespace DiskAccessLibrary.FileSystems.NTFS
             }
         }
 
+        public int BytesPerIndexRecord
+        {
+            get
+            {
+                return m_bootRecord.BytesPerIndexRecord;
+            }
+        }
+
         public int SectorsPerCluster
         {
             get
