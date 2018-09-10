@@ -69,7 +69,7 @@ namespace DiskAccessLibrary.FileSystems.NTFS
                     FileRecord record = FindDirectoryRecord(records, components[index]);
                     if (record != null)
                     {
-                        directorySegmentNumber = record.MftSegmentNumber;
+                        directorySegmentNumber = record.BaseRecordSegmentNumber;
                     }
                     else
                     {

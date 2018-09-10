@@ -169,7 +169,7 @@ namespace DiskAccessLibrary.FileSystems.NTFS
             FileRecord result = GetFileRecord(reference.SegmentNumber);
             if (result != null)
             {
-                if (result.SequenceNumber != reference.SequenceNumber)
+                if (result.BaseRecordSequenceNumber != reference.SequenceNumber)
                 {
                     // The file record segment has been modified, and an older version has been requested
                     return null;

@@ -64,7 +64,7 @@ namespace DiskAccessLibrary.FileSystems.NTFS
             List<FileRecord> fileRecords = GetFileRecordsInDirectoryFromMft(directoryBaseSegmentNumber);
             foreach (FileRecord fileRecord in fileRecords)
             {
-                result.Add(new MftSegmentReference(fileRecord.MftSegmentNumber, fileRecord.SequenceNumber), fileRecord.FileNameRecord);
+                result.Add(fileRecord.BaseRecordSegmentReference, fileRecord.FileNameRecord);
             }
             return result;
         }

@@ -66,7 +66,7 @@ namespace DiskAccessLibrary.FileSystems.NTFS
             FileRecord directoryRecord = m_volume.GetFileRecord(path);
             if (directoryRecord != null && directoryRecord.IsDirectory)
             {
-                List<FileRecord> records = m_volume.GetFileRecordsInDirectory(directoryRecord.MftSegmentNumber);
+                List<FileRecord> records = m_volume.GetFileRecordsInDirectory(directoryRecord.BaseRecordSegmentNumber);
                 List<FileSystemEntry> result = new List<FileSystemEntry>();
 
                 path = FileSystem.GetDirectoryPath(path);

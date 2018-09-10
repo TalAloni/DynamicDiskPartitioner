@@ -274,10 +274,7 @@ namespace DiskAccessLibrary.FileSystems.NTFS
             }
         }
 
-        /// <summary>
-        /// Segment number of base record
-        /// </summary>
-        public long MftSegmentNumber
+        public long BaseRecordSegmentNumber
         {
             get
             {
@@ -285,14 +282,19 @@ namespace DiskAccessLibrary.FileSystems.NTFS
             }
         }
 
-        /// <summary>
-        /// Sequence number of base record
-        /// </summary>
-        public ushort SequenceNumber
+        public ushort BaseRecordSequenceNumber
         {
             get
             {
                 return m_segments[0].SequenceNumber;
+            }
+        }
+
+        public MftSegmentReference BaseRecordSegmentReference
+        {
+            get
+            {
+                return new MftSegmentReference(BaseRecordSegmentNumber, BaseRecordSequenceNumber);
             }
         }
 
@@ -329,7 +331,7 @@ namespace DiskAccessLibrary.FileSystems.NTFS
         {
             get
             {
-                return (this.MftSegmentNumber <= MasterFileTable.LastReservedMftSegmentNumber);
+                return (this.BaseRecordSegmentNumber <= MasterFileTable.LastReservedMftSegmentNumber);
             }
         }
     }
