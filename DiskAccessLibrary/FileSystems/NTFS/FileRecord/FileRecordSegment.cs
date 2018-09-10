@@ -14,6 +14,9 @@ namespace DiskAccessLibrary.FileSystems.NTFS
     /// <summary>
     /// FILE_RECORD_SEGMENT_HEADER: https://msdn.microsoft.com/de-de/windows/desktop/bb470124
     /// </summary>
+    /// <remarks>
+    /// Attributes MUST be ordered by increasing attribute type code when written to disk.
+    /// </remarks>
     public class FileRecordSegment
     {
         public const string ValidSignature = "FILE";
@@ -79,7 +82,7 @@ namespace DiskAccessLibrary.FileSystems.NTFS
                 position += (int)attribute.RecordLengthOnDisk;
                 if (position > buffer.Length)
                 {
-                    throw new InvalidDataException("Improper attribute length");
+                    throw new InvalidDataException("Invalid attribute length");
                 }
             }
 
@@ -87,9 +90,9 @@ namespace DiskAccessLibrary.FileSystems.NTFS
         }
 
         /// <param name="segmentLength">This refers to the maximum length of FileRecord as defined in the Volume's BootRecord</param>
-        public byte[] GetBytes(int segmentLength, int bytesPerCluster, ushort minorNTFSVersion)
+        public byte[] GetBytes(int bytesPerFileRecordSegment, int bytesPerCluster, ushort minorNTFSVersion)
         {
-            int strideCount = segmentLength / MultiSectorHelper.BytesPerStride;
+            int strideCount = bytesPerFileRecordSegment / MultiSectorHelper.BytesPerStride;
             ushort updateSequenceArraySize = (ushort)(1 + strideCount);
 
             ushort updateSequenceArrayOffset;
@@ -103,9 +106,9 @@ namespace DiskAccessLibrary.FileSystems.NTFS
             }
 
             MultiSectorHeader multiSectorHeader = new MultiSectorHeader(ValidSignature, updateSequenceArrayOffset, updateSequenceArraySize);
-            ushort firstAttributeOffset = GetFirstAttributeOffset(segmentLength, minorNTFSVersion);
+            ushort firstAttributeOffset = GetFirstAttributeOffset(bytesPerFileRecordSegment, minorNTFSVersion);
 
-            byte[] buffer = new byte[segmentLength];
+            byte[] buffer = new byte[bytesPerFileRecordSegment];
             multiSectorHeader.WriteBytes(buffer, 0x00);
             LittleEndianWriter.WriteUInt64(buffer, 0x08, LogFileSequenceNumber);
             LittleEndianWriter.WriteUInt16(buffer, 0x10, SequenceNumber);
@@ -113,7 +116,7 @@ namespace DiskAccessLibrary.FileSystems.NTFS
             LittleEndianWriter.WriteUInt16(buffer, 0x14, firstAttributeOffset);
             LittleEndianWriter.WriteUInt16(buffer, 0x16, (ushort)m_flags);
 
-            LittleEndianWriter.WriteInt32(buffer, 0x1C, segmentLength);
+            LittleEndianWriter.WriteInt32(buffer, 0x1C, bytesPerFileRecordSegment);
             BaseFileRecordSegment.WriteBytes(buffer, 0x20);
             LittleEndianWriter.WriteUInt16(buffer, 0x28, NextAttributeInstance);
             if (minorNTFSVersion == 1)
@@ -139,7 +142,7 @@ namespace DiskAccessLibrary.FileSystems.NTFS
             LittleEndianWriter.WriteUInt32(buffer, 0x18, segmentRealSize);
 
             // Write UpdateSequenceNumber and UpdateSequenceReplacementData
-            List<byte[]> updateSequenceReplacementData = MultiSectorHelper.EncodeSegmentBuffer(buffer, 0, segmentLength, UpdateSequenceNumber);
+            List<byte[]> updateSequenceReplacementData = MultiSectorHelper.EncodeSegmentBuffer(buffer, 0, bytesPerFileRecordSegment, UpdateSequenceNumber);
             MultiSectorHelper.WriteUpdateSequenceArray(buffer, updateSequenceArrayOffset, updateSequenceArraySize, UpdateSequenceNumber, updateSequenceReplacementData);
             return buffer;
         }
