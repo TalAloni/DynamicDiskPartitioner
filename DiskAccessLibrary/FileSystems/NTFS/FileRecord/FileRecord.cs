@@ -76,6 +76,14 @@ namespace DiskAccessLibrary.FileSystems.NTFS
             return FileRecordHelper.GetAssembledAttributes(m_segments);
         }
 
+        public AttributeRecord CreateAttributeRecord(AttributeType type, string name)
+        {
+            AttributeRecord attribute = AttributeRecord.Create(type, name, m_segments[0].NextAttributeInstance);
+            m_segments[0].NextAttributeInstance++;
+            FileRecordHelper.InsertSorted(this.Attributes, attribute);
+            return attribute;
+        }
+
         public AttributeRecord GetAttributeRecord(AttributeType type, string name)
         {
             foreach (AttributeRecord attribute in this.Attributes)

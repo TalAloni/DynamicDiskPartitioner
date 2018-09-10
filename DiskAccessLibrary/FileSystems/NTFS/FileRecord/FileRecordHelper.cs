@@ -113,5 +113,16 @@ namespace DiskAccessLibrary.FileSystems.NTFS
 
             return baseAttribute;
         }
+
+        public static void InsertSorted(List<AttributeRecord> attributes, AttributeRecord attribute)
+        {
+            int insertIndex = SortedList<AttributeRecord>.FindIndexForSortedInsert(attributes, CompareAttributeTypes, attribute);
+            attributes.Insert(insertIndex, attribute);
+        }
+
+        private static int CompareAttributeTypes(AttributeRecord attribute1, AttributeRecord attribute2)
+        {
+            return attribute1.AttributeType.CompareTo(attribute2.AttributeType);
+        }
     }
 }
