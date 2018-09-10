@@ -14,9 +14,9 @@ namespace DiskAccessLibrary.FileSystems.NTFS
     {
         public const int Length = 16;
 
-        public uint EntriesOffset; // Relative to Index Header start offset
-        public uint IndexLength;   // Including the Index Header
-        public uint AllocatedLength;
+        public uint EntriesOffset;   // Relative to Index Header start offset
+        public uint TotalLength;     // Length from the start of the header to the end of the last entry, a.k.a. FirstFreeByte
+        public uint AllocatedLength; // BytesAvailable
         public IndexHeaderFlags IndexFlags;
         // 3 zero bytes
 
@@ -27,7 +27,7 @@ namespace DiskAccessLibrary.FileSystems.NTFS
         public IndexHeader(byte[] buffer, int offset)
         {
             EntriesOffset = LittleEndianConverter.ToUInt32(buffer, offset + 0x00);
-            IndexLength = LittleEndianConverter.ToUInt32(buffer, offset + 0x04);
+            TotalLength = LittleEndianConverter.ToUInt32(buffer, offset + 0x04);
             AllocatedLength = LittleEndianConverter.ToUInt32(buffer, offset + 0x08);
             IndexFlags = (IndexHeaderFlags)ByteReader.ReadByte(buffer, offset + 0x0C);
             // 3 zero bytes (padding to 8-byte boundary)
@@ -36,7 +36,7 @@ namespace DiskAccessLibrary.FileSystems.NTFS
         public void WriteBytes(byte[] buffer, int offset)
         {
             LittleEndianWriter.WriteUInt32(buffer, offset + 0x00, EntriesOffset);
-            LittleEndianWriter.WriteUInt32(buffer, offset + 0x04, IndexLength);
+            LittleEndianWriter.WriteUInt32(buffer, offset + 0x04, TotalLength);
             LittleEndianWriter.WriteUInt32(buffer, offset + 0x08, AllocatedLength);
             ByteWriter.WriteByte(buffer, offset + 0x0C, (byte)IndexFlags);
         }
@@ -46,6 +46,17 @@ namespace DiskAccessLibrary.FileSystems.NTFS
             get
             {
                 return (IndexFlags & IndexHeaderFlags.ParentNode) > 0;
+            }
+            set
+            {
+                if (value)
+                {
+                    IndexFlags |= IndexHeaderFlags.ParentNode;
+                }
+                else
+                {
+                    IndexFlags &= ~IndexHeaderFlags.ParentNode;
+                }
             }
         }
     }
