@@ -205,7 +205,7 @@ namespace DiskAccessLibrary.FileSystems.NTFS
                 }
                 else
                 {
-                    m_flags &= FileRecordFlags.IsDirectory;
+                    m_flags &= ~FileRecordFlags.IsDirectory;
                 }
             }
         }
