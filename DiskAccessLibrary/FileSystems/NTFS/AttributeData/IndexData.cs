@@ -11,7 +11,7 @@ using Utilities;
 
 namespace DiskAccessLibrary.FileSystems.NTFS
 {
-    public class IndexData
+    public partial class IndexData
     {
         private NTFSVolume m_volume;
         private FileRecord m_fileRecord;
@@ -37,19 +37,6 @@ namespace DiskAccessLibrary.FileSystems.NTFS
                 }
                 m_indexAllocationData = new NonResidentAttributeData(m_volume, m_indexAllocationRecord);
             }
-        }
-
-        public KeyValuePairList<MftSegmentReference, FileNameRecord> GetAllFileNameRecords()
-        {
-            KeyValuePairList<MftSegmentReference, FileNameRecord> result = new KeyValuePairList<MftSegmentReference, FileNameRecord>();
-            KeyValuePairList<MftSegmentReference, byte[]> entries = GetAllEntries();
-            foreach (KeyValuePair<MftSegmentReference, byte[]> entry in entries)
-            {
-                FileNameRecord fileNameRecord = new FileNameRecord(entry.Value, 0);
-                result.Add(entry.Key, fileNameRecord);
-            }
-
-            return result;
         }
 
         public KeyValuePairList<MftSegmentReference, byte[]> GetAllEntries()

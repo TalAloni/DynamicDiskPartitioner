@@ -64,6 +64,7 @@
     <Compile Include="FileSystems\NTFS\AttributeData\BitmapData.cs" />
     <Compile Include="FileSystems\NTFS\AttributeData\AttributeList.cs" />
     <Compile Include="FileSystems\NTFS\AttributeData\IndexData.cs" />
+    <Compile Include="FileSystems\NTFS\AttributeData\IndexData.FileName.cs" />
     <Compile Include="FileSystems\NTFS\AttributeData\NonResidentAttributeData.cs" />
     <Compile Include="FileSystems\NTFS\AttributeRecord\AttributeRecord.cs" />
     <Compile Include="FileSystems\NTFS\AttributeRecord\FileNameAttributeRecord.cs" />
