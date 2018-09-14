@@ -367,17 +367,5 @@ namespace DiskAccessLibrary.FileSystems.NTFS
         {
             m_bitmap.DeallocateClusters(startLCN, numberOfClusters);
         }
-
-        private static KeyValuePair<MftSegmentReference, FileNameRecord>? FindFileNameRecord(KeyValuePairList<MftSegmentReference, FileNameRecord> records, string name)
-        {
-            foreach (KeyValuePair<MftSegmentReference, FileNameRecord> record in records)
-            {
-                if (String.Equals(record.Value.FileName, name, StringComparison.InvariantCultureIgnoreCase))
-                {
-                    return record;
-                }
-            }
-            return null;
-        }
     }
 }
