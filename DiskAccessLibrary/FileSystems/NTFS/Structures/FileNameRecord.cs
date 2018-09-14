@@ -83,5 +83,13 @@ namespace DiskAccessLibrary.FileSystems.NTFS
             byte fileNameLength = ByteReader.ReadByte(buffer, offset + 0x40);
             return Encoding.Unicode.GetString(buffer, offset + 0x42, fileNameLength * 2);
         }
+
+        public static byte[] GetIndexKeyBytes(string fileName)
+        {
+            byte[] key = new byte[FixedLength + fileName.Length * 2];
+            ByteWriter.WriteByte(key, 0x40, (byte)fileName.Length);
+            ByteWriter.WriteBytes(key, 0x42, Encoding.Unicode.GetBytes(fileName));
+            return key;
+        }
     }
 }
