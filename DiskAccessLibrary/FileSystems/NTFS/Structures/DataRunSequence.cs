@@ -67,23 +67,22 @@ namespace DiskAccessLibrary.FileSystems.NTFS
             }
         }
 
-        /// <param name="startClusterOffset">Distance from LowestVCN</param>
-        public KeyValuePairList<long, int> TranslateToLCN(long startClusterOffset, int clusterCount)
+        public KeyValuePairList<long, int> TranslateToLCN(long firstClusterVCN, int clusterCount)
         {
             KeyValuePairList<long, int> result = new KeyValuePairList<long, int>();
 
             long previousLCN = 0;
-            long clusterOffset = startClusterOffset;
+            long clusterOffset = firstClusterVCN;
             int clustersLeftToTranslate = clusterCount;
             bool translating = false;
             for(int index = 0; index < this.Count; index++)
             {
                 DataRun run = this[index];
-                long lcn = previousLCN + run.RunOffset;
+                long runStartLCN = previousLCN + run.RunOffset;
 
-                if (!translating) // still searching for startClusterVCN
+                if (!translating) // still searching for firstClusterVCN
                 {
-                    if (clusterOffset >= run.RunLength) // startClusterVCN is not in this run, check in the next run
+                    if (clusterOffset >= run.RunLength) // firstClusterVCN is not in this run, check in the next run
                     {
                         clusterOffset -= run.RunLength;
                     }
@@ -91,7 +90,7 @@ namespace DiskAccessLibrary.FileSystems.NTFS
                     {
                         translating = true;
                         
-                        long startClusterLCN = lcn + clusterOffset;
+                        long startClusterLCN = runStartLCN + clusterOffset;
                         long clustersLeftInRun = run.RunLength - clusterOffset; // how many clusters can be read from this run
                         int clustersTranslated = (int)Math.Min(clustersLeftToTranslate, clustersLeftInRun);
                         result.Add(startClusterLCN, clustersTranslated);
@@ -106,7 +105,7 @@ namespace DiskAccessLibrary.FileSystems.NTFS
                 else
                 {
                     int clustersTranslated = (int)Math.Min(clustersLeftToTranslate, run.RunLength);
-                    result.Add(lcn, clustersTranslated);
+                    result.Add(runStartLCN, clustersTranslated);
                     clustersLeftToTranslate -= clustersTranslated;
 
                     if (clustersLeftToTranslate == 0)
@@ -114,7 +113,7 @@ namespace DiskAccessLibrary.FileSystems.NTFS
                         break;
                     }
                 }
-                previousLCN = lcn;
+                previousLCN = runStartLCN;
             }
 
             return result;
@@ -126,7 +125,7 @@ namespace DiskAccessLibrary.FileSystems.NTFS
             long clusterOffset = clusterVCN;
             foreach (DataRun run in this)
             {
-                long lcn = previousLCN + run.RunOffset;
+                long runStartLCN = previousLCN + run.RunOffset;
                 
                 if (clusterOffset >= run.RunLength) // not in this run, check in the next run
                 {
@@ -134,10 +133,10 @@ namespace DiskAccessLibrary.FileSystems.NTFS
                 }
                 else
                 {
-                    return lcn + clusterOffset;
+                    return runStartLCN + clusterOffset;
                 }
 
-                previousLCN = lcn;
+                previousLCN = runStartLCN;
             }
 
             throw new InvalidDataException("Invalid cluster VCN");
