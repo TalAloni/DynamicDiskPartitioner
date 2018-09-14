@@ -67,6 +67,61 @@ namespace DiskAccessLibrary.FileSystems.NTFS
             }
         }
 
+        public KeyValuePairList<long, int> TranslateToLBN(long firstSectorIndex, int sectorCount, int sectorsPerCluster)
+        {
+            KeyValuePairList<long, int> result = new KeyValuePairList<long, int>();
+
+            long previousLCN = 0;
+            long sectorOffset = firstSectorIndex;
+            int sectorsLeftToTranslate = sectorCount;
+            bool translating = false;
+            for (int index = 0; index < this.Count; index++)
+            {
+                DataRun run = this[index];
+                long runStartLCN = previousLCN + run.RunOffset;
+                long runStartLSN = runStartLCN * sectorsPerCluster;
+                long runLengthInClusters = run.RunLength;
+                long runLengthInSectors = runLengthInClusters * sectorsPerCluster;
+
+                if (!translating) // still searching for firstSectorIndex
+                {
+                    if (sectorOffset >= runLengthInSectors) // firstSectorIndex is not in this run, check in the next run
+                    {
+                        sectorOffset -= runLengthInSectors;
+                    }
+                    else
+                    {
+                        translating = true;
+
+                        long startSectorLSN = runStartLSN + sectorOffset;
+                        long sectorsLeftInRun = runLengthInSectors - sectorOffset; // how many sectors can be read from this run
+                        int sectorsTranslated = (int)Math.Min(sectorsLeftToTranslate, sectorsLeftInRun);
+                        result.Add(startSectorLSN, sectorsTranslated);
+                        sectorsLeftToTranslate -= sectorsTranslated;
+
+                        if (sectorsLeftToTranslate == 0)
+                        {
+                            break;
+                        }
+                    }
+                }
+                else
+                {
+                    int sectorsTranslated = (int)Math.Min(sectorsLeftToTranslate, runLengthInSectors);
+                    result.Add(runStartLSN, sectorsTranslated);
+                    sectorsLeftToTranslate -= sectorsTranslated;
+
+                    if (sectorsLeftToTranslate == 0)
+                    {
+                        break;
+                    }
+                }
+                previousLCN = runStartLCN;
+            }
+
+            return result;
+        }
+
         public KeyValuePairList<long, int> TranslateToLCN(long firstClusterVCN, int clusterCount)
         {
             KeyValuePairList<long, int> result = new KeyValuePairList<long, int>();
