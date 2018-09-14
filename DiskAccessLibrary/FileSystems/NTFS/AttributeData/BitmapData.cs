@@ -71,11 +71,22 @@ namespace DiskAccessLibrary.FileSystems.NTFS
                 int bitOffsetInBitmap = (int)(index % (Volume.BytesPerCluster * 8));
                 if (IsBitClear(bufferedClusterBytes, bitOffsetInBitmap))
                 {
+                    SetBit(bufferedClusterBytes, bitOffsetInBitmap);
+                    WriteCluster(currentVCN, bufferedClusterBytes);
                     return index;
                 }
             }
 
             return null;
+        }
+
+        public void DeallocateRecord(long recordIndex)
+        {
+            long currentVCN = recordIndex / (Volume.BytesPerCluster * 8);
+            int bitOffsetInBitmap = (int)(recordIndex % (Volume.BytesPerCluster * 8));
+            byte[] bitmap = ReadCluster(currentVCN);
+            ClearBit(bitmap, bitOffsetInBitmap);
+            WriteCluster(currentVCN, bitmap);
         }
 
         public void ExtendBitmap(long numberOfBits)
@@ -96,6 +107,20 @@ namespace DiskAccessLibrary.FileSystems.NTFS
             int bitOffsetInByte = bitOffsetInBitmap % 8;
             bool isInUse = ((bitmap[byteOffset] >> bitOffsetInByte) & 0x01) != 0;
             return !isInUse;
+        }
+
+        private static void SetBit(byte[] bitmap, int bitOffsetInBitmap)
+        {
+            int byteOffset = bitOffsetInBitmap / 8;
+            int bitOffsetInByte = bitOffsetInBitmap % 8;
+            bitmap[byteOffset] |= (byte)(0x01 << bitOffsetInByte);
+        }
+
+        private static void ClearBit(byte[] bitmap, int bitOffsetInBitmap)
+        {
+            int byteOffset = bitOffsetInBitmap / 8;
+            int bitOffsetInByte = bitOffsetInBitmap % 8;
+            bitmap[byteOffset] &= (byte)(~(0x01 << bitOffsetInByte));
         }
 
         public long NumberOfUsableBits
