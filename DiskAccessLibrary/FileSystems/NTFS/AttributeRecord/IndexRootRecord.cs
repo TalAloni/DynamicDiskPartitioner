@@ -22,12 +22,12 @@ namespace DiskAccessLibrary.FileSystems.NTFS
         public uint BytesPerIndexRecord;
         public byte BlocksPerIndexRecord; // In units of clusters when BytesPerIndexRecord >= Volume.BytesPerCluster, otherwise in units of 512 byte blocks.
         // 3 zero bytes
-        public IndexHeader IndexHeader;
+        private IndexHeader m_indexHeader;
         public List<IndexEntry> IndexEntries;
 
         public IndexRootRecord(string name, ushort instance) : base(AttributeType.IndexRoot, name, instance)
         {
-            IndexHeader = new IndexHeader();
+            m_indexHeader = new IndexHeader();
             IndexEntries = new List<IndexEntry>();
         }
         
@@ -38,24 +38,24 @@ namespace DiskAccessLibrary.FileSystems.NTFS
             BytesPerIndexRecord = LittleEndianConverter.ToUInt32(this.Data, 0x08);
             BlocksPerIndexRecord = ByteReader.ReadByte(this.Data, 0x0C);
             // 3 zero bytes (padding to 8-byte boundary)
-            IndexHeader = new IndexHeader(this.Data, 0x10);
+            m_indexHeader = new IndexHeader(this.Data, 0x10);
 
-            int entriesOffset = IndexHeaderOffset + (int)IndexHeader.EntriesOffset;
+            int entriesOffset = IndexHeaderOffset + (int)m_indexHeader.EntriesOffset;
             IndexEntries = IndexEntry.ReadIndexEntries(this.Data, entriesOffset);
         }
 
         public override byte[] GetBytes(int bytesPerCluster)
         {
             this.Data = new byte[this.DataLength];
-            IndexHeader.EntriesOffset = IndexHeader.Length;
-            IndexHeader.TotalLength = (uint)this.Data.Length - IndexHeaderOffset;
-            IndexHeader.AllocatedLength = (uint)this.Data.Length - IndexHeaderOffset;
+            m_indexHeader.EntriesOffset = IndexHeader.Length;
+            m_indexHeader.TotalLength = (uint)this.Data.Length - IndexHeaderOffset;
+            m_indexHeader.AllocatedLength = (uint)this.Data.Length - IndexHeaderOffset;
 
             LittleEndianWriter.WriteUInt32(this.Data, 0x00, (uint)IndexedAttributeType);
             LittleEndianWriter.WriteUInt32(this.Data, 0x04, (uint)CollationRule);
             LittleEndianWriter.WriteUInt32(this.Data, 0x08, (uint)BytesPerIndexRecord);
             ByteWriter.WriteByte(this.Data, 0x0C, BlocksPerIndexRecord);
-            IndexHeader.WriteBytes(this.Data, 0x10);
+            m_indexHeader.WriteBytes(this.Data, 0x10);
             IndexEntry.WriteIndexEntries(this.Data, IndexHeaderOffset + IndexHeader.Length, IndexEntries);
             return base.GetBytes(bytesPerCluster);
         }
@@ -72,11 +72,11 @@ namespace DiskAccessLibrary.FileSystems.NTFS
         {
             get
             {
-                return IndexHeader.IsParentNode;
+                return m_indexHeader.IsParentNode;
             }
             set
             {
-                IndexHeader.IsParentNode = value;
+                m_indexHeader.IsParentNode = value;
             }
         }
     }
