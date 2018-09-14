@@ -155,17 +155,18 @@ namespace DiskAccessLibrary.FileSystems.NTFS
 
         public static void WriteIndexEntries(byte[] buffer, int offset, List<IndexEntry> entries)
         {
+            if (entries.Count > 0 && entries[entries.Count - 1].ParentNodeForm)
+            {
+                entries[entries.Count - 1].IsLastEntry = true;
+            }
+
             foreach (IndexEntry entry in entries)
             {
                 entry.WriteBytes(buffer, offset);
                 offset += entry.Length;
             }
 
-            if (entries.Count > 0 && entries[entries.Count - 1].ParentNodeForm)
-            {
-                entries[entries.Count - 1].IsLastEntry = true;
-            }
-            else
+            if (entries.Count == 0 || !entries[entries.Count - 1].IsLastEntry)
             {
                 IndexEntry lastEntry = new IndexEntry();
                 lastEntry.IsLastEntry = true;
