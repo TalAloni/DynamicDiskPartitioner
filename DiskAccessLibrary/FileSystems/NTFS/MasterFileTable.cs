@@ -22,16 +22,20 @@ namespace DiskAccessLibrary.FileSystems.NTFS
         private const long LogFileSegmentNumber = 2;
         private const long VolumeSegmentNumber = 3;
         private const long AttrDefSegmentNumber = 4;
-        internal const long RootDirSegmentNumber = 5;
-        internal const long BitmapSegmentNumber = 6;
+        private const long RootDirSegmentNumber = 5;
+        private const long BitmapSegmentNumber = 6;
         private const long BootSegmentNumber = 7;
         private const long BadClusSegmentNumber = 8;
         private const long SecureSegmentNumber = 9;
         private const long UpCaseSegmentNumber = 10;
         private const long ExtendSegmentNumber = 11;
         // The $Extend Metafile is simply a directory index that contains information on where to locate the last four metafiles ($ObjId, $Quota, $Reparse and $UsnJrnl)
+        private static readonly MftSegmentReference LogSegmentReference = new MftSegmentReference(LogFileSegmentNumber, (ushort)LogFileSegmentNumber);
+        private static readonly MftSegmentReference VolumeSegmentReference = new MftSegmentReference(VolumeSegmentNumber, (ushort)VolumeSegmentNumber);
+        internal static readonly MftSegmentReference RootDirSegmentReference = new MftSegmentReference(RootDirSegmentNumber, (ushort)RootDirSegmentNumber);
+        internal static readonly MftSegmentReference BitmapSegmentReference = new MftSegmentReference(BitmapSegmentNumber, (ushort)BitmapSegmentNumber);
+        private static readonly MftSegmentReference BootSegmentReference = new MftSegmentReference(BootSegmentNumber, (ushort)BootSegmentNumber);
         internal readonly int AttributeRecordLengthToMakeNonResident;
-        public readonly MftSegmentReference RootDirSegmentReference = new MftSegmentReference(RootDirSegmentNumber, (ushort)RootDirSegmentNumber);
 
         private NTFSVolume m_volume;
         private FileRecord m_mftRecord;
@@ -235,12 +239,12 @@ namespace DiskAccessLibrary.FileSystems.NTFS
 
         public FileRecord GetVolumeRecord()
         {
-            return GetFileRecord(VolumeSegmentNumber);
+            return GetFileRecord(VolumeSegmentReference);
         }
 
         public FileRecord GetBitmapRecord()
         {
-            return GetFileRecord(BitmapSegmentNumber);
+            return GetFileRecord(BitmapSegmentReference);
         }
 
         public void UpdateFileRecord(FileRecord record)

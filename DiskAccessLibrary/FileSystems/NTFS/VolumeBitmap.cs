@@ -23,7 +23,7 @@ namespace DiskAccessLibrary.FileSystems.NTFS
         private long m_numberOfClustersInVolume; // This will correctly reflect the current number of clusters in the volume when extending the bitmap.
         private readonly int ExtendGranularity = 8; // The number of bytes added to the bitmap when extending it, MUST be multiple of 8.
 
-        public VolumeBitmap(NTFSVolume volume) : base(volume, MasterFileTable.BitmapSegmentNumber)
+        public VolumeBitmap(NTFSVolume volume) : base(volume, MasterFileTable.BitmapSegmentReference)
         {
             m_volume = volume;
             m_numberOfClustersInVolume = m_volume.Size / m_volume.BytesPerCluster;

@@ -17,10 +17,10 @@ namespace DiskAccessLibrary.FileSystems.NTFS
         private AttributeData m_data;
         private BitmapData m_bitmap;
 
-        public NTFSFile(NTFSVolume volume, long baseSegmentNumber)
+        public NTFSFile(NTFSVolume volume, MftSegmentReference fileReference)
         {
             m_volume = volume;
-            m_fileRecord = m_volume.MasterFileTable.GetFileRecord(baseSegmentNumber);
+            m_fileRecord = m_volume.MasterFileTable.GetFileRecord(fileReference);
         }
 
         public NTFSFile(NTFSVolume volume, FileRecord fileRecord)
