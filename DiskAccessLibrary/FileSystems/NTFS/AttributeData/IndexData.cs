@@ -48,6 +48,56 @@ namespace DiskAccessLibrary.FileSystems.NTFS
             }
         }
 
+        public KeyValuePair<MftSegmentReference, byte[]>? FindEntry(byte[] key)
+        {
+            if (!m_rootRecord.IsParentNode)
+            {
+                int index = CollationHelper.FindIndexInLeafNode(m_rootRecord.IndexEntries, key, m_rootRecord.CollationRule);
+                if (index >= 0)
+                {
+                    IndexEntry entry = m_rootRecord.IndexEntries[index];
+                    return new KeyValuePair<MftSegmentReference, byte[]>(entry.FileReference, entry.Key);
+                }
+                else
+                {
+                    return null;
+                }
+            }
+            else
+            {
+                List<IndexEntry> entries = m_rootRecord.IndexEntries;
+                bool isParentNode = true;
+                int index;
+                while (isParentNode)
+                {
+                    index = CollationHelper.FindIndexInParentNode(entries, key, m_rootRecord.CollationRule);
+                    IndexEntry entry = entries[index];
+                    if (!entry.IsLastEntry && CollationHelper.Compare(entry.Key, key, m_rootRecord.CollationRule) == 0)
+                    {
+                        return new KeyValuePair<MftSegmentReference, byte[]>(entry.FileReference, entry.Key);
+                    }
+                    else
+                    {
+                        long subnodeVBN = entry.SubnodeVBN;
+                        IndexRecord indexRecord = ReadIndexRecord(subnodeVBN);
+                        entries = indexRecord.IndexEntries;
+                        isParentNode = indexRecord.IsParentNode;
+                    }
+                }
+
+                index = CollationHelper.FindIndexInLeafNode(entries, key, m_rootRecord.CollationRule);
+                if (index >= 0)
+                {
+                    IndexEntry entry = entries[index];
+                    return new KeyValuePair<MftSegmentReference, byte[]>(entry.FileReference, entry.Key);
+                }
+                else
+                {
+                    return null;
+                }
+            }
+        }
+
         public KeyValuePairList<MftSegmentReference, byte[]> GetAllEntries()
         {
             KeyValuePairList<MftSegmentReference, byte[]> result = new KeyValuePairList<MftSegmentReference, byte[]>();

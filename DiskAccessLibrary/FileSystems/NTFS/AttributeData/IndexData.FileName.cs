@@ -13,6 +13,36 @@ namespace DiskAccessLibrary.FileSystems.NTFS
 {
     public partial class IndexData
     {
+        public MftSegmentReference FindFileNameRecordSegmentReference(string fileName)
+        {
+            byte[] key = FileNameRecord.GetIndexKeyBytes(fileName);
+            KeyValuePair<MftSegmentReference, byte[]>? entry = FindEntry(key);
+            if (entry != null)
+            {
+                return entry.Value.Key;
+            }
+            else
+            {
+                return null;
+            }
+        }
+
+        public KeyValuePair<MftSegmentReference, FileNameRecord>? FindFileNameRecord(string fileName)
+        {
+            byte[] key = FileNameRecord.GetIndexKeyBytes(fileName);
+            KeyValuePair<MftSegmentReference, byte[]>? entry = FindEntry(key);
+            if (entry != null)
+            {
+                MftSegmentReference fileReference = entry.Value.Key;
+                FileNameRecord fileNameRecord = new FileNameRecord(entry.Value.Value, 0);
+                return new KeyValuePair<MftSegmentReference, FileNameRecord>(fileReference, fileNameRecord);
+            }
+            else
+            {
+                return null;
+            }
+        }
+
         public KeyValuePairList<MftSegmentReference, FileNameRecord> GetAllFileNameRecords()
         {
             KeyValuePairList<MftSegmentReference, FileNameRecord> result = new KeyValuePairList<MftSegmentReference, FileNameRecord>();
