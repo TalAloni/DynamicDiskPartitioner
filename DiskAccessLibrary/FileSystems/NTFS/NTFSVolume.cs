@@ -96,13 +96,13 @@ namespace DiskAccessLibrary.FileSystems.NTFS
             return null;
         }
 
-        private KeyValuePairList<MftSegmentReference, FileNameRecord> GetFileNameRecordsInDirectory(long directoryBaseSegmentNumber)
+        public KeyValuePairList<MftSegmentReference, FileNameRecord> GetFileNameRecordsInDirectory(MftSegmentReference directoryReference)
         {
-            FileRecord fileRecord = m_mft.GetFileRecord(directoryBaseSegmentNumber);
+            FileRecord directoryRecord = m_mft.GetFileRecord(directoryReference);
             KeyValuePairList<MftSegmentReference, FileNameRecord> result = null;
-            if (fileRecord != null && fileRecord.IsDirectory)
+            if (directoryRecord != null && directoryRecord.IsDirectory)
             {
-                IndexData indexData = new IndexData(this, fileRecord, AttributeType.FileName);
+                IndexData indexData = new IndexData(this, directoryRecord, AttributeType.FileName);
                 result = indexData.GetAllFileNameRecords();
                 
                 for (int index = 0; index < result.Count; index++)
@@ -115,35 +115,6 @@ namespace DiskAccessLibrary.FileSystems.NTFS
                     }
                 }
             }
-            return result;
-        }
-
-        public List<FileRecord> GetFileRecordsInDirectory(long directoryBaseSegmentNumber)
-        {
-            return GetFileRecordsInDirectory(directoryBaseSegmentNumber, false);
-        }
-
-        private List<FileRecord> GetFileRecordsInDirectory(long directoryBaseSegmentNumber, bool includeMetaFiles)
-        {
-            KeyValuePairList<MftSegmentReference, FileNameRecord> entries = GetFileNameRecordsInDirectory(directoryBaseSegmentNumber);
-            List<FileRecord> result = new List<FileRecord>();
-            
-            if (entries != null)
-            {
-                List<MftSegmentReference> files = entries.Keys;
-                foreach (MftSegmentReference reference in files)
-                {
-                    FileRecord record = m_mft.GetFileRecord(reference);
-                    if (record != null)
-                    {
-                        if (record.IsInUse && (includeMetaFiles || !record.IsMetaFile))
-                        {
-                            result.Add(record);
-                        }
-                    }
-                }
-            }
-
             return result;
         }
 

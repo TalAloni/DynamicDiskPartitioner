@@ -66,12 +66,12 @@ namespace DiskAccessLibrary.FileSystems.NTFS
             FileRecord directoryRecord = m_volume.GetFileRecord(path);
             if (directoryRecord != null && directoryRecord.IsDirectory)
             {
-                List<FileRecord> records = m_volume.GetFileRecordsInDirectory(directoryRecord.BaseRecordSegmentNumber);
+                KeyValuePairList<MftSegmentReference, FileNameRecord> records = m_volume.GetFileNameRecordsInDirectory(directoryRecord.BaseRecordSegmentReference);
                 List<FileSystemEntry> result = new List<FileSystemEntry>();
 
                 path = FileSystem.GetDirectoryPath(path);
 
-                foreach (FileRecord record in records)
+                foreach (FileNameRecord record in records.Values)
                 {
                     string fullPath = path + record.FileName;
                     FileSystemEntry entry = ToFileSystemEntry(fullPath, record);
@@ -239,6 +239,17 @@ namespace DiskAccessLibrary.FileSystems.NTFS
             bool isReadonly = (attributes & FileAttributes.Readonly) > 0;
             bool isArchived = (attributes & FileAttributes.Archive) > 0;
             return new FileSystemEntry(path, record.FileName, record.IsDirectory, size, record.FileNameRecord.CreationTime, record.FileNameRecord.ModificationTime, record.FileNameRecord.LastAccessTime, isHidden, isReadonly, isArchived);
+        }
+
+        public static FileSystemEntry ToFileSystemEntry(string path, FileNameRecord record)
+        {
+            ulong size = record.FileSize;
+            FileAttributes attributes = record.FileAttributes;
+            bool isHidden = (attributes & FileAttributes.Hidden) > 0;
+            bool isReadonly = (attributes & FileAttributes.Readonly) > 0;
+            bool isArchived = (attributes & FileAttributes.Archive) > 0;
+            bool isDirectory = (attributes & FileAttributes.FileNameIndexPresent) > 0;
+            return new FileSystemEntry(path, record.FileName, isDirectory, size, record.CreationTime, record.ModificationTime, record.LastAccessTime, isHidden, isReadonly, isArchived);
         }
     }
 }
