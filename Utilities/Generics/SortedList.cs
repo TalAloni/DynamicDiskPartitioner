@@ -105,26 +105,31 @@ namespace Utilities
 
         public static int FirstIndexOf(List<T> list, Comparer<T> comparer, T item)
         {
-            int insertIndex = FindIndexForSortedInsert(list, comparer, item);
+            return FirstIndexOf(list, comparer.Compare, item);
+        }
+
+        public static int FindIndexForSortedInsert(List<T> list, Comparer<T> comparer, T item)
+        {
+            return FindIndexForSortedInsert(list, comparer.Compare, item);
+        }
+
+        public static int FirstIndexOf(List<T> list, Comparison<T> compare, T item)
+        {
+            int insertIndex = FindIndexForSortedInsert(list, compare, item);
             if (insertIndex == list.Count)
             {
                 return -1;
             }
-            if (comparer.Compare(item, list[insertIndex]) == 0)
+            if (compare(item, list[insertIndex]) == 0)
             {
                 int index = insertIndex;
-                while (index > 0 && comparer.Compare(item, list[index - 1]) == 0)
+                while (index > 0 && compare(item, list[index - 1]) == 0)
                 {
                     index--;
                 }
                 return index;
             }
             return -1;
-        }
-
-        public static int FindIndexForSortedInsert(List<T> list, Comparer<T> comparer, T item)
-        {
-            return FindIndexForSortedInsert(list, comparer.Compare, item);
         }
 
         public static int FindIndexForSortedInsert(List<T> list, Comparison<T> compare, T item)
