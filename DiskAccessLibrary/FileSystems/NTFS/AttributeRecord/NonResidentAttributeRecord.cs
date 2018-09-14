@@ -81,10 +81,10 @@ namespace DiskAccessLibrary.FileSystems.NTFS
         /// <summary>
         /// This method should only be used for informational purposes.
         /// </summary>
-        public KeyValuePairList<long, int> GetClustersInUse()
+        public KeyValuePairList<long, long> GetClustersInUse()
         {
             long clusterCount = HighestVCN - LowestVCN + 1;
-            KeyValuePairList<long, int> sequence = m_dataRunSequence.TranslateToLCN(0, (int)clusterCount);
+            KeyValuePairList<long, long> sequence = m_dataRunSequence.TranslateToLCN(0, clusterCount);
             return sequence;
         }
 

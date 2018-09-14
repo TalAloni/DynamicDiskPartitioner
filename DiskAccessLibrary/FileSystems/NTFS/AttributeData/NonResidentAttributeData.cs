@@ -234,11 +234,11 @@ namespace DiskAccessLibrary.FileSystems.NTFS
             long clustersToKeep = (long)Math.Ceiling((double)newLengthInBytes / m_volume.BytesPerCluster);
             if (clustersToKeep < ClusterCount)
             {
-                KeyValuePairList<long, int> clustersToDeallocate = m_record.DataRunSequence.TranslateToLCN(clustersToKeep, (int)(ClusterCount - clustersToKeep));
+                KeyValuePairList<long, long> clustersToDeallocate = m_record.DataRunSequence.TranslateToLCN(clustersToKeep, ClusterCount - clustersToKeep);
                 m_record.DataRunSequence.Truncate(clustersToKeep);
                 m_record.HighestVCN = clustersToKeep - 1;
 
-                foreach(KeyValuePair<long, int> runToDeallocate in clustersToDeallocate)
+                foreach (KeyValuePair<long, long> runToDeallocate in clustersToDeallocate)
                 {
                     m_volume.DeallocateClusters(runToDeallocate.Key, runToDeallocate.Value);
                 }

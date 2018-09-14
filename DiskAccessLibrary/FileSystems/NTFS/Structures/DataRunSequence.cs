@@ -122,13 +122,13 @@ namespace DiskAccessLibrary.FileSystems.NTFS
             return result;
         }
 
-        public KeyValuePairList<long, int> TranslateToLCN(long firstClusterVCN, int clusterCount)
+        public KeyValuePairList<long, long> TranslateToLCN(long firstClusterVCN, long clusterCount)
         {
-            KeyValuePairList<long, int> result = new KeyValuePairList<long, int>();
+            KeyValuePairList<long, long> result = new KeyValuePairList<long, long>();
 
             long previousLCN = 0;
             long clusterOffset = firstClusterVCN;
-            int clustersLeftToTranslate = clusterCount;
+            long clustersLeftToTranslate = clusterCount;
             bool translating = false;
             for(int index = 0; index < this.Count; index++)
             {
@@ -147,7 +147,7 @@ namespace DiskAccessLibrary.FileSystems.NTFS
                         
                         long startClusterLCN = runStartLCN + clusterOffset;
                         long clustersLeftInRun = run.RunLength - clusterOffset; // how many clusters can be read from this run
-                        int clustersTranslated = (int)Math.Min(clustersLeftToTranslate, clustersLeftInRun);
+                        long clustersTranslated = (long)Math.Min(clustersLeftToTranslate, clustersLeftInRun);
                         result.Add(startClusterLCN, clustersTranslated);
                         clustersLeftToTranslate -= clustersTranslated;
 
@@ -159,7 +159,7 @@ namespace DiskAccessLibrary.FileSystems.NTFS
                 }
                 else
                 {
-                    int clustersTranslated = (int)Math.Min(clustersLeftToTranslate, run.RunLength);
+                    long clustersTranslated = (long)Math.Min(clustersLeftToTranslate, run.RunLength);
                     result.Add(runStartLCN, clustersTranslated);
                     clustersLeftToTranslate -= clustersTranslated;
 
