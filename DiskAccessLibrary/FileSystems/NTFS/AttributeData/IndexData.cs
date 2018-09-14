@@ -18,8 +18,10 @@ namespace DiskAccessLibrary.FileSystems.NTFS
         private AttributeType m_indexedAttributeType; // Type of the attribute being indexed
         private string m_indexName;
         private IndexRootRecord m_rootRecord;
-        private NonResidentAttributeRecord m_indexAllocationRecord;
+        private IndexAllocationRecord m_indexAllocationRecord;
         private NonResidentAttributeData m_indexAllocationData;
+        private AttributeRecord m_bitmapRecord;
+        private BitmapData m_bitmapData;
 
         public IndexData(NTFSVolume volume, FileRecord fileRecord, AttributeType indexedAttributeType)
         {
@@ -36,6 +38,13 @@ namespace DiskAccessLibrary.FileSystems.NTFS
                     throw new InvalidDataException("Missing Index Allocation Record");
                 }
                 m_indexAllocationData = new NonResidentAttributeData(m_volume, m_indexAllocationRecord);
+                m_bitmapRecord = m_fileRecord.GetAttributeRecord(AttributeType.Bitmap, m_indexName);
+                if (m_bitmapRecord == null)
+                {
+                    throw new InvalidDataException("Missing Index Bitmap Record");
+                }
+                long numberOfUsableBits = (long)(m_indexAllocationRecord.DataLength / m_rootRecord.BytesPerIndexRecord);
+                m_bitmapData = new BitmapData(m_volume, m_fileRecord, m_bitmapRecord, numberOfUsableBits);
             }
         }
 
@@ -81,23 +90,28 @@ namespace DiskAccessLibrary.FileSystems.NTFS
             return result;
         }
 
-        public IndexRecord ReadIndexRecord(long subnodeVBN)
+        private IndexRecord ReadIndexRecord(long subnodeVBN)
         {
-            if (m_rootRecord.BytesPerIndexRecord >= m_volume.BytesPerCluster)
-            {
-                // The VBN is a VCN so we need to translate to sector number
-                subnodeVBN *= m_volume.SectorsPerCluster;
-            }
-            else
-            {
-                subnodeVBN = subnodeVBN * IndexRecord.BytesPerIndexRecordBlock / m_volume.BytesPerSector;
-            }
-            byte[] recordBytes = m_indexAllocationData.ReadSectors(subnodeVBN, this.SectorsPerIndexRecord);
+            long sectorIndex = ConvertToSectorIndex(subnodeVBN);
+            byte[] recordBytes = m_indexAllocationData.ReadSectors(sectorIndex, this.SectorsPerIndexRecord);
             IndexRecord record = new IndexRecord(recordBytes, 0);
             return record;
         }
 
-        public int SectorsPerIndexRecord
+        private long ConvertToSectorIndex(long recordVBN)
+        {
+            if (m_rootRecord.BytesPerIndexRecord >= m_volume.BytesPerCluster)
+            {
+                // The VBN is a VCN so we need to translate to sector index
+                return recordVBN * m_volume.SectorsPerCluster;
+            }
+            else
+            {
+                return recordVBN * IndexRecord.BytesPerIndexRecordBlock / m_volume.BytesPerSector;
+            }
+        }
+
+        private int SectorsPerIndexRecord
         {
             get
             {
