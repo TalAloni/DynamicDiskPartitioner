@@ -27,37 +27,57 @@ namespace DiskAccessLibrary.FileSystems.NTFS
         /// <param name="count">Maximum number of clusters to read</param>
         public byte[] ReadClusters(long firstClusterVCN, int count)
         {
-            long lastClusterVcnToRead = firstClusterVCN + count - 1;
+            int sectorsPerCluster = m_volume.SectorsPerCluster;
+            long firstSectorIndex = firstClusterVCN * sectorsPerCluster;
+            int sectorCount = count * sectorsPerCluster;
+            return ReadSectors(firstSectorIndex, sectorCount);
+        }
+
+        public void WriteClusters(long firstClusterVCN, byte[] data)
+        {
+            int sectorsPerCluster = m_volume.SectorsPerCluster;
+            long firstSectorIndex = firstClusterVCN * sectorsPerCluster;
+            WriteSectors(firstSectorIndex, data);
+        }
+
+        public byte[] ReadSectors(long firstSectorIndex, int count)
+        {
+            int sectorsPerCluster = m_volume.SectorsPerCluster;
+            int bytesPerSector = m_volume.BytesPerSector;
+            long firstClusterVCN = firstSectorIndex / sectorsPerCluster;
+            long lastSectorIndexToRead = firstSectorIndex + count - 1;
+            long lastClusterVCNToRead = lastSectorIndexToRead / sectorsPerCluster;
             if (firstClusterVCN < LowestVCN || firstClusterVCN > HighestVCN)
             {
-                string message = String.Format("Cluster VCN {0}-{1} is not within the valid range ({2}-{3})", firstClusterVCN, lastClusterVcnToRead, LowestVCN, HighestVCN);
+                string message = String.Format("Cluster VCN {0}-{1} is not within the valid range ({2}-{3})", firstClusterVCN, lastClusterVCNToRead, LowestVCN, HighestVCN);
                 throw new ArgumentOutOfRangeException(message);
             }
 
-            if (lastClusterVcnToRead > HighestVCN)
+            long highestSectorIndex = (HighestVCN + 1) * sectorsPerCluster - 1;
+            if (lastSectorIndexToRead > highestSectorIndex)
             {
-                lastClusterVcnToRead = HighestVCN;
+                lastSectorIndexToRead = highestSectorIndex;
             }
 
-            byte[] result = new byte[count * m_volume.BytesPerCluster];
-            ulong firstBytePosition = (ulong)firstClusterVCN * (uint)m_volume.BytesPerCluster;
+            byte[] result = new byte[count * bytesPerSector];
+            ulong firstBytePosition = (ulong)firstSectorIndex * (uint)bytesPerSector;
             if (firstBytePosition < ValidDataLength)
             {
-                KeyValuePairList<long, int> sequence = m_record.DataRunSequence.TranslateToLCN(firstClusterVCN - LowestVCN, count);
+                KeyValuePairList<long, int> sequence = m_record.DataRunSequence.TranslateToLBN(firstSectorIndex, count, sectorsPerCluster);
                 long bytesRead = 0;
                 foreach (KeyValuePair<long, int> run in sequence)
                 {
-                    byte[] clusters = m_volume.ReadClusters(run.Key, run.Value);
-                    Array.Copy(clusters, 0, result, bytesRead, clusters.Length);
-                    bytesRead += clusters.Length;
+                    byte[] data = m_volume.ReadSectors(run.Key, run.Value);
+                    Array.Copy(data, 0, result, bytesRead, data.Length);
+                    bytesRead += data.Length;
                 }
             }
 
-            int numberOfBytesToReturn = count * m_volume.BytesPerCluster;
+            int numberOfBytesToReturn = count * bytesPerSector;
             if (firstBytePosition + (uint)numberOfBytesToReturn > FileSize)
             {
-                // If the last cluster is only partially used or we have been asked to read clusters beyond the last cluster, trim result.
-                numberOfBytesToReturn = (int)(FileSize - (ulong)firstClusterVCN * (uint)m_volume.BytesPerCluster);
+                // If the last sector is only partially used or we have been asked to read beyond FileSize, trim result.
+                numberOfBytesToReturn = (int)(FileSize - (ulong)firstSectorIndex * (uint)bytesPerSector);
                 byte[] resultTrimmed = new byte[numberOfBytesToReturn];
                 Array.Copy(result, resultTrimmed, numberOfBytesToReturn);
                 result = resultTrimmed;
@@ -73,21 +93,23 @@ namespace DiskAccessLibrary.FileSystems.NTFS
             return result;
         }
 
-        public void WriteClusters(long firstClusterVCN, byte[] data)
+        public void WriteSectors(long firstSectorIndex, byte[] data)
         {
-            int clusterCount;
-            long lastClusterVcnToWrite;
-            int bytesPerCluster = m_volume.BytesPerCluster;
-            ulong firstBytePosition = (ulong)firstClusterVCN * (uint)bytesPerCluster;
+            int sectorCount;
+            long lastSectorIndexToWrite;
+            long lastClusterVCNToWrite;
+            int bytesPerSector = m_volume.BytesPerSector;
+            int sectorsPerCluster = m_volume.SectorsPerCluster;
+            ulong firstBytePosition = (ulong)firstSectorIndex * (uint)bytesPerSector;
             ulong nextBytePosition = firstBytePosition + (uint)data.Length;
-
-            if (data.Length % bytesPerCluster > 0)
+            if (data.Length % bytesPerSector > 0)
             {
-                int paddedLength = (int)Math.Ceiling((double)data.Length / bytesPerCluster) * bytesPerCluster;
-                // last cluster could be partial, we must zero-fill it before write
-                clusterCount = paddedLength / bytesPerCluster;
-                lastClusterVcnToWrite = firstClusterVCN + clusterCount - 1;
-                if (lastClusterVcnToWrite == HighestVCN)
+                int paddedLength = (int)Math.Ceiling((double)data.Length / bytesPerSector) * bytesPerSector;
+                // last sector could be partial, we must zero-fill it before write
+                sectorCount = paddedLength / bytesPerSector;
+                lastSectorIndexToWrite = firstSectorIndex + sectorCount - 1;
+                lastClusterVCNToWrite = lastSectorIndexToWrite / sectorsPerCluster;
+                if (lastClusterVCNToWrite == HighestVCN)
                 {
                     byte[] paddedData = new byte[paddedLength];
                     Array.Copy(data, paddedData, data.Length);
@@ -95,83 +117,60 @@ namespace DiskAccessLibrary.FileSystems.NTFS
                 }
                 else
                 {
-                    // only the last cluster can be partial
-                    throw new ArgumentException("Cannot write partial cluster");
+                    // only the last sector can be partial
+                    throw new ArgumentException("Cannot write partial sector");
                 }
             }
             else
             {
-                clusterCount = data.Length / bytesPerCluster;
-                lastClusterVcnToWrite = firstClusterVCN + clusterCount - 1;
+                sectorCount = data.Length / bytesPerSector;
+                lastSectorIndexToWrite = firstSectorIndex + sectorCount - 1;
+                lastClusterVCNToWrite = lastSectorIndexToWrite / sectorsPerCluster;
             }
 
-            if (firstClusterVCN < LowestVCN || lastClusterVcnToWrite > HighestVCN)
+            long firstClusterVCN = firstSectorIndex / sectorsPerCluster;
+            if (firstClusterVCN < LowestVCN || lastClusterVCNToWrite > HighestVCN)
             {
-                string message = String.Format("Cluster VCN {0}-{1} is not within the valid range ({2}-{3})", firstClusterVCN, firstClusterVCN + clusterCount, LowestVCN, HighestVCN);
+                string message = String.Format("Cluster VCN {0}-{1} is not within the valid range ({2}-{3})", firstClusterVCN, lastClusterVCNToWrite, LowestVCN, HighestVCN);
                 throw new ArgumentOutOfRangeException(message);
             }
 
             if (firstBytePosition > ValidDataLength)
             {
                 // We need to zero-fill all the the bytes up to ValidDataLength
-                long firstClusterToFillVCN = (long)(ValidDataLength / (uint)bytesPerCluster);
-                int transferSizeInClusters = Settings.MaximumTransferSizeLBA / m_volume.SectorsPerCluster;
-                for (long clusterToFillVCN = firstClusterToFillVCN; clusterToFillVCN < firstClusterVCN; clusterToFillVCN += transferSizeInClusters)
+                long firstSectorIndexToFill = (long)(ValidDataLength / (uint)bytesPerSector);
+                int transferSizeInSectors = Settings.MaximumTransferSizeLBA;
+                for (long sectorIndexToFill = firstSectorIndexToFill; sectorIndexToFill < firstSectorIndex; sectorIndexToFill += transferSizeInSectors)
                 {
-                    int clustersToWrite = (int)Math.Min(transferSizeInClusters, firstClusterVCN - firstClusterToFillVCN);
-                    byte[] fillData = new byte[clustersToWrite * bytesPerCluster];
-                    if (clusterToFillVCN == firstClusterToFillVCN)
+                    int sectorsToWrite = (int)Math.Min(transferSizeInSectors, firstSectorIndex - firstSectorIndexToFill);
+                    byte[] fillData = new byte[sectorsToWrite * bytesPerSector];
+                    if (sectorIndexToFill == firstSectorIndexToFill)
                     {
-                        int bytesToRetain = (int)(ValidDataLength % (uint)bytesPerCluster);
+                        int bytesToRetain = (int)(ValidDataLength % (uint)bytesPerSector);
                         if (bytesToRetain > 0)
                         {
-                            byte[] dataToRetain = ReadCluster(firstClusterToFillVCN);
+                            byte[] dataToRetain = ReadSectors(firstSectorIndexToFill, 1);
                             Array.Copy(dataToRetain, 0, fillData, 0, bytesToRetain);
                         }
                     }
-                    WriteClusters(clusterToFillVCN, fillData);
+                    WriteSectors(sectorIndexToFill, fillData);
                 }
             }
 
-            KeyValuePairList<long, int> sequence = m_record.DataRunSequence.TranslateToLCN(firstClusterVCN, clusterCount);
+            KeyValuePairList<long, int> sequence = m_record.DataRunSequence.TranslateToLBN(firstSectorIndex, sectorCount, sectorsPerCluster);
             long bytesWritten = 0;
             foreach (KeyValuePair<long, int> run in sequence)
             {
-                byte[] clusters = new byte[run.Value * bytesPerCluster];
-                Array.Copy(data, bytesWritten, clusters, 0, clusters.Length);
-                m_volume.WriteClusters(run.Key, clusters);
-                bytesWritten += clusters.Length;
+                byte[] sectors = new byte[run.Value * bytesPerSector];
+                Array.Copy(data, bytesWritten, sectors, 0, sectors.Length);
+                m_volume.WriteSectors(run.Key, sectors);
+                bytesWritten += sectors.Length;
             }
 
             if (nextBytePosition > ValidDataLength)
             {
                 m_record.ValidDataLength = nextBytePosition;
             }
-        }
-
-        public byte[] ReadSectors(long firstSectorIndex, int count)
-        {
-            long firstClusterVcn = firstSectorIndex / m_volume.SectorsPerCluster;
-            int sectorsToSkip = (int)(firstSectorIndex % m_volume.SectorsPerCluster);
-
-            int clustersToRead = (int)Math.Ceiling((double)(count + sectorsToSkip) / m_volume.SectorsPerCluster);
-
-            byte[] clusters = ReadClusters(firstClusterVcn, clustersToRead);
-            byte[] result = new byte[count * m_volume.BytesPerSector];
-            Array.Copy(clusters, sectorsToSkip * m_volume.BytesPerSector, result, 0, result.Length);
-            return result;
-        }
-
-        public void WriteSectors(long firstSectorIndex, byte[] data)
-        {
-            int count = data.Length / m_volume.BytesPerSector;
-            long firstClusterVcn = firstSectorIndex / m_volume.SectorsPerCluster;
-            int sectorsToSkip = (int)(firstSectorIndex % m_volume.SectorsPerCluster);
-
-            int clustersToRead = (int)Math.Ceiling((double)(count + sectorsToSkip) / m_volume.SectorsPerCluster);
-            byte[] clusters = ReadClusters(firstClusterVcn, clustersToRead);
-            Array.Copy(data, 0, clusters, sectorsToSkip * m_volume.BytesPerSector, data.Length);
-            WriteClusters(firstClusterVcn, clusters);
         }
 
         public void Extend(ulong additionalLengthInBytes)
