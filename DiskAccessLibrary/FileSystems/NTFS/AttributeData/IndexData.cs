@@ -111,29 +111,35 @@ namespace DiskAccessLibrary.FileSystems.NTFS
             else
             {
                 List<IndexEntry> parents = new List<IndexEntry>(m_rootRecord.IndexEntries);
+                SortedList<long> subnodesVisited = new SortedList<long>();
 
                 while (parents.Count > 0)
                 {
                     IndexEntry parent = parents[0];
-                    parents.RemoveAt(0);
-                    IndexRecord record = ReadIndexRecord(parent.SubnodeVBN);
-                    if (record.IsParentNode)
+                    if (!subnodesVisited.Contains(parent.SubnodeVBN))
                     {
-                        parents.InsertRange(0, record.IndexEntries);
+                        IndexRecord record = ReadIndexRecord(parent.SubnodeVBN);
+                        if (record.IsParentNode)
+                        {
+                            parents.InsertRange(0, record.IndexEntries);
+                        }
+                        else
+                        {
+                            foreach (IndexEntry entry in record.IndexEntries)
+                            {
+                                result.Add(entry.FileReference, entry.Key);
+                            }
+                        }
+                        subnodesVisited.Add(parent.SubnodeVBN);
                     }
                     else
                     {
-                        foreach (IndexEntry entry in record.IndexEntries)
+                        if (!parent.IsLastEntry)
                         {
-                            result.Add(entry.FileReference, entry.Key);
+                            // Some of the tree data in NTFS is contained in non-leaf keys
+                            result.Add(parent.FileReference, parent.Key);
                         }
-                    }
-
-
-                    if (!parent.IsLastEntry)
-                    {
-                        // Some of the tree data in NTFS is contained in non-leaf keys
-                        result.Add(parent.FileReference, parent.Key);
+                        parents.RemoveAt(0);
                     }
                 }
             }
