@@ -115,7 +115,7 @@ namespace DiskAccessLibrary.FileSystems.NTFS
             FileRecordSegment result = ReadFileRecordSegment(mftStartLCN, reference.SegmentNumber);
             if (result.SequenceNumber != reference.SequenceNumber)
             {
-                // The file record segment has been modified, and an older version has been requested
+                // The file record segment has been freed and reallocated, and an obsolete version is being requested
                 return null;
             }
             return result;
@@ -171,7 +171,7 @@ namespace DiskAccessLibrary.FileSystems.NTFS
             {
                 if (result.BaseRecordSequenceNumber != reference.SequenceNumber)
                 {
-                    // The file record segment has been modified, and an older version has been requested
+                    // The file record segment has been freed and reallocated, and an obsolete version is being requested
                     return null;
                 }
             }

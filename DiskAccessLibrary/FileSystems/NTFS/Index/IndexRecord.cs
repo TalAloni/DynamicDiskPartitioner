@@ -11,6 +11,9 @@ using Utilities;
 
 namespace DiskAccessLibrary.FileSystems.NTFS
 {
+    /// <summary>
+    /// INDEX_ALLOCATION_BUFFER
+    /// </summary>
     public class IndexRecord
     {
         public const string ValidSignature = "INDX";
