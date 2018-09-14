@@ -20,13 +20,13 @@ namespace DiskAccessLibrary.FileSystems.NTFS
                     {
                         string str1 = FileNameRecord.ReadFileName(key1, 0);
                         string str2 = FileNameRecord.ReadFileName(key2, 0);
-                        return String.Compare(str1, str2, true);
+                        return String.Compare(str1, str2, StringComparison.OrdinalIgnoreCase);
                     }
                 case CollationRule.UnicodeString:
                     {
                         string str1 = Encoding.Unicode.GetString(key1);
                         string str2 = Encoding.Unicode.GetString(key2);
-                        return String.Compare(str1, str2, true);
+                        return String.Compare(str1, str2, StringComparison.OrdinalIgnoreCase);
                     }
                 default:
                     throw new NotImplementedException();
