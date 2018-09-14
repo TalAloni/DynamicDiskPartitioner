@@ -27,7 +27,7 @@ namespace DiskAccessLibrary.FileSystems.NTFS
         /* Start of header */
         // MULTI_SECTOR_HEADER
         public ulong LogFileSequenceNumber;
-        public ushort SequenceNumber; // This value is incremented each time that a file record segment is freed
+        private ushort m_sequenceNumber; // This value is incremented each time that a file record segment is freed
         public ushort ReferenceCount;
         // ushort FirstAttributeOffset;
         private FileRecordFlags m_flags;
@@ -44,13 +44,14 @@ namespace DiskAccessLibrary.FileSystems.NTFS
 
         private long m_segmentNumber; // We use our own segment number to support NTFS v3.0 (note that SegmentNumberOnDisk is UInt32, which is another reason to avoid it)
 
-        public FileRecordSegment(long segmentNumber) : this(segmentNumber, new MftSegmentReference(0, 0))
+        public FileRecordSegment(long segmentNumber, ushort sequenceNumber) : this(segmentNumber, sequenceNumber, new MftSegmentReference(0, 0))
         {
         }
 
-        public FileRecordSegment(long segmentNumber, MftSegmentReference baseFileRecordSegment)
+        public FileRecordSegment(long segmentNumber, ushort sequenceNumber, MftSegmentReference baseFileRecordSegment)
         {
             m_segmentNumber = segmentNumber;
+            m_sequenceNumber = sequenceNumber;
             m_baseFileRecordSegment = baseFileRecordSegment;
         }
 
@@ -66,7 +67,7 @@ namespace DiskAccessLibrary.FileSystems.NTFS
                 throw new InvalidDataException("Invalid FILE record signature");
             }
             LogFileSequenceNumber = LittleEndianConverter.ToUInt64(buffer, offset + 0x08);
-            SequenceNumber = LittleEndianConverter.ToUInt16(buffer, offset + 0x10);
+            m_sequenceNumber = LittleEndianConverter.ToUInt16(buffer, offset + 0x10);
             ReferenceCount = LittleEndianConverter.ToUInt16(buffer, offset + 0x12);
             ushort firstAttributeOffset = LittleEndianConverter.ToUInt16(buffer, offset + 0x14);
             m_flags = (FileRecordFlags)LittleEndianConverter.ToUInt16(buffer, offset + 0x16);
@@ -120,7 +121,7 @@ namespace DiskAccessLibrary.FileSystems.NTFS
             byte[] buffer = new byte[bytesPerFileRecordSegment];
             multiSectorHeader.WriteBytes(buffer, 0x00);
             LittleEndianWriter.WriteUInt64(buffer, 0x08, LogFileSequenceNumber);
-            LittleEndianWriter.WriteUInt16(buffer, 0x10, SequenceNumber);
+            LittleEndianWriter.WriteUInt16(buffer, 0x10, m_sequenceNumber);
             LittleEndianWriter.WriteUInt16(buffer, 0x12, ReferenceCount);
             LittleEndianWriter.WriteUInt16(buffer, 0x14, firstAttributeOffset);
             LittleEndianWriter.WriteUInt16(buffer, 0x16, (ushort)m_flags);
@@ -244,6 +245,14 @@ namespace DiskAccessLibrary.FileSystems.NTFS
             get
             {
                 return m_segmentNumber;
+            }
+        }
+
+        public ushort SequenceNumber
+        {
+            get
+            {
+                return m_sequenceNumber;
             }
         }
 
