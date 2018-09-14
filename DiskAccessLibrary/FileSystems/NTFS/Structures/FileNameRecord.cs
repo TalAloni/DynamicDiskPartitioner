@@ -28,7 +28,7 @@ namespace DiskAccessLibrary.FileSystems.NTFS
         public ushort PackedEASize;
         // ushort Reserved;
         // byte FileNameLength
-        public FilenameNamespace Namespace; // Type of filename (e.g. 8.3, long filename etc.)
+        public FileNameFlags Flags; // Type of filename (e.g. 8.3, long filename etc.)
         public string FileName;
 
         public FileNameRecord()
@@ -47,7 +47,7 @@ namespace DiskAccessLibrary.FileSystems.NTFS
             FileAttributes = (FileAttributes)LittleEndianConverter.ToUInt32(buffer, offset + 0x38);
             PackedEASize = LittleEndianConverter.ToUInt16(buffer, offset + 0x3C);
             byte fileNameLength = ByteReader.ReadByte(buffer, offset + 0x40);
-            Namespace = (FilenameNamespace)ByteReader.ReadByte(buffer, offset + 0x41);
+            Flags = (FileNameFlags)ByteReader.ReadByte(buffer, offset + 0x41);
             FileName = Encoding.Unicode.GetString(buffer, offset + 0x42, fileNameLength * 2);
         }
 
@@ -65,10 +65,17 @@ namespace DiskAccessLibrary.FileSystems.NTFS
             LittleEndianWriter.WriteUInt32(buffer, 0x38, (uint)FileAttributes);
             LittleEndianWriter.WriteUInt16(buffer, 0x3C, PackedEASize);
             ByteWriter.WriteByte(buffer, 0x40, (byte)FileName.Length);
-            ByteWriter.WriteByte(buffer, 0x41, (byte)Namespace);
+            ByteWriter.WriteByte(buffer, 0x41, (byte)Flags);
             ByteWriter.WriteBytes(buffer, 0x42, Encoding.Unicode.GetBytes(FileName));
 
             return buffer;
+        }
+
+        /// <param name="fileNameNamespace">POSIX or Win32 or DOS, multiple flags are not supported</param>
+        public bool IsInNamespace(FileNameFlags fileNameNamespace)
+        {
+            bool isPosix = ((Flags & (FileNameFlags.Win32 | FileNameFlags.DOS)) == 0);
+            return ((fileNameNamespace == FileNameFlags.POSIX && isPosix) || (Flags & fileNameNamespace) != 0);
         }
 
         public bool IsDirectory

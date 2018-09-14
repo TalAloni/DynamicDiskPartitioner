@@ -98,18 +98,24 @@ namespace DiskAccessLibrary.FileSystems.NTFS
 
         public KeyValuePairList<MftSegmentReference, FileNameRecord> GetFileNameRecordsInDirectory(MftSegmentReference directoryReference)
         {
+            return GetFileNameRecordsInDirectory(directoryReference, FileNameFlags.Win32);
+        }
+
+        public KeyValuePairList<MftSegmentReference, FileNameRecord> GetFileNameRecordsInDirectory(MftSegmentReference directoryReference, FileNameFlags? fileNameNamespace)
+        {
             FileRecord directoryRecord = m_mft.GetFileRecord(directoryReference);
             KeyValuePairList<MftSegmentReference, FileNameRecord> result = null;
             if (directoryRecord != null && directoryRecord.IsDirectory)
             {
                 IndexData indexData = new IndexData(this, directoryRecord, AttributeType.FileName);
                 result = indexData.GetAllFileNameRecords();
-                
+
                 for (int index = 0; index < result.Count; index++)
                 {
-                    if (result[index].Value.Namespace == FilenameNamespace.DOS)
+                    bool isMetaFile = (result[index].Key.SegmentNumber <= MasterFileTable.LastReservedMftSegmentNumber);
+                    if ((fileNameNamespace.HasValue && !result[index].Value.IsInNamespace(fileNameNamespace.Value)) || isMetaFile)
                     {
-                        // The same FileRecord can have multiple entries, each with its own namespace
+                        // The same FileRecord can have multiple FileNameRecord entries, each with its own namespace
                         result.RemoveAt(index);
                         index--;
                     }

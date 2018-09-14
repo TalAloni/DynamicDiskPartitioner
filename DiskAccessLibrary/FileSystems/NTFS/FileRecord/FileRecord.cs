@@ -123,16 +123,17 @@ namespace DiskAccessLibrary.FileSystems.NTFS
             return result;
         }
 
-        public FileNameRecord GetFileNameRecord(FilenameNamespace filenameNamespace)
+        /// <param name="fileNameNamespace">POSIX or Win32 or DOS, multiple flags are not supported</param>
+        private FileNameRecord GetFileNameRecord(FileNameFlags fileNameNamespace)
         {
             foreach (AttributeRecord attribute in this.Attributes)
             {
                 if (attribute is FileNameAttributeRecord)
                 {
-                    FileNameRecord fileNameAttribute = ((FileNameAttributeRecord)attribute).Record;
-                    if (fileNameAttribute.Namespace == filenameNamespace)
+                    FileNameRecord fileNameRecord = ((FileNameAttributeRecord)attribute).Record;
+                    if (fileNameRecord.IsInNamespace(fileNameNamespace))
                     {
-                        return fileNameAttribute;
+                        return fileNameRecord;
                     }
                 }
             }
@@ -178,26 +179,22 @@ namespace DiskAccessLibrary.FileSystems.NTFS
         {
             get
             {
-                FileNameRecord record = GetFileNameRecord(FilenameNamespace.Win32);
+                FileNameRecord record = GetFileNameRecord(FileNameFlags.Win32);
                 if (record == null)
                 {
-                    record = GetFileNameRecord(FilenameNamespace.POSIX);
+                    record = GetFileNameRecord(FileNameFlags.POSIX);
                 }
                 return record;
             }
         }
 
-        // 8.3 filename
-        public FileNameRecord ShortFileNameRecord
+        /// <summary>Returns FileNameRecord containing 8.3 filename</summary>
+        public FileNameRecord DosFileNameRecord
         {
             get
             {
-                FileNameRecord record = GetFileNameRecord(FilenameNamespace.DOS);
-                if (record == null)
-                {
-                    // Win32AndDOS means that both the Win32 and the DOS filenames are identical and hence have been saved in this single filename record.
-                    record = GetFileNameRecord(FilenameNamespace.Win32AndDOS);
-                }
+                // FileNameFlags.Win32 | FileNameFlags.DOS means that both the Win32 and the DOS filenames are identical and hence have been saved in this single filename record.
+                FileNameRecord record = GetFileNameRecord(FileNameFlags.DOS);
                 return record;
             }
         }
@@ -209,7 +206,7 @@ namespace DiskAccessLibrary.FileSystems.NTFS
                 FileNameRecord fileNameRecord = this.LongFileNameRecord;
                 if (fileNameRecord == null)
                 {
-                    fileNameRecord = this.ShortFileNameRecord;
+                    fileNameRecord = this.DosFileNameRecord;
                 }
 
                 return fileNameRecord;
@@ -247,12 +244,7 @@ namespace DiskAccessLibrary.FileSystems.NTFS
         {
             get
             {
-                FileNameRecord fileNameRecord = this.LongFileNameRecord;
-                if (fileNameRecord == null)
-                {
-                    fileNameRecord = this.ShortFileNameRecord;
-                }
-
+                FileNameRecord fileNameRecord = this.FileNameRecord;
                 if (fileNameRecord != null)
                 {
                     return fileNameRecord.ParentDirectory;
