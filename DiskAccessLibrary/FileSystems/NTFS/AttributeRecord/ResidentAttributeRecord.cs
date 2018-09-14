@@ -24,6 +24,7 @@ namespace DiskAccessLibrary.FileSystems.NTFS
 
         public ResidentAttributeRecord(AttributeType attributeType, string name, ushort instance) : base(attributeType, name, true, instance)
         {
+            Data = new byte[0];
         }
 
         public ResidentAttributeRecord(byte[] buffer, int offset) : base(buffer, offset)
@@ -77,6 +78,25 @@ namespace DiskAccessLibrary.FileSystems.NTFS
                 // Each record is aligned to 8-byte boundary
                 length = (uint)Math.Ceiling((double)length / 8) * 8;
                 return length;
+            }
+        }
+
+        public bool IsIndexed
+        {
+            get
+            {
+                return (m_residentForm & ResidentForm.Indexed) > 0;
+            }
+            set
+            {
+                if (value)
+                {
+                    m_residentForm |= ResidentForm.Indexed;
+                }
+                else
+                {
+                    m_residentForm &= ~ResidentForm.Indexed;
+                }
             }
         }
     }
