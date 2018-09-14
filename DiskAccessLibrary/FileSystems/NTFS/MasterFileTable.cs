@@ -31,6 +31,7 @@ namespace DiskAccessLibrary.FileSystems.NTFS
         private const long ExtendSegmentNumber = 11;
         // The $Extend Metafile is simply a directory index that contains information on where to locate the last four metafiles ($ObjId, $Quota, $Reparse and $UsnJrnl)
         internal readonly int AttributeRecordLengthToMakeNonResident;
+        public readonly MftSegmentReference RootDirSegmentReference = new MftSegmentReference(RootDirSegmentNumber, (ushort)RootDirSegmentNumber);
 
         private NTFSVolume m_volume;
         private FileRecord m_mftRecord;

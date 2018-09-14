@@ -56,56 +56,43 @@ namespace DiskAccessLibrary.FileSystems.NTFS
 
             if (path == String.Empty)
             {
-                return m_mft.GetFileRecord(MasterFileTable.RootDirSegmentNumber);
+                return m_mft.GetFileRecord(MasterFileTable.RootDirSegmentReference);
             }
 
             string[] components = path.Substring(1).Split('\\');
-            long directorySegmentNumber = MasterFileTable.RootDirSegmentNumber;
+            MftSegmentReference directoryReference = MasterFileTable.RootDirSegmentReference;
             for (int index = 0; index < components.Length; index++)
             {
-                KeyValuePairList<MftSegmentReference, FileNameRecord> records = GetFileNameRecordsInDirectory(directorySegmentNumber);
+                FileRecord directoryRecord = m_mft.GetFileRecord(directoryReference);
                 if (index < components.Length - 1)
                 {
-                    FileRecord record = FindDirectoryRecord(records, components[index]);
-                    if (record != null)
+                    if (!directoryRecord.IsDirectory)
                     {
-                        directorySegmentNumber = record.BaseRecordSegmentNumber;
+                        return null;
                     }
-                    else
+                    IndexData indexData = new IndexData(this, directoryRecord, AttributeType.FileName);
+                    directoryReference = indexData.FindFileNameRecordSegmentReference(components[index]);
+                    if (directoryReference == null)
                     {
                         return null;
                     }
                 }
                 else // Last component
                 {
-                    return FindRecord(records, components[index]);
+                    IndexData indexData = new IndexData(this, directoryRecord, AttributeType.FileName);
+                    MftSegmentReference fileReference = indexData.FindFileNameRecordSegmentReference(components[index]);
+                    if (fileReference == null)
+                    {
+                        return null;
+                    }
+                    FileRecord fileRecord = m_mft.GetFileRecord(fileReference);
+                    if (fileRecord != null && !fileRecord.IsMetaFile)
+                    {
+                        return fileRecord;
+                    }
                 }
             }
 
-            return null;
-        }
-
-        private FileRecord FindDirectoryRecord(KeyValuePairList<MftSegmentReference, FileNameRecord> records, string directoryName)
-        {
-            FileRecord directoryRecord = FindRecord(records, directoryName);
-            if (directoryRecord != null && directoryRecord.IsDirectory)
-            {
-                return directoryRecord;
-            }
-            return null;
-        }
-
-        private FileRecord FindRecord(KeyValuePairList<MftSegmentReference, FileNameRecord> records, string name)
-        {
-            KeyValuePair<MftSegmentReference, FileNameRecord>? nameRecord = FindFileNameRecord(records, name);
-            if (nameRecord != null)
-            {
-                FileRecord record = m_mft.GetFileRecord(nameRecord.Value.Key);
-                if (record != null && record.IsInUse && !record.IsMetaFile)
-                {
-                    return record;
-                }
-            }
             return null;
         }
 
