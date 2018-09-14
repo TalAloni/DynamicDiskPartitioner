@@ -15,6 +15,7 @@ namespace DiskAccessLibrary.FileSystems.NTFS
     public class FileNameRecord
     {
         public const int FixedLength = 0x42;
+        public const int MaxFileNameLength = 255; // Unicode characters
 
         public MftSegmentReference ParentDirectory;
         public DateTime CreationTime;
@@ -68,6 +69,25 @@ namespace DiskAccessLibrary.FileSystems.NTFS
             ByteWriter.WriteBytes(buffer, 0x42, Encoding.Unicode.GetBytes(FileName));
 
             return buffer;
+        }
+
+        public bool IsDirectory
+        {
+            get
+            {
+                return (FileAttributes & FileAttributes.FileNameIndexPresent) != 0;
+            }
+            set
+            {
+                if (value)
+                {
+                    FileAttributes |= FileAttributes.FileNameIndexPresent;
+                }
+                else
+                {
+                    FileAttributes &= ~FileAttributes.FileNameIndexPresent;
+                }
+            }
         }
 
         public int Length

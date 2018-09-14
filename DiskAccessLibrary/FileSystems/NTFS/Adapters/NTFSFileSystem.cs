@@ -244,11 +244,11 @@ namespace DiskAccessLibrary.FileSystems.NTFS
         public static FileSystemEntry ToFileSystemEntry(string path, FileNameRecord record)
         {
             ulong size = record.FileSize;
+            bool isDirectory = record.IsDirectory;
             FileAttributes attributes = record.FileAttributes;
             bool isHidden = (attributes & FileAttributes.Hidden) > 0;
             bool isReadonly = (attributes & FileAttributes.Readonly) > 0;
             bool isArchived = (attributes & FileAttributes.Archive) > 0;
-            bool isDirectory = (attributes & FileAttributes.FileNameIndexPresent) > 0;
             return new FileSystemEntry(path, record.FileName, isDirectory, size, record.CreationTime, record.ModificationTime, record.LastAccessTime, isHidden, isReadonly, isArchived);
         }
     }
