@@ -32,5 +32,89 @@ namespace DiskAccessLibrary.FileSystems.NTFS
                     throw new NotImplementedException();
             }
         }
+
+        public static int FindIndexInParentNode(List<IndexEntry> entries, byte[] key, CollationRule collationRule)
+        {
+            if (entries.Count == 0)
+            {
+                throw new ArgumentException("Parent Index Record must contain at least 1 entry");
+            }
+
+            if (entries.Count == 1)
+            {
+                // The root can contain a single entry pointing to a leaf record
+                return 0;
+            }
+
+            int lowerIndex = 0;
+            int upperIndex = entries.Count - 2;
+            int comparisonResult;
+            while (lowerIndex < upperIndex)
+            {
+                int middleIndex = (lowerIndex + upperIndex) / 2;
+                IndexEntry middle = entries[middleIndex];
+                comparisonResult = Compare(middle.Key, key, collationRule);
+                if (comparisonResult == 0)
+                {
+                    return middleIndex;
+                }
+                else if (comparisonResult > 0) // middle > key
+                {
+                    upperIndex = middleIndex - 1;
+                }
+                else // middle < key
+                {
+                    lowerIndex = middleIndex + 1;
+                }
+            }
+
+            // At this point any entry following 'middle' is greater than 'key',
+            // and any entry preceding 'middle' is lesser than 'key'.
+            // So we either put 'key' before or after 'middle'.
+            comparisonResult = Compare(entries[lowerIndex].Key, key, collationRule);
+            if (comparisonResult < 0) // middle < key
+            {
+                return lowerIndex + 1;
+            }
+            else
+            {
+                return lowerIndex;
+            }
+        }
+
+        public static int FindIndexInLeafNode(List<IndexEntry> entries, byte[] key, CollationRule collationRule)
+        {
+            int lowerIndex = 0;
+            int upperIndex = entries.Count - 2;
+            int comparisonResult;
+            while (lowerIndex < upperIndex)
+            {
+                int middleIndex = (lowerIndex + upperIndex) / 2;
+                IndexEntry middle = entries[middleIndex];
+                comparisonResult = Compare(middle.Key, key, collationRule);
+                if (comparisonResult == 0)
+                {
+                    return middleIndex;
+                }
+                else if (comparisonResult > 0) // middle > key
+                {
+                    upperIndex = middleIndex - 1;
+                }
+                else // middle < key
+                {
+                    lowerIndex = middleIndex + 1;
+                }
+            }
+
+            comparisonResult = Compare(entries[lowerIndex].Key, key, collationRule);
+            if (comparisonResult == 0)
+            {
+                return lowerIndex;
+            }
+            else
+            {
+                return -1;
+            }
+        }
     }
 }
