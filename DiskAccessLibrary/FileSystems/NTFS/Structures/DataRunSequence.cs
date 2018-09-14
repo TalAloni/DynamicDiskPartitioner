@@ -200,14 +200,13 @@ namespace DiskAccessLibrary.FileSystems.NTFS
         public override string ToString()
         {
             StringBuilder builder = new StringBuilder();
-            long vcn = 0;
+            long previousLCN = 0;
             for(int index = 0; index < this.Count; index++)
             {
                 DataRun run = this[index];
-
-                long absoluteLCN = GetDataClusterLCN(vcn);
-                builder.AppendFormat("Data Run Number {0}: Absolute LCN: {1}, Length: {2}\n", index, absoluteLCN, run.RunLength);
-                vcn += run.RunLength;
+                long runStartLCN = previousLCN + run.RunOffset;
+                builder.AppendFormat("Data Run Number {0}: Start LCN: {1}, Length: {2}\n", index, runStartLCN, run.RunLength);
+                previousLCN = runStartLCN;
             }
 
             builder.AppendFormat("Number of clusters in sequence: {0}\n", DataClusterCount); 
