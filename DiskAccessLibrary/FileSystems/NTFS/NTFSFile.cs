@@ -55,15 +55,11 @@ namespace DiskAccessLibrary.FileSystems.NTFS
                 return;
             }
 
-            if (m_fileRecord.LongFileNameRecord != null)
+            List<FileNameRecord> fileNameRecords = m_fileRecord.FileNameRecords;
+            foreach (FileNameRecord fileNameRecord in fileNameRecords)
             {
-                m_fileRecord.LongFileNameRecord.AllocatedLength = this.Data.AllocatedLength;
-                m_fileRecord.LongFileNameRecord.FileSize = this.Data.Length;
-            }
-            if (m_fileRecord.ShortFileNameRecord != null)
-            {
-                m_fileRecord.ShortFileNameRecord.AllocatedLength = this.Data.AllocatedLength;
-                m_fileRecord.ShortFileNameRecord.FileSize = this.Data.Length;
+                fileNameRecord.AllocatedLength = this.Data.AllocatedLength;
+                fileNameRecord.FileSize = this.Data.Length;
             }
             // Note that directory indexes are not being updated ATM
             m_volume.MasterFileTable.UpdateFileRecord(m_fileRecord);

@@ -109,6 +109,20 @@ namespace DiskAccessLibrary.FileSystems.NTFS
             }
         }
 
+        private List<FileNameRecord> GetFileNameRecords()
+        {
+            List<FileNameRecord> result = new List<FileNameRecord>();
+            foreach (AttributeRecord attribute in this.Attributes)
+            {
+                if (attribute is FileNameAttributeRecord)
+                {
+                    FileNameRecord fileNameRecord = ((FileNameAttributeRecord)attribute).Record;
+                    result.Add(fileNameRecord);
+                }
+            }
+            return result;
+        }
+
         public FileNameRecord GetFileNameRecord(FilenameNamespace filenameNamespace)
         {
             foreach (AttributeRecord attribute in this.Attributes)
@@ -199,6 +213,14 @@ namespace DiskAccessLibrary.FileSystems.NTFS
                 }
 
                 return fileNameRecord;
+            }
+        }
+
+        public List<FileNameRecord> FileNameRecords
+        {
+            get
+            {
+                return GetFileNameRecords();
             }
         }
 
