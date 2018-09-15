@@ -31,8 +31,15 @@ namespace DiskAccessLibrary.FileSystems.NTFS
         public FileNameFlags Flags; // Type of filename (e.g. 8.3, long filename etc.)
         public string FileName;
 
-        public FileNameRecord()
+        public FileNameRecord(MftSegmentReference parentDirectory, string fileName, bool isDirectory, DateTime creationTime)
         {
+            ParentDirectory = parentDirectory;
+            CreationTime = creationTime;
+            ModificationTime = creationTime;
+            MftModificationTime = creationTime;
+            LastAccessTime = creationTime;
+            IsDirectory = isDirectory;
+            FileName = fileName;
         }
 
         public FileNameRecord(byte[] buffer, int offset)
