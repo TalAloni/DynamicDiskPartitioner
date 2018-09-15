@@ -17,5 +17,49 @@ namespace DiskAccessLibrary.FileSystems.NTFS
         {
             return "$I" + ((uint)indexedAttributeType).ToString("X");
         }
+
+        public static List<FileNameRecord> GenerateFileNameRecords(MftSegmentReference parentDirectory, string fileName, bool isDirectory, bool generateDosName, IndexData parentDirectoryIndex)
+        {
+            DateTime creationTime = DateTime.Now;
+
+            FileNameRecord fileNameRecord = new FileNameRecord(parentDirectory, fileName, isDirectory, creationTime);
+            fileNameRecord.ParentDirectory = parentDirectory;
+            fileNameRecord.CreationTime = creationTime;
+            fileNameRecord.ModificationTime = creationTime;
+            fileNameRecord.MftModificationTime = creationTime;
+            fileNameRecord.LastAccessTime = creationTime;
+            fileNameRecord.IsDirectory = isDirectory;
+            fileNameRecord.FileName = fileName;
+            bool createDosOnlyRecord = false;
+            if (generateDosName)
+            {
+                fileNameRecord.Flags = FileNameFlags.Win32;
+                if (DosFileNameHelper.IsValidDosFileName(fileName))
+                {
+                    fileNameRecord.Flags |= FileNameFlags.DOS;
+                }
+                else
+                {
+                    createDosOnlyRecord = true;
+                }
+            }
+            else
+            {
+                // This is similar to Windows 8.1, When FileNameFlags.Win32 is set, Windows Server 2003's CHKDSK expects to find a record with FileNameFlags.DOS set.
+                fileNameRecord.Flags = FileNameFlags.POSIX;
+            }
+
+            List<FileNameRecord> result = new List<FileNameRecord>();
+            result.Add(fileNameRecord);
+            if (createDosOnlyRecord)
+            {
+                string dosFileName = DosFileNameHelper.GenerateDosName(parentDirectoryIndex, fileName);
+                FileNameRecord dosOnlyRecord = new FileNameRecord(parentDirectory, dosFileName, isDirectory, creationTime);
+                dosOnlyRecord.Flags = FileNameFlags.DOS;
+                result.Add(dosOnlyRecord);
+            }
+
+            return result;
+        }
     }
 }
