@@ -52,6 +52,7 @@
     <Compile Include="Disks\VMDK\VirtualMachineDiskDescriptor.cs" />
     <Compile Include="Disks\VMDK\VirtualMachineDiskExtentEntry.cs" />
     <Compile Include="Disks\VMDK\VirtualMachineDiskType.cs" />
+    <Compile Include="Exceptions\AlreadyExistsException.cs" />
     <Compile Include="Exceptions\CyclicRedundancyCheckException.cs" />
     <Compile Include="Exceptions\DeviceNotReadyException.cs" />
     <Compile Include="Exceptions\DiskFullException.cs" />
