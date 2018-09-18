@@ -44,7 +44,7 @@ namespace DiskAccessLibrary.FileSystems.NTFS
 
         private long m_segmentNumber; // We use our own segment number to support NTFS v3.0 (note that SegmentNumberOnDisk is UInt32, which is another reason to avoid it)
 
-        public FileRecordSegment(long segmentNumber, ushort sequenceNumber) : this(segmentNumber, sequenceNumber, new MftSegmentReference(0, 0))
+        public FileRecordSegment(long segmentNumber, ushort sequenceNumber) : this(segmentNumber, sequenceNumber, MftSegmentReference.NullReference)
         {
         }
 

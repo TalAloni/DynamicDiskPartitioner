@@ -14,7 +14,7 @@ namespace DiskAccessLibrary.FileSystems.NTFS
     {
         public const int FixedLength = 16;
 
-        public MftSegmentReference FileReference; // 0 for self reference
+        public MftSegmentReference FileReference;
         // ushort EntryLength;
         // ushort AttributeLength;
         public IndexEntryFlags Flags;
@@ -26,7 +26,7 @@ namespace DiskAccessLibrary.FileSystems.NTFS
 
         public IndexEntry()
         {
-            FileReference = new MftSegmentReference(0, 0);
+            FileReference = MftSegmentReference.NullReference;
             Key = new byte[0];
         }
 
