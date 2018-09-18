@@ -55,11 +55,7 @@ namespace DiskAccessLibrary.FileSystems.NTFS
             m_baseFileRecordSegment = baseFileRecordSegment;
         }
 
-        public FileRecordSegment(byte[] buffer, int bytesPerSector, long segmentNumber) : this(buffer, 0, bytesPerSector, segmentNumber)
-        {
-        }
-
-        public FileRecordSegment(byte[] buffer, int offset, int bytesPerSector, long segmentNumber)
+        public FileRecordSegment(byte[] buffer, int offset, long segmentNumber)
         {
             MultiSectorHeader multiSectorHeader = new MultiSectorHeader(buffer, offset + 0x00);
             if (multiSectorHeader.Signature != ValidSignature)

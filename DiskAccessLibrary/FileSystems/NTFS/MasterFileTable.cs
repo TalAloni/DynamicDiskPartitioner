@@ -134,7 +134,7 @@ namespace DiskAccessLibrary.FileSystems.NTFS
         {
             long sectorIndex = mftStartLCN * m_volume.SectorsPerCluster + segmentNumber * m_volume.SectorsPerFileRecordSegment;
             byte[] bytes = m_volume.ReadSectors(sectorIndex, m_volume.SectorsPerFileRecordSegment);
-            FileRecordSegment result = new FileRecordSegment(bytes, 0, m_volume.BytesPerSector, segmentNumber);
+            FileRecordSegment result = new FileRecordSegment(bytes, 0, segmentNumber);
             return result;
         }
 
@@ -160,7 +160,7 @@ namespace DiskAccessLibrary.FileSystems.NTFS
 
             if (FileRecordSegment.ContainsFileRecordSegment(segmentBytes))
             {
-                FileRecordSegment recordSegment = new FileRecordSegment(segmentBytes, m_volume.BootRecord.BytesPerSector, segmentNumber);
+                FileRecordSegment recordSegment = new FileRecordSegment(segmentBytes, 0, segmentNumber);
                 return recordSegment;
             }
             else
