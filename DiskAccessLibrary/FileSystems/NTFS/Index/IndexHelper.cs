@@ -18,6 +18,24 @@ namespace DiskAccessLibrary.FileSystems.NTFS
             return "$I" + ((uint)indexedAttributeType).ToString("X");
         }
 
+        public static void InitializeIndexRoot(IndexRootRecord indexRoot, AttributeType indexedAttributeType, int bytesPerIndexRecord, int bytesPerCluster)
+        {
+            indexRoot.IndexedAttributeType = indexedAttributeType;
+            if (indexedAttributeType == AttributeType.FileName)
+            {
+                indexRoot.CollationRule = CollationRule.Filename;
+            }
+            indexRoot.BytesPerIndexRecord = (uint)bytesPerIndexRecord;
+            if (bytesPerIndexRecord >= bytesPerCluster)
+            {
+                indexRoot.BlocksPerIndexRecord = 1;
+            }
+            else
+            {
+                indexRoot.BlocksPerIndexRecord = (byte)(bytesPerIndexRecord / IndexRecord.BytesPerIndexRecordBlock);
+            }
+        }
+
         public static List<FileNameRecord> GenerateFileNameRecords(MftSegmentReference parentDirectory, string fileName, bool isDirectory, bool generateDosName, IndexData parentDirectoryIndex)
         {
             DateTime creationTime = DateTime.Now;
