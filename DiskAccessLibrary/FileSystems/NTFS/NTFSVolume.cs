@@ -237,6 +237,11 @@ namespace DiskAccessLibrary.FileSystems.NTFS
             }
         }
 
+        public AttributeDefinition GetAttributeDefinition()
+        {
+            return new AttributeDefinition(this);
+        }
+
         public override string ToString()
         {
             StringBuilder builder = new StringBuilder();

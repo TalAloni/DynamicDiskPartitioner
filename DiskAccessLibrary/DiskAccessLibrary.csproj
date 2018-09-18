@@ -67,6 +67,7 @@
     <Compile Include="FileSystems\NTFS\AttributeData\IndexData.cs" />
     <Compile Include="FileSystems\NTFS\AttributeData\IndexData.FileName.cs" />
     <Compile Include="FileSystems\NTFS\AttributeData\NonResidentAttributeData.cs" />
+    <Compile Include="FileSystems\NTFS\AttributeDefinition.cs" />
     <Compile Include="FileSystems\NTFS\AttributeRecord\AttributeRecord.cs" />
     <Compile Include="FileSystems\NTFS\AttributeRecord\FileNameAttributeRecord.cs" />
     <Compile Include="FileSystems\NTFS\AttributeRecord\IndexAllocationRecord.cs" />
@@ -76,6 +77,7 @@
     <Compile Include="FileSystems\NTFS\AttributeRecord\StandardInformationRecord.cs" />
     <Compile Include="FileSystems\NTFS\AttributeRecord\VolumeInformationRecord.cs" />
     <Compile Include="FileSystems\NTFS\AttributeRecord\VolumeNameRecord.cs" />
+    <Compile Include="FileSystems\NTFS\Enums\AttributeDefinitionFlags.cs" />
     <Compile Include="FileSystems\NTFS\Enums\AttributeFlags.cs" />
     <Compile Include="FileSystems\NTFS\Enums\AttributeForm.cs" />
     <Compile Include="FileSystems\NTFS\Enums\AttributeType.cs" />
@@ -103,6 +105,7 @@
     <Compile Include="FileSystems\NTFS\NTFSVolume.cs" />
     <Compile Include="FileSystems\NTFS\NTFSVolume.Extend.cs" />
     <Compile Include="FileSystems\NTFS\NTFSVolume.Recovery.cs" />
+    <Compile Include="FileSystems\NTFS\Structures\AttributeDefinitionEntry.cs" />
     <Compile Include="FileSystems\NTFS\Structures\AttributeListEntry.cs" />
     <Compile Include="FileSystems\NTFS\Structures\DataRun.cs" />
     <Compile Include="FileSystems\NTFS\Structures\DataRunSequence.cs" />
