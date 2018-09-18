@@ -89,8 +89,6 @@ namespace DiskAccessLibrary.FileSystems.NTFS
                 clusterVCN++;
                 position += clusterBytes.Length;
             }
-            // ValidDataLength might have changed
-            m_volume.MasterFileTable.UpdateFileRecord(m_fileRecord);
         }
 
         /// <summary>
@@ -123,7 +121,7 @@ namespace DiskAccessLibrary.FileSystems.NTFS
         {
             if (m_attributeRecord is NonResidentAttributeRecord)
             {
-                NonResidentAttributeData attributeData = new NonResidentAttributeData(m_volume, (NonResidentAttributeRecord)m_attributeRecord);
+                NonResidentAttributeData attributeData = new NonResidentAttributeData(m_volume, m_fileRecord, (NonResidentAttributeRecord)m_attributeRecord);
                 return attributeData.ReadClusters(clusterVCN, count);
             }
             else
@@ -161,7 +159,7 @@ namespace DiskAccessLibrary.FileSystems.NTFS
         {
             if (m_attributeRecord is NonResidentAttributeRecord)
             {
-                NonResidentAttributeData attributeData = new NonResidentAttributeData(m_volume, (NonResidentAttributeRecord)m_attributeRecord);
+                NonResidentAttributeData attributeData = new NonResidentAttributeData(m_volume, m_fileRecord, (NonResidentAttributeRecord)m_attributeRecord);
                 attributeData.WriteClusters(clusterVCN, data);
             }
             else
@@ -176,6 +174,7 @@ namespace DiskAccessLibrary.FileSystems.NTFS
 
                 long offset = clusterVCN * m_volume.BytesPerCluster;
                 Array.Copy(data, 0, ((ResidentAttributeRecord)m_attributeRecord).Data, offset, data.Length);
+                m_volume.MasterFileTable.UpdateFileRecord(m_fileRecord);
             }
         }
 
@@ -183,7 +182,7 @@ namespace DiskAccessLibrary.FileSystems.NTFS
         {
             if (m_attributeRecord is NonResidentAttributeRecord)
             {
-                NonResidentAttributeData attributeData = new NonResidentAttributeData(m_volume, (NonResidentAttributeRecord)m_attributeRecord);
+                NonResidentAttributeData attributeData = new NonResidentAttributeData(m_volume, m_fileRecord, (NonResidentAttributeRecord)m_attributeRecord);
                 return attributeData.ReadSectors(firstSectorIndex, count);
             }
             else
@@ -196,7 +195,7 @@ namespace DiskAccessLibrary.FileSystems.NTFS
         {
             if (m_attributeRecord is NonResidentAttributeRecord)
             {
-                NonResidentAttributeData attributeData = new NonResidentAttributeData(m_volume, (NonResidentAttributeRecord)m_attributeRecord);
+                NonResidentAttributeData attributeData = new NonResidentAttributeData(m_volume, m_fileRecord, (NonResidentAttributeRecord)m_attributeRecord);
                 attributeData.WriteSectors(firstSectorIndex, data);
             }
             else
@@ -210,7 +209,7 @@ namespace DiskAccessLibrary.FileSystems.NTFS
             ulong currentSize = this.Length;
             if (m_attributeRecord is NonResidentAttributeRecord)
             {
-                NonResidentAttributeData attributeData = new NonResidentAttributeData(m_volume, (NonResidentAttributeRecord)m_attributeRecord);
+                NonResidentAttributeData attributeData = new NonResidentAttributeData(m_volume, m_fileRecord, (NonResidentAttributeRecord)m_attributeRecord);
                 attributeData.Extend(additionalLengthInBytes);
             }
             else
@@ -226,13 +225,14 @@ namespace DiskAccessLibrary.FileSystems.NTFS
                     {
                         throw new DiskFullException();
                     }
-                    m_fileRecord.RemoveAttributeRecord(m_attributeRecord.AttributeType, m_attributeRecord.Name);
                     NonResidentAttributeRecord attributeRecord = new NonResidentAttributeRecord(m_attributeRecord.AttributeType, m_attributeRecord.Name, m_attributeRecord.Instance);
-                    NonResidentAttributeData attributeData = new NonResidentAttributeData(m_volume, attributeRecord);
+                    NonResidentAttributeData attributeData = new NonResidentAttributeData(m_volume, null, attributeRecord);
                     attributeData.Extend(finalDataLength);
                     attributeData.WriteClusters(0, data);
+                    // Note that we overwrite the old attribute only after writing the non-resident data
+                    m_fileRecord.RemoveAttributeRecord(m_attributeRecord.AttributeType, m_attributeRecord.Name);
+                    m_fileRecord.Attributes.Add(attributeRecord);
                     m_attributeRecord = attributeRecord;
-                    m_fileRecord.Attributes.Add(m_attributeRecord);
                 }
                 else
                 {
@@ -241,8 +241,8 @@ namespace DiskAccessLibrary.FileSystems.NTFS
                     Array.Copy(data, temp, data.Length);
                     ((ResidentAttributeRecord)m_attributeRecord).Data = temp;
                 }
+                m_volume.MasterFileTable.UpdateFileRecord(m_fileRecord);
             }
-            m_volume.MasterFileTable.UpdateFileRecord(m_fileRecord);
         }
 
         public void Truncate(ulong newLengthInBytes)
@@ -250,7 +250,7 @@ namespace DiskAccessLibrary.FileSystems.NTFS
             ulong currentSize = this.Length;
             if (m_attributeRecord is NonResidentAttributeRecord)
             {
-                NonResidentAttributeData attributeData = new NonResidentAttributeData(m_volume, (NonResidentAttributeRecord)m_attributeRecord);
+                NonResidentAttributeData attributeData = new NonResidentAttributeData(m_volume, m_fileRecord, (NonResidentAttributeRecord)m_attributeRecord);
                 attributeData.Truncate(newLengthInBytes);
             }
             else
@@ -259,6 +259,7 @@ namespace DiskAccessLibrary.FileSystems.NTFS
                 byte[] temp = new byte[newLengthInBytes];
                 Array.Copy(data, temp, temp.Length);
                 ((ResidentAttributeRecord)m_attributeRecord).Data = temp;
+                m_volume.MasterFileTable.UpdateFileRecord(m_fileRecord);
             }
         }
 

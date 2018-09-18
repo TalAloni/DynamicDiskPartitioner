@@ -37,7 +37,7 @@ namespace DiskAccessLibrary.FileSystems.NTFS
                 {
                     throw new InvalidDataException("Missing Index Allocation Record");
                 }
-                m_indexAllocationData = new NonResidentAttributeData(m_volume, m_indexAllocationRecord);
+                m_indexAllocationData = new NonResidentAttributeData(m_volume, m_fileRecord, m_indexAllocationRecord);
                 m_bitmapRecord = m_fileRecord.GetAttributeRecord(AttributeType.Bitmap, m_indexName);
                 if (m_bitmapRecord == null)
                 {

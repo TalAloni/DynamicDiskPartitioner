@@ -13,10 +13,6 @@ namespace DiskAccessLibrary.FileSystems.NTFS
         private FileRecord m_fileRecord;
         private NonResidentAttributeRecord m_attributeRecord;
 
-        public NonResidentAttributeData(NTFSVolume volume, NonResidentAttributeRecord attributeRecord) : this(volume, null, attributeRecord)
-        {
-        }
-
         public NonResidentAttributeData(NTFSVolume volume, FileRecord fileRecord, NonResidentAttributeRecord attributeRecord)
         {
             m_volume = volume;
