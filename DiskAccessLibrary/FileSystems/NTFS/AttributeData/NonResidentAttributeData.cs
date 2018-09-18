@@ -10,12 +10,12 @@ namespace DiskAccessLibrary.FileSystems.NTFS
     public class NonResidentAttributeData
     {
         private NTFSVolume m_volume;
-        private NonResidentAttributeRecord m_record;
+        private NonResidentAttributeRecord m_attributeRecord;
 
         public NonResidentAttributeData(NTFSVolume volume, NonResidentAttributeRecord attributeRecord)
         {
             m_volume = volume;
-            m_record = attributeRecord;
+            m_attributeRecord = attributeRecord;
         }
 
         /// <param name="clusterVCN">Cluster index</param>
@@ -63,7 +63,7 @@ namespace DiskAccessLibrary.FileSystems.NTFS
             ulong firstBytePosition = (ulong)firstSectorIndex * (uint)bytesPerSector;
             if (firstBytePosition < ValidDataLength)
             {
-                KeyValuePairList<long, int> sequence = m_record.DataRunSequence.TranslateToLBN(firstSectorIndex, count, sectorsPerCluster);
+                KeyValuePairList<long, int> sequence = m_attributeRecord.DataRunSequence.TranslateToLBN(firstSectorIndex, count, sectorsPerCluster);
                 long bytesRead = 0;
                 foreach (KeyValuePair<long, int> run in sequence)
                 {
@@ -157,7 +157,7 @@ namespace DiskAccessLibrary.FileSystems.NTFS
                 }
             }
 
-            KeyValuePairList<long, int> sequence = m_record.DataRunSequence.TranslateToLBN(firstSectorIndex, sectorCount, sectorsPerCluster);
+            KeyValuePairList<long, int> sequence = m_attributeRecord.DataRunSequence.TranslateToLBN(firstSectorIndex, sectorCount, sectorsPerCluster);
             long bytesWritten = 0;
             foreach (KeyValuePair<long, int> run in sequence)
             {
@@ -169,7 +169,7 @@ namespace DiskAccessLibrary.FileSystems.NTFS
 
             if (nextBytePosition > ValidDataLength)
             {
-                m_record.ValidDataLength = nextBytePosition;
+                m_attributeRecord.ValidDataLength = nextBytePosition;
             }
         }
 
@@ -187,13 +187,13 @@ namespace DiskAccessLibrary.FileSystems.NTFS
                 AllocateAdditionalClusters(clustersToAllocate);
             }
 
-            m_record.FileSize += additionalLengthInBytes;
+            m_attributeRecord.FileSize += additionalLengthInBytes;
         }
 
         private void AllocateAdditionalClusters(long clustersToAllocate)
         {
             KeyValuePairList<long, long> freeClusterRunList;
-            DataRunSequence dataRuns = m_record.DataRunSequence;
+            DataRunSequence dataRuns = m_attributeRecord.DataRunSequence;
             if (dataRuns.Count == 0)
             {
                 freeClusterRunList = m_volume.AllocateClusters(clustersToAllocate);
@@ -210,7 +210,7 @@ namespace DiskAccessLibrary.FileSystems.NTFS
                     // Merge with last run
                     DataRun lastRun = dataRuns[dataRuns.Count - 1];
                     lastRun.RunLength += firstRunLength;
-                    m_record.HighestVCN += (long)firstRunLength;
+                    m_attributeRecord.HighestVCN += (long)firstRunLength;
                     freeClusterRunList.RemoveAt(0);
                 }
             }
@@ -221,11 +221,11 @@ namespace DiskAccessLibrary.FileSystems.NTFS
                 long runLength = freeClusterRunList[index].Value;
 
                 DataRun run = new DataRun();
-                long previousLCN = m_record.DataRunSequence.LastDataRunStartLCN;
+                long previousLCN = m_attributeRecord.DataRunSequence.LastDataRunStartLCN;
                 run.RunOffset = runStartLCN - previousLCN;
                 run.RunLength = runLength;
-                m_record.HighestVCN += runLength;
-                m_record.DataRunSequence.Add(run);
+                m_attributeRecord.HighestVCN += runLength;
+                m_attributeRecord.DataRunSequence.Add(run);
             }
         }
 
@@ -234,9 +234,9 @@ namespace DiskAccessLibrary.FileSystems.NTFS
             long clustersToKeep = (long)Math.Ceiling((double)newLengthInBytes / m_volume.BytesPerCluster);
             if (clustersToKeep < ClusterCount)
             {
-                KeyValuePairList<long, long> clustersToDeallocate = m_record.DataRunSequence.TranslateToLCN(clustersToKeep, ClusterCount - clustersToKeep);
-                m_record.DataRunSequence.Truncate(clustersToKeep);
-                m_record.HighestVCN = clustersToKeep - 1;
+                KeyValuePairList<long, long> clustersToDeallocate = m_attributeRecord.DataRunSequence.TranslateToLCN(clustersToKeep, ClusterCount - clustersToKeep);
+                m_attributeRecord.DataRunSequence.Truncate(clustersToKeep);
+                m_attributeRecord.HighestVCN = clustersToKeep - 1;
 
                 foreach (KeyValuePair<long, long> runToDeallocate in clustersToDeallocate)
                 {
@@ -244,10 +244,10 @@ namespace DiskAccessLibrary.FileSystems.NTFS
                 }
             }
 
-            m_record.FileSize = newLengthInBytes;
-            if (m_record.ValidDataLength > newLengthInBytes)
+            m_attributeRecord.FileSize = newLengthInBytes;
+            if (m_attributeRecord.ValidDataLength > newLengthInBytes)
             {
-                m_record.ValidDataLength = newLengthInBytes;
+                m_attributeRecord.ValidDataLength = newLengthInBytes;
             }
         }
 
@@ -255,7 +255,7 @@ namespace DiskAccessLibrary.FileSystems.NTFS
         {
             get
             {
-                return m_record.LowestVCN;
+                return m_attributeRecord.LowestVCN;
             }
         }
 
@@ -263,7 +263,7 @@ namespace DiskAccessLibrary.FileSystems.NTFS
         {
             get
             {
-                return m_record.HighestVCN;
+                return m_attributeRecord.HighestVCN;
             }
         }
 
@@ -271,7 +271,7 @@ namespace DiskAccessLibrary.FileSystems.NTFS
         {
             get
             {
-                return m_record.DataClusterCount;
+                return m_attributeRecord.DataClusterCount;
             }
         }
 
@@ -279,7 +279,7 @@ namespace DiskAccessLibrary.FileSystems.NTFS
         {
             get
             {
-                return (ulong)(m_record.DataClusterCount * m_volume.BytesPerCluster);
+                return (ulong)(m_attributeRecord.DataClusterCount * m_volume.BytesPerCluster);
             }
         }
 
@@ -287,7 +287,7 @@ namespace DiskAccessLibrary.FileSystems.NTFS
         {
             get
             {
-                return m_record.FileSize;
+                return m_attributeRecord.FileSize;
             }
         }
 
@@ -295,7 +295,7 @@ namespace DiskAccessLibrary.FileSystems.NTFS
         {
             get
             {
-                return m_record.ValidDataLength;
+                return m_attributeRecord.ValidDataLength;
             }
         }
 
@@ -303,7 +303,7 @@ namespace DiskAccessLibrary.FileSystems.NTFS
         {
             get
             {
-                return m_record;
+                return m_attributeRecord;
             }
         }
     }
