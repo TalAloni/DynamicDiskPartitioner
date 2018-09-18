@@ -274,6 +274,90 @@ namespace DiskAccessLibrary.FileSystems.NTFS
             m_mftFile.Data.WriteSectors(firstSectorIndex, recordSegmentBytes);
         }
 
+        public FileRecord CreateFile(List<FileNameRecord> fileNameRecords)
+        {
+            if (fileNameRecords.Count == 0)
+            {
+                throw new ArgumentException();
+            }
+            bool isDirectory = fileNameRecords[0].IsDirectory;
+            MftSegmentReference segmentReference = AllocateFileRecordSegment();
+            FileRecordSegment fileRecordSegment = new FileRecordSegment(segmentReference.SegmentNumber, segmentReference.SequenceNumber);
+            fileRecordSegment.ReferenceCount = (ushort)fileNameRecords.Count; // Each FileNameRecord is about to be indexed
+            fileRecordSegment.IsInUse = true;
+            fileRecordSegment.IsDirectory = isDirectory;
+            FileRecord fileRecord = new FileRecord(fileRecordSegment);
+            StandardInformationRecord standardInformation = (StandardInformationRecord)fileRecord.CreateAttributeRecord(AttributeType.StandardInformation, String.Empty);
+            standardInformation.CreationTime = fileNameRecords[0].CreationTime;
+            standardInformation.ModificationTime = fileNameRecords[0].ModificationTime;
+            standardInformation.MftModificationTime = fileNameRecords[0].MftModificationTime;
+            standardInformation.LastAccessTime = fileNameRecords[0].LastAccessTime;
+            standardInformation.FileAttributes = 0;
+            foreach (FileNameRecord fileNameRecord in fileNameRecords)
+            {
+                FileNameAttributeRecord fileNameAttribute = (FileNameAttributeRecord)fileRecord.CreateAttributeRecord(AttributeType.FileName, String.Empty);
+                fileNameAttribute.IsIndexed = true;
+                fileNameAttribute.Record = fileNameRecord;
+            }
+            
+            if (isDirectory)
+            {
+                string indexName = IndexHelper.GetIndexName(AttributeType.FileName);
+                IndexRootRecord indexRoot = (IndexRootRecord)fileRecord.CreateAttributeRecord(AttributeType.IndexRoot, indexName);
+                IndexHelper.InitializeIndexRoot(indexRoot, AttributeType.FileName, m_volume.BytesPerIndexRecord, m_volume.BytesPerCluster);
+            }
+            else
+            {
+                fileRecord.CreateAttributeRecord(AttributeType.Data, String.Empty);
+            }
+
+            UpdateFileRecord(fileRecord);
+
+            return fileRecord;
+        }
+
+        public void DeleteFile(FileRecord fileRecord)
+        {
+            foreach (FileRecordSegment segment in fileRecord.Segments)
+            {
+                DeallocateFileRecordSegment(segment);
+            }
+        }
+
+        private MftSegmentReference AllocateFileRecordSegment()
+        {
+            BitmapData bitmap = m_mftFile.Bitmap;
+            if (bitmap == null)
+            {
+                throw new InvalidDataException("Invalid MFT Record, missing Bitmap attribute");
+            }
+            long mftBitmapSearchStartIndex = MasterFileTable.LastReservedMftSegmentNumber + 1;
+            long? segmentNumber = bitmap.AllocateRecord(mftBitmapSearchStartIndex);
+            if (!segmentNumber.HasValue)
+            {
+                long numberOfUsableBits = bitmap.NumberOfUsableBits;
+                Extend();
+                segmentNumber = bitmap.AllocateRecord(numberOfUsableBits);
+            }
+
+            FileRecordSegment previousSegment = GetFileRecordSegment(segmentNumber.Value);
+            ushort sequenceNumber = (previousSegment == null) ? (ushort)1 : previousSegment.SequenceNumber;
+            return new MftSegmentReference(segmentNumber.Value, sequenceNumber);
+        }
+
+        private void DeallocateFileRecordSegment(FileRecordSegment segment)
+        {
+            BitmapData bitmap = m_mftFile.Bitmap;
+            if (bitmap == null)
+            {
+                throw new InvalidDataException("Invalid MFT Record, missing Bitmap attribute");
+            }
+            ushort nextSequenceNumber = (ushort)(segment.SequenceNumber + 1);
+            FileRecordSegment segmentToWrite = new FileRecordSegment(segment.SegmentNumber, nextSequenceNumber);
+            UpdateFileRecordSegment(segmentToWrite);
+            bitmap.DeallocateRecord(segment.SegmentNumber);
+        }
+
         public void Extend()
         {
             ulong additionalDataLength = (ulong)(m_volume.BytesPerFileRecordSegment * ExtendGranularity);

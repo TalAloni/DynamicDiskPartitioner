@@ -124,6 +124,59 @@ namespace DiskAccessLibrary.FileSystems.NTFS
             return result;
         }
 
+        public FileRecord CreateFile(MftSegmentReference parentDirectory, string fileName, bool isDirectory)
+        {
+            // Worst case scenrario: the MFT might be full and the parent directory index requires multiple splits
+            if (NumberOfFreeClusters < 24)
+            {
+                throw new DiskFullException();
+            }
+            FileRecord parentDirectoryRecord = m_mft.GetFileRecord(parentDirectory);
+            IndexData parentDirectoryIndex = new IndexData(this, parentDirectoryRecord, AttributeType.FileName);
+
+            if (parentDirectoryIndex.ContainsFileName(fileName))
+            {
+                throw new AlreadyExistsException();
+            }
+
+            List<FileNameRecord> fileNameRecords = IndexHelper.GenerateFileNameRecords(parentDirectory, fileName, isDirectory, false, parentDirectoryIndex);
+            FileRecord fileRecord = m_mft.CreateFile(fileNameRecords);
+
+            // Update parent directory index
+            foreach (FileNameRecord fileNameRecord in fileNameRecords)
+            {
+                parentDirectoryIndex.AddEntry(fileRecord.BaseRecordSegmentReference, fileNameRecord.GetBytes());
+            }
+
+            return fileRecord;
+        }
+
+        public void DeleteFile(FileRecord fileRecord)
+        {
+            MftSegmentReference parentDirectory = fileRecord.ParentDirectoryReference;
+            FileRecord parentDirectoryRecord = m_mft.GetFileRecord(parentDirectory);
+            IndexData parentDirectoryIndex = new IndexData(this, parentDirectoryRecord, AttributeType.FileName);
+
+            // Update parent directory index
+            List<FileNameRecord> fileNameRecords = fileRecord.FileNameRecords;
+            foreach(FileNameRecord fileNameRecord in fileNameRecords)
+            {
+                parentDirectoryIndex.RemoveEntry(fileNameRecord.GetBytes());
+            }
+
+            // Deallocate all data clusters
+            foreach (AttributeRecord atttributeRecord in fileRecord.Attributes)
+            {
+                if (atttributeRecord is NonResidentAttributeRecord)
+                {
+                    NonResidentAttributeData attributeData = new NonResidentAttributeData(this, fileRecord, (NonResidentAttributeRecord)atttributeRecord);
+                    attributeData.Truncate(0);
+                }
+            }
+
+            m_mft.DeleteFile(fileRecord);
+        }
+
         // logical cluster
         public byte[] ReadCluster(long clusterLCN)
         {
