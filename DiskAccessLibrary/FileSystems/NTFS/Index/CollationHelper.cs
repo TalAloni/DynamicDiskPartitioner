@@ -84,8 +84,13 @@ namespace DiskAccessLibrary.FileSystems.NTFS
 
         public static int FindIndexInLeafNode(List<IndexEntry> entries, byte[] key, CollationRule collationRule)
         {
+            if (entries.Count == 0)
+            {
+                return -1;
+            }
+
             int lowerIndex = 0;
-            int upperIndex = entries.Count - 2;
+            int upperIndex = entries.Count - 1;
             int comparisonResult;
             while (lowerIndex < upperIndex)
             {
