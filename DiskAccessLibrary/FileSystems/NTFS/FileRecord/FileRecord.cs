@@ -33,14 +33,14 @@ namespace DiskAccessLibrary.FileSystems.NTFS
         /// <remarks>
         /// https://blogs.technet.microsoft.com/askcore/2009/10/16/the-four-stages-of-ntfs-file-growth/
         /// </remarks>
-        public void UpdateSegments(int maximumSegmentLength, int bytesPerSector, ushort minorNTFSVersion)
+        public void UpdateSegments(int bytesPerFileRecordSegment, int bytesPerSector, ushort minorNTFSVersion)
         {
             foreach (FileRecordSegment segment in m_segments)
             {
                 segment.ImmediateAttributes.Clear();
             }
 
-            int segmentLength = FileRecordSegment.GetFirstAttributeOffset(maximumSegmentLength, minorNTFSVersion);
+            int segmentLength = FileRecordSegment.GetFirstAttributeOffset(bytesPerFileRecordSegment, minorNTFSVersion);
             segmentLength += FileRecordSegment.EndMarkerLength;
 
             foreach (AttributeRecord attribute in this.Attributes)
@@ -48,7 +48,7 @@ namespace DiskAccessLibrary.FileSystems.NTFS
                 segmentLength += (int)attribute.RecordLength;
             }
 
-            if (segmentLength <= maximumSegmentLength)
+            if (segmentLength <= bytesPerFileRecordSegment)
             {
                 // a single record segment is needed
                 FileRecordSegment baseRecordSegment = m_segments[0];
