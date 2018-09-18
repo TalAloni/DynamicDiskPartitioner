@@ -43,12 +43,34 @@ namespace DiskAccessLibrary.FileSystems.NTFS
 
         public override FileSystemEntry CreateFile(string path)
         {
-            throw new NotImplementedException("The method or operation is not implemented.");
+            string parentDirectoryName = Path.GetDirectoryName(path);
+            string fileName = Path.GetFileName(path);
+            FileRecord parentDirectoryRecord = m_volume.GetFileRecord(parentDirectoryName);
+            if (parentDirectoryRecord != null)
+            {
+                FileRecord fileRecord = m_volume.CreateFile(parentDirectoryRecord.BaseRecordSegmentReference, fileName, false);
+                return ToFileSystemEntry(path, fileRecord);
+            }
+            else
+            {
+                throw new DirectoryNotFoundException();
+            }
         }
 
         public override FileSystemEntry CreateDirectory(string path)
         {
-            throw new NotImplementedException("The method or operation is not implemented.");
+            string parentDirectoryName = Path.GetDirectoryName(path);
+            string directoryName = Path.GetFileName(path);
+            FileRecord parentDirectoryRecord = m_volume.GetFileRecord(parentDirectoryName);
+            if (parentDirectoryRecord != null)
+            {
+                FileRecord directoryRecord = m_volume.CreateFile(parentDirectoryRecord.BaseRecordSegmentReference, directoryName, true);
+                return ToFileSystemEntry(path, directoryRecord);
+            }
+            else
+            {
+                throw new DirectoryNotFoundException();
+            }
         }
 
         public override void Move(string source, string destination)
