@@ -12,39 +12,76 @@ using Utilities;
 
 namespace DiskAccessLibrary.FileSystems.NTFS
 {
+    /// <summary>
+    /// ATTRIBUTE_LIST_ENTRY
+    /// </summary>
     public class AttributeListEntry
     {
         public const int HeaderLength = 0x1A; // Excluding name
 
         public AttributeType AttributeType;
-        public ushort Length;   // The size of this structure, plus the optional name buffer, in bytes
-        public byte NameLength; // Number of bytes
-        public byte NameOffset;
+        private ushort m_lengthOnDisk; // The size of this structure, plus the optional name buffer, in bytes
+        // byte NameLength; // Number of bytes
+        // byte NameOffset;
         public long LowestVCN;  // Stored as unsigned, but is within the range of long
         public MftSegmentReference SegmentReference;
-        public ushort AttributeID;
+        public ushort Instance; // The instance within the FileRecordSegment
         public string AttributeName = String.Empty;
+
+        public AttributeListEntry()
+        {
+        }
 
         public AttributeListEntry(byte[] buffer, int offset)
         {
             AttributeType = (AttributeType)LittleEndianConverter.ToUInt32(buffer, offset + 0x00);
-            Length = LittleEndianConverter.ToUInt16(buffer, offset + 0x04);
-            if (Length < AttributeListEntry.HeaderLength)
+            m_lengthOnDisk = LittleEndianConverter.ToUInt16(buffer, offset + 0x04);
+            if (m_lengthOnDisk < AttributeListEntry.HeaderLength)
             {
                 throw new InvalidDataException("Invalid attribute list entry, data length is less than the valid minimum");
             }
-            else if (Length > buffer.Length - offset)
+            else if (m_lengthOnDisk > buffer.Length - offset)
             {
                 throw new InvalidDataException("Invalid attribute list entry, data length exceed list length");
             }
-            NameLength = buffer[offset + 0x06];
-            NameOffset = buffer[offset + 0x07];
+            byte nameLength = ByteReader.ReadByte(buffer, offset + 0x06);
+            byte nameOffset = ByteReader.ReadByte(buffer, offset + 0x07);
             LowestVCN = (long)LittleEndianConverter.ToUInt64(buffer, offset + 0x08);
             SegmentReference = new MftSegmentReference(buffer, offset + 0x10);
-            AttributeID = LittleEndianConverter.ToUInt16(buffer, offset + 0x18);
-            if (NameLength > 0)
+            Instance = LittleEndianConverter.ToUInt16(buffer, offset + 0x18);
+            if (nameLength > 0)
             {
-                AttributeName = UnicodeEncoding.Unicode.GetString(buffer, offset + NameOffset, NameLength);
+                AttributeName = UnicodeEncoding.Unicode.GetString(buffer, offset + nameOffset, nameLength);
+            }
+        }
+
+        public void WriteBytes(byte[] buffer, int offset)
+        {
+            LittleEndianWriter.WriteUInt32(buffer, offset + 0x00, (uint)AttributeType);
+            LittleEndianWriter.WriteUInt16(buffer, offset + 0x04, (ushort)this.Length);
+            ByteWriter.WriteByte(buffer, offset + 0x06, (byte)(AttributeName.Length * 2));
+            ByteWriter.WriteByte(buffer, offset + 0x07, (byte)HeaderLength);
+            LittleEndianWriter.WriteUInt64(buffer, offset + 0x08, (ulong)LowestVCN);
+            SegmentReference.WriteBytes(buffer, offset + 0x10);
+            LittleEndianWriter.WriteUInt16(buffer, offset + 0x18, Instance);
+            ByteWriter.WriteUTF16String(buffer, offset + HeaderLength, AttributeName);
+        }
+
+        public int Length
+        {
+            get
+            {
+                // Entries are padded to align to 8 byte boundary
+                int length = HeaderLength + AttributeName.Length * 2;
+                return (int)Math.Ceiling((double)length / 8) * 8;
+            }
+        }
+
+        public int LengthOnDisk
+        {
+            get
+            {
+                return m_lengthOnDisk;
             }
         }
     }

@@ -30,7 +30,7 @@ namespace DiskAccessLibrary.FileSystems.NTFS
             {
                 AttributeListEntry entry = new AttributeListEntry(data, position);
                 Attributes.Add(entry);
-                position += entry.Length;
+                position += entry.LengthOnDisk;
             }
         }
 
