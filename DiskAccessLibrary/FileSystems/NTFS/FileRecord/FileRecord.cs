@@ -33,7 +33,7 @@ namespace DiskAccessLibrary.FileSystems.NTFS
         /// <remarks>
         /// https://blogs.technet.microsoft.com/askcore/2009/10/16/the-four-stages-of-ntfs-file-growth/
         /// </remarks>
-        public void UpdateSegments(int bytesPerFileRecordSegment, int bytesPerSector, ushort minorNTFSVersion)
+        public void UpdateSegments(int bytesPerFileRecordSegment, ushort minorNTFSVersion)
         {
             foreach (FileRecordSegment segment in m_segments)
             {

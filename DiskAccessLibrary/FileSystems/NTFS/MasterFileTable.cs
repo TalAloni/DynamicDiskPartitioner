@@ -247,13 +247,13 @@ namespace DiskAccessLibrary.FileSystems.NTFS
             return GetFileRecord(BitmapSegmentReference);
         }
 
-        public void UpdateFileRecord(FileRecord record)
+        public void UpdateFileRecord(FileRecord fileRecord)
         {
-            record.UpdateSegments(m_volume.BytesPerFileRecordSegment, m_volume.BytesPerSector, m_volume.MinorVersion);
+            fileRecord.UpdateSegments(m_volume.BytesPerFileRecordSegment, m_volume.MinorVersion);
             
-            foreach (FileRecordSegment segment in record.Segments)
+            foreach (FileRecordSegment segment in fileRecord.Segments)
             {
-                if (segment.SegmentNumber >= 0)
+                if (segment.SegmentReference != MftSegmentReference.NullReference)
                 {
                     UpdateFileRecordSegment(segment);
                 }
