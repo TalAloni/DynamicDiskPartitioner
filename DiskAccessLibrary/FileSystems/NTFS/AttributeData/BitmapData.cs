@@ -42,7 +42,10 @@ namespace DiskAccessLibrary.FileSystems.NTFS
             else
             {
                 recordIndex = AllocateRecord(0, m_searchStartIndex - 1);
-                m_searchStartIndex = recordIndex.Value + 1;
+                if (recordIndex.HasValue)
+                {
+                    m_searchStartIndex = recordIndex.Value + 1;
+                }
             }
             return recordIndex;
         }
@@ -99,6 +102,13 @@ namespace DiskAccessLibrary.FileSystems.NTFS
                 this.Extend(additionalBytes);
             }
             m_numberOfUsableBits += numberOfBits;
+        }
+
+        public void TruncateBitmap(long newLengthInBits)
+        {
+            m_numberOfUsableBits = newLengthInBits;
+            ulong newLengthInBytes = (ulong)Math.Ceiling((double)newLengthInBits / (ExtendGranularity * 8)) * 8;
+            this.Truncate(newLengthInBytes);
         }
 
         private static bool IsBitClear(byte[] bitmap, int bitOffsetInBitmap)
