@@ -67,9 +67,8 @@ namespace DiskAccessLibrary.FileSystems.NTFS
             }
             else
             {
-                // we have to check if we can make some data streams non-resident,
-                // otherwise we have to use child segments and create an attribute list
-                throw new NotImplementedException();
+                // We slice the attributes and put them in segments, the attribute list will be built by the caller after the new segments will be allocated
+                FileRecordHelper.SliceAttributes(m_segments, attributes, bytesPerFileRecordSegment, minorNTFSVersion);
             }
         }
 

@@ -252,19 +252,54 @@ namespace DiskAccessLibrary.FileSystems.NTFS
 
         public void UpdateFileRecord(FileRecord fileRecord)
         {
+            AttributeRecord oldAttributeList = fileRecord.Segments[0].GetImmediateAttributeRecord(AttributeType.AttributeList, String.Empty);
             fileRecord.UpdateSegments(m_volume.BytesPerFileRecordSegment, m_volume.MinorVersion);
-            
+            FileRecordSegment baseRecordSegment = fileRecord.Segments[0];
+            for(int segmentIndex = 1; segmentIndex < fileRecord.Segments.Count; segmentIndex++)
+            {
+                FileRecordSegment segment = fileRecord.Segments[segmentIndex];
+                if (segment.SegmentReference == MftSegmentReference.NullReference)
+                {
+                    // New segment, we must allocate space for it
+                    MftSegmentReference segmentReference = AllocateFileRecordSegment();
+                    FileRecordSegment newSegment = new FileRecordSegment(segmentReference.SegmentNumber, segmentReference.SequenceNumber, baseRecordSegment.SegmentReference);
+                    newSegment.IsInUse = true;
+                    newSegment.NextAttributeInstance = segment.NextAttributeInstance;
+                    newSegment.ImmediateAttributes.AddRange(segment.ImmediateAttributes);
+                    fileRecord.Segments[segmentIndex] = newSegment;
+                }
+                else if (segment.ImmediateAttributes.Count == 0)
+                {
+                    DeallocateFileRecordSegment(segment);
+                    fileRecord.Segments.RemoveAt(segmentIndex);
+                    segmentIndex--;
+                }
+            }
+
             foreach (FileRecordSegment segment in fileRecord.Segments)
             {
-                if (segment.SegmentReference != MftSegmentReference.NullReference)
-                {
-                    UpdateFileRecordSegment(segment);
-                }
-                else
-                {
-                    // new segment, we must allocate space for it
-                    throw new NotImplementedException();
-                }
+                UpdateFileRecordSegment(segment);
+            }
+
+            if (oldAttributeList is NonResidentAttributeRecord)
+            {
+                new NonResidentAttributeData(m_volume, null, (NonResidentAttributeRecord)oldAttributeList).Truncate(0);
+            }
+
+            bool needsAttributeList = (fileRecord.Segments.Count > 1);
+            if (needsAttributeList)
+            {
+                List<AttributeListEntry> entries = FileRecordHelper.BuildAttributeList(fileRecord.Segments, m_volume.BytesPerFileRecordSegment, m_volume.MinorVersion);
+                int dataLength = AttributeList.GetLength(entries);
+                int attributeListRecordLength = ResidentAttributeRecord.GetRecordLength(0, dataLength);
+                int numberOfBytesFreeInBaseRecordSegment = baseRecordSegment.GetNumberOfBytesFree(m_volume.BytesPerFileRecordSegment, m_volume.MinorVersion);
+                bool isResident = (attributeListRecordLength <= numberOfBytesFreeInBaseRecordSegment);
+                AttributeRecord attributeListRecord = baseRecordSegment.CreateAttributeListRecord(isResident);
+                AttributeList attributeList = new AttributeList(m_volume, attributeListRecord);
+                attributeList.WriteEntries(entries);
+
+                FileRecordHelper.InsertSorted(baseRecordSegment.ImmediateAttributes, attributeListRecord);
+                UpdateFileRecordSegment(baseRecordSegment);
             }
         }
 
