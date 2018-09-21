@@ -35,6 +35,8 @@ namespace DiskAccessLibrary.FileSystems.NTFS
         /// </remarks>
         public void UpdateSegments(int bytesPerFileRecordSegment, ushort minorNTFSVersion)
         {
+            List<AttributeRecord> attributes = this.Attributes;
+
             foreach (FileRecordSegment segment in m_segments)
             {
                 segment.ImmediateAttributes.Clear();
@@ -43,7 +45,7 @@ namespace DiskAccessLibrary.FileSystems.NTFS
             int segmentLength = FileRecordSegment.GetFirstAttributeOffset(bytesPerFileRecordSegment, minorNTFSVersion);
             segmentLength += FileRecordSegment.EndMarkerLength;
 
-            foreach (AttributeRecord attribute in this.Attributes)
+            foreach (AttributeRecord attribute in attributes)
             {
                 segmentLength += (int)attribute.RecordLength;
             }
@@ -52,7 +54,7 @@ namespace DiskAccessLibrary.FileSystems.NTFS
             {
                 // a single record segment is needed
                 FileRecordSegment baseRecordSegment = m_segments[0];
-                foreach (AttributeRecord attribute in this.Attributes)
+                foreach (AttributeRecord attribute in attributes)
                 {
                     baseRecordSegment.ImmediateAttributes.Add(attribute);
                 }
@@ -71,9 +73,16 @@ namespace DiskAccessLibrary.FileSystems.NTFS
             }
         }
 
-        public List<AttributeRecord> GetAssembledAttributes()
+        private List<AttributeRecord> GetAttributes()
         {
-            return FileRecordHelper.GetAssembledAttributes(m_segments);
+            if (m_segments.Count > 1)
+            {
+                return FileRecordHelper.GetAssembledAttributes(m_segments);
+            }
+            else
+            {
+                return new List<AttributeRecord>(m_segments[0].ImmediateAttributes);
+            }
         }
 
         public AttributeRecord CreateAttributeRecord(AttributeType type, string name)
@@ -154,7 +163,7 @@ namespace DiskAccessLibrary.FileSystems.NTFS
             {
                 if (m_attributes == null)
                 {
-                    m_attributes = GetAssembledAttributes();
+                    m_attributes = GetAttributes();
                 }
                 return m_attributes;
             }
