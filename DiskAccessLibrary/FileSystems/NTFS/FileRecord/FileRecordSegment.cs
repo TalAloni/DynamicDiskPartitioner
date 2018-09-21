@@ -153,6 +153,29 @@ namespace DiskAccessLibrary.FileSystems.NTFS
             return buffer;
         }
 
+        public AttributeRecord CreateAttributeRecord(AttributeType type, string name)
+        {
+            AttributeRecord attribute = AttributeRecord.Create(type, name, NextAttributeInstance);
+            NextAttributeInstance++;
+            FileRecordHelper.InsertSorted(m_immediateAttributes, attribute);
+            return attribute;
+        }
+
+        public AttributeRecord CreateAttributeListRecord(bool isResident)
+        {
+            AttributeRecord attribute;
+            if (isResident)
+            {
+                attribute = AttributeRecord.Create(AttributeType.AttributeList, String.Empty, NextAttributeInstance);
+            }
+            else
+            {
+                attribute = new NonResidentAttributeRecord(AttributeType.AttributeList, String.Empty, NextAttributeInstance);
+            }
+            NextAttributeInstance++;
+            return attribute;
+        }
+
         public AttributeRecord GetImmediateAttributeRecord(AttributeType type, string name)
         {
             foreach (AttributeRecord attribute in m_immediateAttributes)
@@ -164,6 +187,17 @@ namespace DiskAccessLibrary.FileSystems.NTFS
             }
 
             return null;
+        }
+
+        public int GetNumberOfBytesFree(int bytesPerFileRecordSegment, ushort minorNTFSVersion)
+        {
+            int firstAttributeOffset = FileRecordSegment.GetFirstAttributeOffset(bytesPerFileRecordSegment, minorNTFSVersion);
+            int numberOfBytesAvailable = bytesPerFileRecordSegment - firstAttributeOffset - EndMarkerLength;
+            foreach (AttributeRecord attribute in m_immediateAttributes)
+            {
+                numberOfBytesAvailable -= attribute.RecordLength;
+            }
+            return numberOfBytesAvailable;
         }
 
         /// <summary>
