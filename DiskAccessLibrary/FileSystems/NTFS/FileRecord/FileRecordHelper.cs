@@ -31,6 +31,11 @@ namespace DiskAccessLibrary.FileSystems.NTFS
             {
                 foreach (AttributeRecord attribute in segment.ImmediateAttributes)
                 {
+                    if (attribute.AttributeType == AttributeType.AttributeList)
+                    {
+                        continue;
+                    }
+
                     bool additionalFragment = (attribute is NonResidentAttributeRecord) && (fragments.Count > 0) &&
                                               (attribute.AttributeType == currentAttributeType) && (attribute.Name == currentAttributeName);
 
