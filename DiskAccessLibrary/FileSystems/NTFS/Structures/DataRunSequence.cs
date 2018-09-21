@@ -12,6 +12,9 @@ using Utilities;
 
 namespace DiskAccessLibrary.FileSystems.NTFS
 {
+    /// <summary>
+    /// MappingPairs array
+    /// </summary>
     public class DataRunSequence : List<DataRun>
     {
         public DataRunSequence() : base()
