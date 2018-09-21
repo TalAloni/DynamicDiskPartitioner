@@ -19,28 +19,66 @@ namespace DiskAccessLibrary.FileSystems.NTFS
     /// http://blogs.technet.com/b/askcore/archive/2009/10/16/the-four-stages-of-ntfs-file-growth.aspx
     public class AttributeList : AttributeData
     {
-        public List<AttributeListEntry> Attributes = new List<AttributeListEntry>();
-
         public AttributeList(NTFSVolume volume, AttributeRecord attributeRecord) : base(volume, null, attributeRecord)
+        {
+        }
+
+        public List<AttributeListEntry> ReadEntries()
         {
             byte[] data = ReadClusters(0, (int)ClusterCount);
 
+            List<AttributeListEntry> entries = new List<AttributeListEntry>();
             int position = 0;
             while (position < data.Length)
             {
                 AttributeListEntry entry = new AttributeListEntry(data, position);
-                Attributes.Add(entry);
+                entries.Add(entry);
                 position += entry.LengthOnDisk;
             }
+
+            return entries;
+        }
+
+        public void WriteEntries(List<AttributeListEntry> entries)
+        {
+            byte[] data = GetBytes(entries);
+            WriteBytes(0, data);
+            if ((uint)this.Length > data.Length)
+            {
+                Truncate((uint)data.Length);
+            }
+        }
+
+        public static int GetLength(List<AttributeListEntry> entries)
+        {
+            int result = 0;
+            foreach (AttributeListEntry entry in entries)
+            {
+                result += entry.Length;
+            }
+            return result;
+        }
+
+        public static byte[] GetBytes(List<AttributeListEntry> entries)
+        {
+            int length = GetLength(entries);
+            byte[] buffer = new byte[length];
+            int position = 0;
+            foreach (AttributeListEntry entry in entries)
+            {
+                entry.WriteBytes(buffer, position);
+                position += entry.Length;
+            }
+            return buffer;
         }
 
         /// <summary>
         /// Return list containing the segment reference to all of the segments that are listed in this attribute list
         /// </summary>
-        public List<MftSegmentReference> GetSegmentReferenceList()
+        public static List<MftSegmentReference> GetSegmentReferenceList(List<AttributeListEntry> entries)
         {
             List<MftSegmentReference> result = new List<MftSegmentReference>();
-            foreach (AttributeListEntry entry in Attributes)
+            foreach (AttributeListEntry entry in entries)
             {
                 if (!MftSegmentReference.ContainsSegmentNumber(result, entry.SegmentReference.SegmentNumber))
                 {
