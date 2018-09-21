@@ -117,6 +117,165 @@ namespace DiskAccessLibrary.FileSystems.NTFS
             return attribute;
         }
 
+        public static void SliceAttributes(List<FileRecordSegment> segments, List<AttributeRecord> attributes, int bytesPerFileRecordSegment, ushort minorNTFSVersion)
+        {
+            int bytesAvailableInSegment = FileRecordSegment.GetNumberOfBytesAvailable(bytesPerFileRecordSegment, minorNTFSVersion);
+            LinkedList<KeyValuePair<AttributeRecord, bool>> remainingAttributes = new LinkedList<KeyValuePair<AttributeRecord, bool>>();
+            FileRecordSegment baseFileRecordSegment = segments[0];
+            foreach (AttributeRecord attribute in attributes)
+            {
+                if (attribute.AttributeType == AttributeType.StandardInformation ||
+                    attribute.AttributeType == AttributeType.FileName)
+                {
+                    baseFileRecordSegment.ImmediateAttributes.Add(attribute);
+                }
+                else
+                {
+                    remainingAttributes.AddFirst(new KeyValuePair<AttributeRecord, bool>(attribute, false));
+                }
+            }
+
+            int segmentIndex = 1;
+            int remainingLengthInCurrentSegment = bytesAvailableInSegment;
+            while (remainingAttributes.Count > 0)
+            {
+                AttributeRecord attribute = remainingAttributes.First.Value.Key;
+                bool isSlice = remainingAttributes.First.Value.Value;
+
+                if (segmentIndex == segments.Count)
+                {
+                    MftSegmentReference newSegmentReference = MftSegmentReference.NullReference;
+                    FileRecordSegment newFileRecordSegment = new FileRecordSegment(newSegmentReference.SegmentNumber, newSegmentReference.SequenceNumber, baseFileRecordSegment.SegmentReference);
+                    newFileRecordSegment.IsInUse = true;
+                    segments.Add(newFileRecordSegment);
+                }
+
+                if (attribute.RecordLength <= remainingLengthInCurrentSegment)
+                {
+                    remainingLengthInCurrentSegment -= (int)attribute.RecordLength;
+                    segments[segmentIndex].ImmediateAttributes.Add(attribute);
+                    remainingAttributes.RemoveFirst();
+                    // Instead of renumbering each attribute slice in the new FileRecordSegment, we use the original Instance number.
+                    if (segments[segmentIndex].NextAttributeInstance <= attribute.Instance)
+                    {
+                        segments[segmentIndex].NextAttributeInstance = (ushort)(attribute.Instance + 1);
+                    }
+                }
+                else
+                {
+                    if (attribute is ResidentAttributeRecord || isSlice)
+                    {
+                        segmentIndex++;
+                        remainingLengthInCurrentSegment = bytesAvailableInSegment;
+                    }
+                    else
+                    {
+                        NonResidentAttributeRecord nonResidentAttribute = ((NonResidentAttributeRecord)attribute);
+                        List<NonResidentAttributeRecord> slices = SliceAttributeRecord((NonResidentAttributeRecord)attribute, remainingLengthInCurrentSegment, bytesAvailableInSegment);
+                        remainingAttributes.RemoveFirst();
+                        slices.Reverse();
+                        foreach (NonResidentAttributeRecord slice in slices)
+                        {
+                            remainingAttributes.AddFirst(new KeyValuePair<AttributeRecord, bool>(slice, true));
+                        }
+                    }
+                }
+            }
+        }
+
+        private static List<NonResidentAttributeRecord> SliceAttributeRecord(NonResidentAttributeRecord record, int remainingLengthInCurrentSegment, int bytesAvailableInSegment)
+        {
+            List<NonResidentAttributeRecord> result = new List<NonResidentAttributeRecord>();
+            int numberOfRunsFitted = 0;
+            int availableLength = remainingLengthInCurrentSegment;
+            while (numberOfRunsFitted < record.DataRunSequence.Count)
+            {
+                NonResidentAttributeRecord slice = FitMaxNumberOfRuns(record, numberOfRunsFitted, remainingLengthInCurrentSegment);
+                if (slice != null)
+                {
+                    result.Add(slice);
+                    numberOfRunsFitted += slice.DataRunSequence.Count;
+                }
+                availableLength = bytesAvailableInSegment;
+            }
+
+            return result;
+        }
+
+        private static NonResidentAttributeRecord FitMaxNumberOfRuns(NonResidentAttributeRecord record, int runIndex, int availableLength)
+        {
+            // Each attribute record is aligned to 8-byte boundary, we must have enough room for padding
+            availableLength = (int)Math.Floor((double)availableLength / 8) * 8;
+            // Note that we're using the original record Instance instead of using the FileRecordSegment.NextAttributeInstance
+            NonResidentAttributeRecord slice = new NonResidentAttributeRecord(record.AttributeType, record.Name, record.Instance);
+            DataRunSequence dataRuns = record.DataRunSequence;
+            long clusterCount = 0;
+            for (int index = 0; index < runIndex; index++)
+            {
+                clusterCount += dataRuns[index].RunLength;
+            }
+            slice.LowestVCN = clusterCount;
+            slice.DataRunSequence.Add(dataRuns[runIndex]);
+            
+            if (runIndex == 0)
+            {
+                slice.CompressionUnit = record.CompressionUnit;
+                slice.AllocatedLength = record.AllocatedLength;
+                slice.FileSize = record.FileSize;
+                slice.ValidDataLength = record.ValidDataLength;
+            }
+            else
+            {
+                // The DataRunSequence of each NonResidentDataRecord fragment starts at absolute LCN
+                long runLength = dataRuns[runIndex].RunLength;
+                long runStartLCN = dataRuns.GetDataClusterLCN(clusterCount);
+                slice.DataRunSequence[0] = new DataRun(runLength, runStartLCN);
+            }
+            clusterCount += dataRuns[runIndex].RunLength;
+
+            int sliceRecordLength = NonResidentAttributeRecord.HeaderLength + record.Name.Length * 2 + slice.DataRunSequence.RecordLength;
+            if (sliceRecordLength > availableLength)
+            {
+                return null;
+            }
+
+            runIndex++;
+            while (runIndex < dataRuns.Count && sliceRecordLength + dataRuns[runIndex].RecordLength <= availableLength)
+            {
+                slice.DataRunSequence.Add(record.DataRunSequence[runIndex]);
+                sliceRecordLength += dataRuns[runIndex].RecordLength;
+                clusterCount += dataRuns[runIndex].RunLength;
+                runIndex++;
+            }
+
+            slice.HighestVCN = clusterCount - 1;
+            return slice;
+        }
+
+        public static List<AttributeListEntry> BuildAttributeList(List<FileRecordSegment> segments, int bytesPerFileRecordSegment, ushort minorNTFSVersion)
+        {
+            int bytesAvailableInSegment = FileRecordSegment.GetNumberOfBytesAvailable(bytesPerFileRecordSegment, minorNTFSVersion);
+
+            List<AttributeListEntry> result = new List<AttributeListEntry>();
+            foreach (FileRecordSegment segment in segments)
+            {
+                foreach (AttributeRecord attribute in segment.ImmediateAttributes)
+                {
+                    AttributeListEntry entry = new AttributeListEntry();
+                    entry.AttributeType = attribute.AttributeType;
+                    if (attribute is NonResidentAttributeRecord)
+                    {
+                        entry.LowestVCN = ((NonResidentAttributeRecord)attribute).LowestVCN;
+                    }
+                    entry.SegmentReference = segment.SegmentReference;
+                    entry.Instance = attribute.Instance;
+                    entry.AttributeName = attribute.Name;
+                    result.Add(entry);
+                }
+            }
+            return result;
+        }
+
         public static void InsertSorted(List<AttributeRecord> attributes, AttributeRecord attribute)
         {
             int insertIndex = SortedList<AttributeRecord>.FindIndexForSortedInsert(attributes, CompareAttributeTypes, attribute);
