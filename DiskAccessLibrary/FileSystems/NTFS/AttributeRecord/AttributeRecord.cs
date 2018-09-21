@@ -51,7 +51,7 @@ namespace DiskAccessLibrary.FileSystems.NTFS
             }
         }
 
-        public abstract byte[] GetBytes(int bytesPerCluster);
+        public abstract byte[] GetBytes();
 
         public void WriteHeader(byte[] buffer, ushort nameOffset)
         {

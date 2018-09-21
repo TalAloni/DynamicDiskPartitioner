@@ -30,11 +30,11 @@ namespace DiskAccessLibrary.FileSystems.NTFS
             m_volumeName = Encoding.Unicode.GetString(this.Data);
         }
 
-        public override byte[] GetBytes(int bytesPerCluster)
+        public override byte[] GetBytes()
         {
             this.Data = Encoding.Unicode.GetBytes(m_volumeName);
 
-            return base.GetBytes(bytesPerCluster);
+            return base.GetBytes();
         }
 
         public override ulong DataLength

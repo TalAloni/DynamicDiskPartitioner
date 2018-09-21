@@ -44,7 +44,7 @@ namespace DiskAccessLibrary.FileSystems.NTFS
             IndexEntries = IndexEntry.ReadIndexEntries(this.Data, entriesOffset);
         }
 
-        public override byte[] GetBytes(int bytesPerCluster)
+        public override byte[] GetBytes()
         {
             this.Data = new byte[this.DataLength];
             m_indexHeader.EntriesOffset = IndexHeader.Length;
@@ -57,7 +57,8 @@ namespace DiskAccessLibrary.FileSystems.NTFS
             ByteWriter.WriteByte(this.Data, 0x0C, BlocksPerIndexRecord);
             m_indexHeader.WriteBytes(this.Data, 0x10);
             IndexEntry.WriteIndexEntries(this.Data, IndexHeaderOffset + IndexHeader.Length, IndexEntries);
-            return base.GetBytes(bytesPerCluster);
+
+            return base.GetBytes();
         }
 
         public override ulong DataLength

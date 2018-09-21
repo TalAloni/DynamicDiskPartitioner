@@ -27,11 +27,11 @@ namespace DiskAccessLibrary.FileSystems.NTFS
             Record = new FileNameRecord(this.Data, 0);
         }
 
-        public override byte[] GetBytes(int bytesPerCluster)
+        public override byte[] GetBytes()
         {
             this.Data = Record.GetBytes();
 
-            return base.GetBytes(bytesPerCluster);
+            return base.GetBytes();
         }
 
         public override ulong DataLength

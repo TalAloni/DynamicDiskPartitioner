@@ -272,7 +272,7 @@ namespace DiskAccessLibrary.FileSystems.NTFS
         {
             long segmentNumber = recordSegment.SegmentNumber;
             long firstSectorIndex = segmentNumber * m_volume.SectorsPerFileRecordSegment;
-            byte[] recordSegmentBytes = recordSegment.GetBytes(m_volume.BytesPerFileRecordSegment, m_volume.BytesPerCluster, m_volume.MinorVersion);
+            byte[] recordSegmentBytes = recordSegment.GetBytes(m_volume.BytesPerFileRecordSegment, m_volume.MinorVersion);
 
             m_mftFile.Data.WriteSectors(firstSectorIndex, recordSegmentBytes);
         }

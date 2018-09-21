@@ -36,14 +36,14 @@ namespace DiskAccessLibrary.FileSystems.NTFS
             VolumeFlags = (VolumeFlags)LittleEndianConverter.ToUInt16(this.Data, 0x0A);
         }
 
-        public override byte[] GetBytes(int bytesPerCluster)
+        public override byte[] GetBytes()
         {
             this.Data = new byte[this.DataLength];
             ByteWriter.WriteByte(this.Data, 0x08, MajorVersion);
             ByteWriter.WriteByte(this.Data, 0x09, MinorVersion);
             LittleEndianWriter.WriteUInt16(this.Data, 0x0A, (ushort)VolumeFlags);
 
-            return base.GetBytes(bytesPerCluster);
+            return base.GetBytes();
         }
 
         public override ulong DataLength

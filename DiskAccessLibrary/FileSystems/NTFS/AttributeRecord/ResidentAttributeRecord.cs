@@ -42,7 +42,7 @@ namespace DiskAccessLibrary.FileSystems.NTFS
             Data = ByteReader.ReadBytes(buffer, offset + dataOffset, (int)dataLength);
         }
 
-        public override byte[] GetBytes(int bytesPerCluster)
+        public override byte[] GetBytes()
         {
             byte[] buffer = new byte[this.RecordLength];
             WriteHeader(buffer, HeaderLength);

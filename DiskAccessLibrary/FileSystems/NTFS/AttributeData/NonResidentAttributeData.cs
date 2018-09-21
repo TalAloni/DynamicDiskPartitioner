@@ -237,6 +237,9 @@ namespace DiskAccessLibrary.FileSystems.NTFS
                 m_attributeRecord.HighestVCN += runLength;
                 m_attributeRecord.DataRunSequence.Add(run);
             }
+
+            // Extend() will update the FileRecord
+            m_attributeRecord.AllocatedLength += (ulong)(clustersToAllocate * m_volume.BytesPerCluster);
         }
 
         public void Truncate(ulong newLengthInBytes)
@@ -247,6 +250,7 @@ namespace DiskAccessLibrary.FileSystems.NTFS
                 KeyValuePairList<long, long> clustersToDeallocate = m_attributeRecord.DataRunSequence.TranslateToLCN(clustersToKeep, ClusterCount - clustersToKeep);
                 m_attributeRecord.DataRunSequence.Truncate(clustersToKeep);
                 m_attributeRecord.HighestVCN = clustersToKeep - 1;
+                m_attributeRecord.AllocatedLength = (ulong)(clustersToKeep * m_volume.BytesPerCluster);
 
                 foreach (KeyValuePair<long, long> runToDeallocate in clustersToDeallocate)
                 {

@@ -24,9 +24,9 @@ namespace DiskAccessLibrary.FileSystems.NTFS
         public long LowestVCN;  // The lowest VCN covered by this attribute record, stored as unsigned, but is within the range of long, see note above.
         public long HighestVCN; // The highest VCN covered by this attribute record, stored as unsigned, but is within the range of long, see note above.
         // ushort mappingPairsOffset;
-        public byte CompressionUnit;
+        public byte CompressionUnit;  // Log of the number of clusters in each unit (not valid if the LowestVCN member is nonzero)
         // 5 reserved bytes
-        // ulong AllocatedLength;     // An even multiple of the cluster size (not valid if the LowestVCN member is nonzero).
+        public ulong AllocatedLength; // An even multiple of the cluster size (not valid if the LowestVCN member is nonzero).
         public ulong FileSize;        // The real size of a file with all of its runs combined (not valid if the LowestVCN member is nonzero).
         public ulong ValidDataLength; // Actual data written so far, (always less than or equal to the file size).
                                       // Data beyond ValidDataLength should be treated as 0 (not valid if the LowestVCN member is nonzero).
@@ -45,7 +45,7 @@ namespace DiskAccessLibrary.FileSystems.NTFS
             HighestVCN = (long)LittleEndianConverter.ToUInt64(buffer, offset + 0x18);
             ushort mappingPairsOffset = LittleEndianConverter.ToUInt16(buffer, offset + 0x20);
             CompressionUnit = ByteReader.ReadByte(buffer, offset + 0x22);
-            ulong allocatedLength = LittleEndianConverter.ToUInt64(buffer, offset + 0x28);
+            AllocatedLength = LittleEndianConverter.ToUInt64(buffer, offset + 0x28);
             FileSize = LittleEndianConverter.ToUInt64(buffer, offset + 0x30);
             ValidDataLength = LittleEndianConverter.ToUInt64(buffer, offset + 0x38);
             m_dataRunSequence = new DataRunSequence(buffer, offset + mappingPairsOffset, (int)this.RecordLengthOnDisk - mappingPairsOffset);
@@ -56,7 +56,7 @@ namespace DiskAccessLibrary.FileSystems.NTFS
             }
         }
 
-        public override byte[] GetBytes(int bytesPerCluster)
+        public override byte[] GetBytes()
         {
             int dataRunSequenceLength = m_dataRunSequence.RecordLength;
             ushort mappingPairsOffset = (ushort)(HeaderLength + Name.Length * 2);
@@ -64,14 +64,13 @@ namespace DiskAccessLibrary.FileSystems.NTFS
             byte[] buffer = new byte[length];
             WriteHeader(buffer, HeaderLength);
 
-            ulong allocatedLength = (ulong)(m_dataRunSequence.DataClusterCount * bytesPerCluster);
             ushort dataRunsOffset = (ushort)(HeaderLength + Name.Length * 2);
 
             LittleEndianWriter.WriteInt64(buffer, 0x10, LowestVCN);
             LittleEndianWriter.WriteInt64(buffer, 0x18, HighestVCN);
             LittleEndianWriter.WriteUInt16(buffer, 0x20, mappingPairsOffset);
             ByteWriter.WriteByte(buffer, 0x22, CompressionUnit);
-            LittleEndianWriter.WriteUInt64(buffer, 0x28, allocatedLength);
+            LittleEndianWriter.WriteUInt64(buffer, 0x28, AllocatedLength);
             LittleEndianWriter.WriteUInt64(buffer, 0x30, FileSize);
             LittleEndianWriter.WriteUInt64(buffer, 0x38, ValidDataLength);
             m_dataRunSequence.WriteBytes(buffer, dataRunsOffset);
@@ -125,7 +124,7 @@ namespace DiskAccessLibrary.FileSystems.NTFS
         {
             get
             {
-                return HighestVCN - LowestVCN + 1;;
+                return HighestVCN - LowestVCN + 1;
             }
         }
     }

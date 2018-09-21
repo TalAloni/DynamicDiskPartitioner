@@ -96,7 +96,7 @@ namespace DiskAccessLibrary.FileSystems.NTFS
         }
 
         /// <param name="segmentLength">This refers to the maximum length of FileRecord as defined in the Volume's BootRecord</param>
-        public byte[] GetBytes(int bytesPerFileRecordSegment, int bytesPerCluster, ushort minorNTFSVersion)
+        public byte[] GetBytes(int bytesPerFileRecordSegment, ushort minorNTFSVersion)
         {
             int strideCount = bytesPerFileRecordSegment / MultiSectorHelper.BytesPerStride;
             ushort updateSequenceArraySize = (ushort)(1 + strideCount);
@@ -134,7 +134,7 @@ namespace DiskAccessLibrary.FileSystems.NTFS
             int position = firstAttributeOffset;
             foreach (AttributeRecord attribute in m_immediateAttributes)
             {
-                byte[] attributeBytes = attribute.GetBytes(bytesPerCluster);
+                byte[] attributeBytes = attribute.GetBytes();
                 ByteWriter.WriteBytes(buffer, position, attributeBytes);
                 position += attributeBytes.Length;
             }
