@@ -41,7 +41,8 @@ namespace DiskAccessLibrary.FileSystems.NTFS
 
                     if (!additionalFragment && fragments.Count > 0)
                     {
-                        NonResidentAttributeRecord assembledAttribute = AssembleFragments(fragments);
+                        NonResidentAttributeRecord assembledAttribute = AssembleFragments(fragments, segments[0].NextAttributeInstance);
+                        segments[0].NextAttributeInstance++;
                         result.Add(assembledAttribute);
                         fragments.Clear();
                     }
@@ -64,51 +65,48 @@ namespace DiskAccessLibrary.FileSystems.NTFS
 
             if (fragments.Count > 0)
             {
-                NonResidentAttributeRecord assembledAttribute = AssembleFragments(fragments);
+                NonResidentAttributeRecord assembledAttribute = AssembleFragments(fragments, segments[0].NextAttributeInstance);
+                segments[0].NextAttributeInstance++;
                 result.Add(assembledAttribute);
             }
 
             return result;
         }
 
-        private static NonResidentAttributeRecord AssembleFragments(List<NonResidentAttributeRecord> attributeFragments)
+        private static NonResidentAttributeRecord AssembleFragments(List<NonResidentAttributeRecord> attributeFragments, ushort nextAttributeInstance)
         {
             // Attribute fragments are written to disk sorted by LowestVCN
-            NonResidentAttributeRecord baseAttribute = attributeFragments[0];
-            if (baseAttribute.LowestVCN != 0)
+            NonResidentAttributeRecord firstFragment = attributeFragments[0];
+            if (firstFragment.LowestVCN != 0)
             {
-                string message = String.Format("Attribute fragments must be sorted. Attribute type: {0}", baseAttribute.AttributeType);
+                string message = String.Format("Attribute fragments must be sorted. Attribute type: {0}", firstFragment.AttributeType);
                 throw new InvalidDataException(message);
             }
 
-            if (baseAttribute.DataRunSequence.DataClusterCount != baseAttribute.HighestVCN + 1)
-            {
-                string message = String.Format("Cannot properly assemble data run sequence 0, expected length: {0}, sequence length: {1}",
-                                               baseAttribute.HighestVCN + 1, baseAttribute.DataRunSequence.DataClusterCount);
-                throw new InvalidDataException(message);
-            }
+            NonResidentAttributeRecord attribute = new NonResidentAttributeRecord(firstFragment.AttributeType, firstFragment.Name, nextAttributeInstance);
+            attribute.Flags = firstFragment.Flags;
+            attribute.LowestVCN = 0;
+            attribute.HighestVCN = -1;
+            attribute.CompressionUnit = firstFragment.CompressionUnit;
+            attribute.AllocatedLength = firstFragment.AllocatedLength;
+            attribute.FileSize = firstFragment.FileSize;
+            attribute.ValidDataLength = firstFragment.ValidDataLength;
 
-            for (int index = 1; index < attributeFragments.Count; index++)
+            foreach(NonResidentAttributeRecord attributeFragment in attributeFragments)
             {
-                NonResidentAttributeRecord attributeFragment = attributeFragments[index];
-                if (attributeFragment.LowestVCN == baseAttribute.HighestVCN + 1)
+                if (attributeFragment.LowestVCN == attribute.HighestVCN + 1)
                 {
-                    // The DataRunSequence of each additional file record segment starts at absolute LCN,
-                    // so we need to convert it to relative offset before adding it to the base DataRunSequence
+                    // The DataRunSequence of each NonResidentDataRecord fragment starts at absolute LCN,
+                    // We need to convert it to relative offset before adding it to the base DataRunSequence
+                    long runLength = attributeFragment.DataRunSequence[0].RunLength;
                     long absoluteOffset = attributeFragment.DataRunSequence[0].RunOffset;
-                    long previousLCN = baseAttribute.DataRunSequence.LastDataRunStartLCN;
+                    long previousLCN = attribute.DataRunSequence.LastDataRunStartLCN;
                     long relativeOffset = absoluteOffset - previousLCN;
-                    attributeFragment.DataRunSequence[0].RunOffset = relativeOffset;
 
-                    baseAttribute.DataRunSequence.AddRange(attributeFragment.DataRunSequence);
-                    baseAttribute.HighestVCN = attributeFragment.HighestVCN;
-
-                    if (baseAttribute.DataRunSequence.DataClusterCount != baseAttribute.HighestVCN + 1)
-                    {
-                        string message = String.Format("Cannot properly assemble data run sequence, expected length: {0}, sequence length: {1}",
-                                                       baseAttribute.HighestVCN + 1, baseAttribute.DataRunSequence.DataClusterCount);
-                        throw new InvalidDataException(message);
-                    }
+                    int runIndex = attribute.DataRunSequence.Count;
+                    attribute.DataRunSequence.AddRange(attributeFragment.DataRunSequence);
+                    attribute.DataRunSequence[runIndex] = new DataRun(runLength, relativeOffset);
+                    attribute.HighestVCN = attributeFragment.HighestVCN;
                 }
                 else
                 {
@@ -116,7 +114,7 @@ namespace DiskAccessLibrary.FileSystems.NTFS
                 }
             }
 
-            return baseAttribute;
+            return attribute;
         }
 
         public static void InsertSorted(List<AttributeRecord> attributes, AttributeRecord attribute)
