@@ -153,11 +153,11 @@ namespace DiskAccessLibrary.FileSystems.NTFS
             return buffer;
         }
 
-        public AttributeRecord GetImmediateAttributeRecord(AttributeType type)
+        public AttributeRecord GetImmediateAttributeRecord(AttributeType type, string name)
         {
             foreach (AttributeRecord attribute in m_immediateAttributes)
             {
-                if (attribute.AttributeType == type)
+                if (attribute.AttributeType == type && attribute.Name == name)
                 {
                     return attribute;
                 }
@@ -231,7 +231,7 @@ namespace DiskAccessLibrary.FileSystems.NTFS
         {
             get
             {
-                AttributeRecord attributeList = GetImmediateAttributeRecord(AttributeType.AttributeList);
+                AttributeRecord attributeList = GetImmediateAttributeRecord(AttributeType.AttributeList, String.Empty);
                 return (attributeList != null);
             }
         }

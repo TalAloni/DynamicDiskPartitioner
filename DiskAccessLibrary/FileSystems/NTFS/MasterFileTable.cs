@@ -74,7 +74,7 @@ namespace DiskAccessLibrary.FileSystems.NTFS
                     throw new InvalidDataException("Invalid MFT record, not a base record");
                 }
 
-                AttributeRecord attributeListRecord = mftRecordSegment.GetImmediateAttributeRecord(AttributeType.AttributeList);
+                AttributeRecord attributeListRecord = mftRecordSegment.GetImmediateAttributeRecord(AttributeType.AttributeList, String.Empty);
                 if (attributeListRecord == null)
                 {
                     return new FileRecord(mftRecordSegment);
@@ -190,7 +190,7 @@ namespace DiskAccessLibrary.FileSystems.NTFS
             FileRecordSegment baseRecordSegment = GetFileRecordSegment(baseSegmentNumber);
             if (baseRecordSegment != null && baseRecordSegment.IsBaseFileRecord)
             {
-                AttributeRecord attributeListRecord = baseRecordSegment.GetImmediateAttributeRecord(AttributeType.AttributeList);
+                AttributeRecord attributeListRecord = baseRecordSegment.GetImmediateAttributeRecord(AttributeType.AttributeList, String.Empty);
                 if (attributeListRecord == null)
                 {
                     return new FileRecord(baseRecordSegment);
