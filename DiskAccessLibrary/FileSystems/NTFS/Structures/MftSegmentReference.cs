@@ -55,9 +55,9 @@ namespace DiskAccessLibrary.FileSystems.NTFS
 
         public static bool operator ==(MftSegmentReference obj1, MftSegmentReference obj2)
         {
-            if (obj1.Equals(null))
+            if (Object.ReferenceEquals(obj1, null))
             {
-                return (obj2.Equals(null));
+                return Object.ReferenceEquals(obj2, null);
             }
             else
             {
