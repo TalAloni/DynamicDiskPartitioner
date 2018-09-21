@@ -25,6 +25,12 @@ namespace DiskAccessLibrary.FileSystems.NTFS
         {
         }
 
+        public DataRun(long runLength, long runOffset)
+        {
+            RunLength = runLength;
+            RunOffset = runOffset;
+        }
+
         public DataRun(byte[] buffer, int offset)
         {
             int runOffsetSize = buffer[offset] >> 4;
