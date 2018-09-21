@@ -174,7 +174,10 @@ namespace DiskAccessLibrary.FileSystems.NTFS
 
                 long offset = clusterVCN * m_volume.BytesPerCluster;
                 Array.Copy(data, 0, ((ResidentAttributeRecord)m_attributeRecord).Data, offset, data.Length);
-                m_volume.MasterFileTable.UpdateFileRecord(m_fileRecord);
+                if (m_fileRecord != null)
+                {
+                    m_volume.MasterFileTable.UpdateFileRecord(m_fileRecord);
+                }
             }
         }
 
@@ -230,8 +233,11 @@ namespace DiskAccessLibrary.FileSystems.NTFS
                     attributeData.Extend(finalDataLength);
                     attributeData.WriteClusters(0, data);
                     // Note that we overwrite the old attribute only after writing the non-resident data
-                    m_fileRecord.RemoveAttributeRecord(m_attributeRecord.AttributeType, m_attributeRecord.Name);
-                    m_fileRecord.Attributes.Add(attributeRecord);
+                    if (m_fileRecord != null)
+                    {
+                        m_fileRecord.RemoveAttributeRecord(m_attributeRecord.AttributeType, m_attributeRecord.Name);
+                        m_fileRecord.Attributes.Add(attributeRecord);
+                    }
                     m_attributeRecord = attributeRecord;
                 }
                 else
@@ -241,7 +247,11 @@ namespace DiskAccessLibrary.FileSystems.NTFS
                     Array.Copy(data, temp, data.Length);
                     ((ResidentAttributeRecord)m_attributeRecord).Data = temp;
                 }
-                m_volume.MasterFileTable.UpdateFileRecord(m_fileRecord);
+
+                if (m_fileRecord != null)
+                {
+                    m_volume.MasterFileTable.UpdateFileRecord(m_fileRecord);
+                }
             }
         }
 
@@ -259,7 +269,10 @@ namespace DiskAccessLibrary.FileSystems.NTFS
                 byte[] temp = new byte[newLengthInBytes];
                 Array.Copy(data, temp, temp.Length);
                 ((ResidentAttributeRecord)m_attributeRecord).Data = temp;
-                m_volume.MasterFileTable.UpdateFileRecord(m_fileRecord);
+                if (m_fileRecord != null)
+                {
+                    m_volume.MasterFileTable.UpdateFileRecord(m_fileRecord);
+                }
             }
         }
 
