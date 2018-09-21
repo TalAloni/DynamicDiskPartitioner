@@ -55,11 +55,11 @@ namespace DiskAccessLibrary.FileSystems.NTFS
 
         public void WriteHeader(byte[] buffer, ushort nameOffset)
         {
-            m_recordLengthOnDisk = this.RecordLength;
+            m_recordLengthOnDisk = (uint)this.RecordLength;
             m_nameLength = (byte)Name.Length;
             
             ByteWriter.WriteByte(buffer, 0x00, (byte)m_attribueType);
-            LittleEndianWriter.WriteUInt32(buffer, 0x04, this.RecordLength);
+            LittleEndianWriter.WriteUInt32(buffer, 0x04, m_recordLengthOnDisk);
             ByteWriter.WriteByte(buffer, 0x08, (byte)m_attributeForm);
             ByteWriter.WriteByte(buffer, 0x09, m_nameLength);
             LittleEndianWriter.WriteUInt16(buffer, 0x0A, nameOffset);
@@ -113,7 +113,7 @@ namespace DiskAccessLibrary.FileSystems.NTFS
         /// When reading attributes, they may contain additional padding,
         /// so we should use RecordLengthOnDisk to advance the buffer position instead.
         /// </summary>
-        public abstract uint RecordLength
+        public abstract int RecordLength
         {
             get;
         }

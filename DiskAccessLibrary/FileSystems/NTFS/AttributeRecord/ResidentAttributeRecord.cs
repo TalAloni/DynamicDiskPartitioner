@@ -70,14 +70,11 @@ namespace DiskAccessLibrary.FileSystems.NTFS
         /// When reading attributes, they may contain additional padding,
         /// so we should use RecordLengthOnDisk to advance the buffer position instead.
         /// </summary>
-        public override uint RecordLength
+        public override int RecordLength
         {
             get 
             {
-                uint length = (uint)(AttributeRecord.AttributeRecordHeaderLength + 8 + Name.Length * 2 + (int)this.DataLength);
-                // Each record is aligned to 8-byte boundary
-                length = (uint)Math.Ceiling((double)length / 8) * 8;
-                return length;
+                return GetRecordLength(Name.Length, (int)this.DataLength);
             }
         }
 
@@ -98,6 +95,14 @@ namespace DiskAccessLibrary.FileSystems.NTFS
                     m_residentForm &= ~ResidentForm.Indexed;
                 }
             }
+        }
+
+        public static int GetRecordLength(int nameLength, int dataLength)
+        {
+            int length = HeaderLength + nameLength * 2 + dataLength;
+            // Each record is aligned to 8-byte boundary
+            length = (int)Math.Ceiling((double)length / 8) * 8;
+            return length;
         }
     }
 }

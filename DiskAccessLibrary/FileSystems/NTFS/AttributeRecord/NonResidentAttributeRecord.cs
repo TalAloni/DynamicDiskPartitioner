@@ -60,7 +60,7 @@ namespace DiskAccessLibrary.FileSystems.NTFS
         {
             int dataRunSequenceLength = m_dataRunSequence.RecordLength;
             ushort mappingPairsOffset = (ushort)(HeaderLength + Name.Length * 2);
-            uint length = this.RecordLength;
+            int length = this.RecordLength;
             byte[] buffer = new byte[length];
             WriteHeader(buffer, HeaderLength);
 
@@ -92,15 +92,15 @@ namespace DiskAccessLibrary.FileSystems.NTFS
         /// When reading attributes, they may contain additional padding,
         /// so we should use RecordLengthOnDisk to advance the buffer position instead.
         /// </summary>
-        public override uint RecordLength
+        public override int RecordLength
         {
             get 
             {
                 int dataRunSequenceLength = m_dataRunSequence.RecordLength;
                 ushort mappingPairsOffset = (ushort)(HeaderLength + Name.Length * 2);
-                uint length = (uint)(mappingPairsOffset + dataRunSequenceLength);
+                int length = (int)(mappingPairsOffset + dataRunSequenceLength);
                 // Each record is aligned to 8-byte boundary
-                length = (uint)Math.Ceiling((double)length / 8) * 8;
+                length = (int)Math.Ceiling((double)length / 8) * 8;
                 return length;
             }
         }

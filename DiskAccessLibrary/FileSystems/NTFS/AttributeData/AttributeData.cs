@@ -216,7 +216,7 @@ namespace DiskAccessLibrary.FileSystems.NTFS
             {
                 byte[] data = ((ResidentAttributeRecord)m_attributeRecord).Data;
                 ulong finalDataLength = (uint)data.Length + additionalLengthInBytes;
-                ulong finalRecordLength = m_attributeRecord.RecordLength + additionalLengthInBytes;
+                ulong finalRecordLength = (uint)m_attributeRecord.RecordLength + additionalLengthInBytes;
                 if (finalRecordLength >= (ulong)m_volume.MasterFileTable.AttributeRecordLengthToMakeNonResident)
                 {
                     // Convert the attribute to non-resident
