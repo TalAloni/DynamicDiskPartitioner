@@ -264,6 +264,7 @@ namespace DiskAccessLibrary.FileSystems.NTFS
                     MftSegmentReference segmentReference = AllocateFileRecordSegment();
                     FileRecordSegment newSegment = new FileRecordSegment(segmentReference.SegmentNumber, segmentReference.SequenceNumber, baseRecordSegment.SegmentReference);
                     newSegment.IsInUse = true;
+                    newSegment.IsDirectory = fileRecord.IsDirectory;
                     newSegment.NextAttributeInstance = segment.NextAttributeInstance;
                     newSegment.ImmediateAttributes.AddRange(segment.ImmediateAttributes);
                     fileRecord.Segments[segmentIndex] = newSegment;
