@@ -80,7 +80,23 @@ namespace DiskAccessLibrary.FileSystems.NTFS
 
         public override void Delete(string path)
         {
-            throw new NotImplementedException("The method or operation is not implemented.");
+            FileRecord fileRecord = m_volume.GetFileRecord(path);
+            if (fileRecord != null)
+            {
+                if (fileRecord.IsDirectory)
+                {
+                    IndexData directoryIndex = new IndexData(m_volume, fileRecord, AttributeType.FileName);
+                    if (!directoryIndex.IsEmpty)
+                    {
+                        throw new DirectoryNotEmptyException();
+                    }
+                }
+                m_volume.DeleteFile(fileRecord);
+            }
+            else
+            {
+                throw new FileNotFoundException();
+            }
         }
 
         public override List<FileSystemEntry> ListEntriesInDirectory(string path)
