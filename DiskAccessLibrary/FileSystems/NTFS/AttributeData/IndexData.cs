@@ -68,8 +68,8 @@ namespace DiskAccessLibrary.FileSystems.NTFS
             }
             else
             {
-                List<IndexEntry> entries = m_rootRecord.IndexEntries;
                 bool isParentNode = true;
+                List<IndexEntry> entries = m_rootRecord.IndexEntries;
                 int index;
                 while (isParentNode)
                 {
@@ -83,8 +83,8 @@ namespace DiskAccessLibrary.FileSystems.NTFS
                     {
                         long subnodeVBN = entry.SubnodeVBN;
                         IndexRecord indexRecord = ReadIndexRecord(subnodeVBN);
-                        entries = indexRecord.IndexEntries;
                         isParentNode = indexRecord.IsParentNode;
+                        entries = indexRecord.IndexEntries;
                     }
                 }
 
@@ -129,7 +129,6 @@ namespace DiskAccessLibrary.FileSystems.NTFS
             else
             {
                 KeyValuePairList<int, IndexRecord> path = FindInsertPath(key);
-                //int leafRecordVBN = path[path.Count - 1].Key;
                 IndexRecord leafRecord = path[path.Count - 1].Value;
                 long leafRecordVBN = leafRecord.RecordVBN;
                 int insertIndex = CollationHelper.FindIndexForSortedInsert(leafRecord.IndexEntries, key, m_rootRecord.CollationRule);
