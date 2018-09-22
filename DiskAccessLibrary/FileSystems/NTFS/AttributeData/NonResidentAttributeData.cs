@@ -37,8 +37,7 @@ namespace DiskAccessLibrary.FileSystems.NTFS
 
         public void WriteClusters(long firstClusterVCN, byte[] data)
         {
-            int sectorsPerCluster = m_volume.SectorsPerCluster;
-            long firstSectorIndex = firstClusterVCN * sectorsPerCluster;
+            long firstSectorIndex = firstClusterVCN * m_volume.SectorsPerCluster;
             WriteSectors(firstSectorIndex, data);
         }
 
