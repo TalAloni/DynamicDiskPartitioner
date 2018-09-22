@@ -20,10 +20,10 @@ namespace DiskAccessLibrary.FileSystems.NTFS
     public partial class NTFSVolume : IExtendableFileSystem
     {
         private Volume m_volume;
+        private NTFSBootRecord m_bootRecord; // Partition's boot record
         private MasterFileTable m_mft;
         private VolumeBitmap m_bitmap;
-
-        private NTFSBootRecord m_bootRecord; // Partition's boot record
+        private VolumeInformationRecord m_volumeInformation;
 
         public NTFSVolume(Volume volume) : this(volume, false)
         { 
@@ -39,6 +39,7 @@ namespace DiskAccessLibrary.FileSystems.NTFS
             {
                 m_mft = new MasterFileTable(this, useMftMirror);
                 m_bitmap = new VolumeBitmap(this);
+                m_volumeInformation = GetVolumeInformationRecord();
             }
         }
 
@@ -214,8 +215,7 @@ namespace DiskAccessLibrary.FileSystems.NTFS
             FileRecord volumeRecord = m_mft.GetVolumeRecord();
             if (volumeRecord != null)
             {
-                VolumeNameRecord volumeNameRecord = (VolumeNameRecord)volumeRecord.GetAttributeRecord(AttributeType.VolumeName, String.Empty);
-                return volumeNameRecord;
+                return (VolumeNameRecord)volumeRecord.GetAttributeRecord(AttributeType.VolumeName, String.Empty);
             }
             else
             {
@@ -228,8 +228,7 @@ namespace DiskAccessLibrary.FileSystems.NTFS
             FileRecord volumeRecord = m_mft.GetVolumeRecord();
             if (volumeRecord != null)
             {
-                VolumeInformationRecord volumeInformationRecord = (VolumeInformationRecord)volumeRecord.GetAttributeRecord(AttributeType.VolumeInformation, String.Empty);
-                return volumeInformationRecord;
+                return (VolumeInformationRecord)volumeRecord.GetAttributeRecord(AttributeType.VolumeInformation, String.Empty);
             }
             else
             {
@@ -403,8 +402,7 @@ namespace DiskAccessLibrary.FileSystems.NTFS
         {
             get
             {
-                VolumeInformationRecord volumeInformationRecord = GetVolumeInformationRecord();
-                return volumeInformationRecord.MajorVersion;
+                return m_volumeInformation.MajorVersion;
             }
         }
 
@@ -412,8 +410,7 @@ namespace DiskAccessLibrary.FileSystems.NTFS
         {
             get
             {
-                VolumeInformationRecord volumeInformationRecord = GetVolumeInformationRecord();
-                return volumeInformationRecord.MinorVersion;
+                return m_volumeInformation.MinorVersion;
             }
         }
 
