@@ -36,7 +36,12 @@ namespace DiskAccessLibrary.FileSystems.NTFS
 
         public void WriteData(ulong offset, byte[] data)
         {
+            ulong fileSizeBefore = this.Data.Length;
             this.Data.WriteBytes(offset, data);
+            if (fileSizeBefore != this.Data.Length)
+            {
+                UpdateFileNameRecords();
+            }
         }
 
         public void SetLength(ulong newLengthInBytes)
@@ -55,14 +60,27 @@ namespace DiskAccessLibrary.FileSystems.NTFS
                 return;
             }
 
+            UpdateFileNameRecords();
+        }
+
+        private void UpdateFileNameRecords()
+        {
             List<FileNameRecord> fileNameRecords = m_fileRecord.FileNameRecords;
             foreach (FileNameRecord fileNameRecord in fileNameRecords)
             {
                 fileNameRecord.AllocatedLength = this.Data.AllocatedLength;
                 fileNameRecord.FileSize = this.Data.Length;
             }
-            // Note that directory indexes are not being updated ATM
             m_volume.MasterFileTable.UpdateFileRecord(m_fileRecord);
+
+            // Update directory index
+            MftSegmentReference parentDirectory = m_fileRecord.ParentDirectoryReference;
+            FileRecord parentDirectoryRecord = m_volume.MasterFileTable.GetFileRecord(parentDirectory);
+            IndexData parentDirectoryIndex = new IndexData(m_volume, parentDirectoryRecord, AttributeType.FileName);
+            foreach (FileNameRecord fileNameRecord in fileNameRecords)
+            {
+                parentDirectoryIndex.UpdateFileNameRecord(fileNameRecord);
+            }
         }
 
         public AttributeData Data
