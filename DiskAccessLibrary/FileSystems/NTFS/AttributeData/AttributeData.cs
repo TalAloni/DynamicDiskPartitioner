@@ -190,7 +190,25 @@ namespace DiskAccessLibrary.FileSystems.NTFS
             }
             else
             {
-                throw new NotImplementedException();
+                byte[] data = ((ResidentAttributeRecord)m_attributeRecord).Data;
+                long totalSectors = (long)Math.Ceiling((double)data.Length / m_volume.BytesPerSector);
+                long highestSectorIndex = Math.Max(totalSectors - 1, 0);
+                if (firstSectorIndex < 0 || firstSectorIndex > highestSectorIndex)
+                {
+                    throw new ArgumentOutOfRangeException("firstSectorIndex is not within the valid range");
+                }
+
+                int offset = (int)firstSectorIndex * m_volume.BytesPerSector;
+                int bytesToRead;
+                if (offset + count * m_volume.BytesPerSector <= data.Length)
+                {
+                    bytesToRead = count * m_volume.BytesPerCluster;
+                }
+                else
+                {
+                    bytesToRead = data.Length - offset;
+                }
+                return ByteReader.ReadBytes(data, offset, bytesToRead);
             }
         }
 
@@ -203,7 +221,29 @@ namespace DiskAccessLibrary.FileSystems.NTFS
             }
             else
             {
-                throw new NotImplementedException();
+                byte[] recordData = ((ResidentAttributeRecord)m_attributeRecord).Data;
+                long totalSectors = (long)Math.Ceiling((double)recordData.Length / m_volume.BytesPerSector);
+                long highestSectorIndex = Math.Max(totalSectors - 1, 0);
+                if (firstSectorIndex < 0 || firstSectorIndex > highestSectorIndex)
+                {
+                    throw new ArgumentOutOfRangeException("firstSectorIndex is not within the valid range");
+                }
+
+                int offset = (int)firstSectorIndex * m_volume.BytesPerSector;
+                int bytesToWrite;
+                if (offset + data.Length <= recordData.Length)
+                {
+                    bytesToWrite = data.Length;
+                }
+                else
+                {
+                    bytesToWrite = recordData.Length - offset;
+                }
+                ByteWriter.WriteBytes(recordData, offset, data, bytesToWrite);
+                if (m_fileRecord != null)
+                {
+                    m_volume.MasterFileTable.UpdateFileRecord(m_fileRecord);
+                }
             }
         }
 
