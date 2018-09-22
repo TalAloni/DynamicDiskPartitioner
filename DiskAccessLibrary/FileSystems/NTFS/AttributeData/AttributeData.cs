@@ -282,7 +282,7 @@ namespace DiskAccessLibrary.FileSystems.NTFS
             {
                 if (m_attributeRecord is NonResidentAttributeRecord)
                 {
-                    return (ulong)(((NonResidentAttributeRecord)m_attributeRecord).DataClusterCount * m_volume.BytesPerCluster);
+                    return ((NonResidentAttributeRecord)m_attributeRecord).AllocatedLength;
                 }
                 else
                 {

@@ -298,7 +298,7 @@ namespace DiskAccessLibrary.FileSystems.NTFS
         {
             get
             {
-                return (ulong)(m_attributeRecord.DataClusterCount * m_volume.BytesPerCluster);
+                return m_attributeRecord.AllocatedLength;
             }
         }
 
