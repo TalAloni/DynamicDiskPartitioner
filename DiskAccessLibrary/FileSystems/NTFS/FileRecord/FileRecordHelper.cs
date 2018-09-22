@@ -131,7 +131,7 @@ namespace DiskAccessLibrary.FileSystems.NTFS
                 }
                 else
                 {
-                    remainingAttributes.AddFirst(new KeyValuePair<AttributeRecord, bool>(attribute, false));
+                    remainingAttributes.AddLast(new KeyValuePair<AttributeRecord, bool>(attribute, false));
                 }
             }
 
