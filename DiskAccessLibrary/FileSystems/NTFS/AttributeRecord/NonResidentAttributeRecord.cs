@@ -127,5 +127,16 @@ namespace DiskAccessLibrary.FileSystems.NTFS
                 return HighestVCN - LowestVCN + 1;
             }
         }
+
+        public static new NonResidentAttributeRecord Create(AttributeType type, string name, ushort instance)
+        {
+            switch (type)
+            {
+                case AttributeType.IndexAllocation:
+                    return new IndexAllocationRecord(name, instance);
+                default:
+                    return new NonResidentAttributeRecord(type, name, instance);
+            }
+        }
     }
 }

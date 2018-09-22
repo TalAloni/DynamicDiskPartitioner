@@ -83,7 +83,7 @@ namespace DiskAccessLibrary.FileSystems.NTFS
                 throw new InvalidDataException(message);
             }
 
-            NonResidentAttributeRecord attribute = new NonResidentAttributeRecord(firstFragment.AttributeType, firstFragment.Name, nextAttributeInstance);
+            NonResidentAttributeRecord attribute = NonResidentAttributeRecord.Create(firstFragment.AttributeType, firstFragment.Name, nextAttributeInstance);
             attribute.Flags = firstFragment.Flags;
             attribute.LowestVCN = 0;
             attribute.HighestVCN = -1;

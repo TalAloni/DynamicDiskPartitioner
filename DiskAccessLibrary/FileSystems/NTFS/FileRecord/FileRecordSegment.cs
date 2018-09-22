@@ -170,7 +170,7 @@ namespace DiskAccessLibrary.FileSystems.NTFS
             }
             else
             {
-                attribute = new NonResidentAttributeRecord(AttributeType.AttributeList, String.Empty, NextAttributeInstance);
+                attribute = NonResidentAttributeRecord.Create(AttributeType.AttributeList, String.Empty, NextAttributeInstance);
             }
             NextAttributeInstance++;
             return attribute;
