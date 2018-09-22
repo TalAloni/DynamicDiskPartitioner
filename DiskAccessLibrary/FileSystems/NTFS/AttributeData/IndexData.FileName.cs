@@ -49,6 +49,72 @@ namespace DiskAccessLibrary.FileSystems.NTFS
             }
         }
 
+        public bool UpdateFileNameRecord(FileNameRecord fileNameRecord)
+        {
+            byte[] key = fileNameRecord.GetBytes();
+            if (!m_rootRecord.IsParentNode)
+            {
+                int index = CollationHelper.FindIndexInLeafNode(m_rootRecord.IndexEntries, key, m_rootRecord.CollationRule);
+                if (index >= 0)
+                {
+                    m_rootRecord.IndexEntries[index].Key = key;
+                    m_volume.MasterFileTable.UpdateFileRecord(m_fileRecord);
+                    return true;
+                }
+            }
+            else
+            {
+                IndexRecord indexRecord = null;
+                bool isParentNode = true;
+                List<IndexEntry> entries = m_rootRecord.IndexEntries;
+                int index;
+                while (isParentNode)
+                {
+                    index = CollationHelper.FindIndexInParentNode(entries, key, m_rootRecord.CollationRule);
+                    IndexEntry entry = entries[index];
+                    if (!entry.IsLastEntry && CollationHelper.Compare(entry.Key, key, m_rootRecord.CollationRule) == 0)
+                    {
+                        entries[index].Key = key;
+                        if (indexRecord == null)
+                        {
+                            m_volume.MasterFileTable.UpdateFileRecord(m_fileRecord);
+                        }
+                        else
+                        {
+                            long recordIndex = ConvertToRecordIndex(indexRecord.RecordVBN);
+                            WriteIndexRecord(recordIndex, indexRecord);
+                        }
+                        return true;
+                    }
+                    else
+                    {
+                        long subnodeVBN = entry.SubnodeVBN;
+                        indexRecord = ReadIndexRecord(subnodeVBN);
+                        isParentNode = indexRecord.IsParentNode;
+                        entries = indexRecord.IndexEntries;
+                    }
+                }
+
+                index = CollationHelper.FindIndexInLeafNode(entries, key, m_rootRecord.CollationRule);
+                if (index >= 0)
+                {
+                    entries[index].Key = key;
+                    if (indexRecord == null)
+                    {
+                        m_volume.MasterFileTable.UpdateFileRecord(m_fileRecord);
+                    }
+                    else
+                    {
+                        long recordIndex = ConvertToRecordIndex(indexRecord.RecordVBN);
+                        WriteIndexRecord(recordIndex, indexRecord);
+                    }
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
         public KeyValuePairList<MftSegmentReference, FileNameRecord> GetAllFileNameRecords()
         {
             KeyValuePairList<MftSegmentReference, FileNameRecord> result = new KeyValuePairList<MftSegmentReference, FileNameRecord>();
