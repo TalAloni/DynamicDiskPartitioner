@@ -403,6 +403,14 @@ namespace DiskAccessLibrary.FileSystems.NTFS
             }
         }
 
+        public bool IsEmpty
+        {
+            get
+            {
+                return (m_rootRecord.IndexEntries.Count == 0);
+            }
+        }
+
         private int SectorsPerIndexRecord
         {
             get
