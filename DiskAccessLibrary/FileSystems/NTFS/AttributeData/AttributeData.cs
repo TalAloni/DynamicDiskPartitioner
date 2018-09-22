@@ -117,36 +117,19 @@ namespace DiskAccessLibrary.FileSystems.NTFS
             return ReadClusters(clusterVCN, 1);
         }
 
-        public byte[] ReadClusters(long clusterVCN, int count)
+        public byte[] ReadClusters(long firstClusterVCN, int count)
         {
             if (m_attributeRecord is NonResidentAttributeRecord)
             {
                 NonResidentAttributeData attributeData = new NonResidentAttributeData(m_volume, m_fileRecord, (NonResidentAttributeRecord)m_attributeRecord);
-                return attributeData.ReadClusters(clusterVCN, count);
+                return attributeData.ReadClusters(firstClusterVCN, count);
             }
             else
             {
-                long numberOfClusters = (long)Math.Ceiling((double)((ResidentAttributeRecord)m_attributeRecord).Data.Length / m_volume.BytesPerCluster);
-                long highestVCN = Math.Max(numberOfClusters - 1, 0);
-                if (clusterVCN < 0 || clusterVCN > highestVCN)
-                {
-                    throw new ArgumentOutOfRangeException("Cluster VCN is not within the valid range");
-                }
-
-                long offset = clusterVCN * m_volume.BytesPerCluster;
-                int bytesToRead;
-                // last cluster could be partial
-                if (clusterVCN + count < numberOfClusters)
-                {
-                    bytesToRead = count * m_volume.BytesPerCluster;   
-                }
-                else
-                {
-                    bytesToRead = (int)(((ResidentAttributeRecord)m_attributeRecord).Data.Length - offset);
-                }
-                byte[] data = new byte[bytesToRead];
-                Array.Copy(((ResidentAttributeRecord)m_attributeRecord).Data, offset, data, 0, bytesToRead);
-                return data;
+                int sectorsPerCluster = m_volume.SectorsPerCluster;
+                long firstSectorIndex = firstClusterVCN * sectorsPerCluster;
+                int sectorCount = count * sectorsPerCluster;
+                return ReadSectors(firstSectorIndex, sectorCount);
             }
         }
 
@@ -155,29 +138,17 @@ namespace DiskAccessLibrary.FileSystems.NTFS
             WriteClusters(clusterVCN, data);
         }
 
-        public void WriteClusters(long clusterVCN, byte[] data)
+        public void WriteClusters(long firstClusterVCN, byte[] data)
         {
             if (m_attributeRecord is NonResidentAttributeRecord)
             {
                 NonResidentAttributeData attributeData = new NonResidentAttributeData(m_volume, m_fileRecord, (NonResidentAttributeRecord)m_attributeRecord);
-                attributeData.WriteClusters(clusterVCN, data);
+                attributeData.WriteClusters(firstClusterVCN, data);
             }
             else
             {
-                int numberOfClusters = (int)Math.Ceiling((double)((ResidentAttributeRecord)m_attributeRecord).Data.Length / m_volume.BytesPerCluster);
-                int count = (int)Math.Ceiling((double)data.Length / m_volume.BytesPerCluster);
-                long highestVCN = Math.Max(numberOfClusters - 1, 0);
-                if (clusterVCN < 0 || clusterVCN > highestVCN)
-                {
-                    throw new ArgumentOutOfRangeException("Cluster VCN is not within the valid range");
-                }
-
-                long offset = clusterVCN * m_volume.BytesPerCluster;
-                Array.Copy(data, 0, ((ResidentAttributeRecord)m_attributeRecord).Data, offset, data.Length);
-                if (m_fileRecord != null)
-                {
-                    m_volume.MasterFileTable.UpdateFileRecord(m_fileRecord);
-                }
+                long firstSectorIndex = firstClusterVCN * m_volume.SectorsPerCluster;
+                WriteSectors(firstClusterVCN, data);
             }
         }
 
