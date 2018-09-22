@@ -7,7 +7,6 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
-using System.Text;
 using Utilities;
 
 namespace DiskAccessLibrary.FileSystems.NTFS
@@ -21,7 +20,7 @@ namespace DiskAccessLibrary.FileSystems.NTFS
 
         public AttributeType AttributeType;
         private ushort m_lengthOnDisk; // The size of this structure, plus the optional name buffer, in bytes
-        // byte NameLength; // Number of bytes
+        // byte NameLength; // Number of characters
         // byte NameOffset;
         public long LowestVCN;  // Stored as unsigned, but is within the range of long
         public MftSegmentReference SegmentReference;
@@ -51,7 +50,7 @@ namespace DiskAccessLibrary.FileSystems.NTFS
             Instance = LittleEndianConverter.ToUInt16(buffer, offset + 0x18);
             if (nameLength > 0)
             {
-                AttributeName = UnicodeEncoding.Unicode.GetString(buffer, offset + nameOffset, nameLength);
+                AttributeName = ByteReader.ReadUTF16String(buffer, offset + nameOffset, nameLength);
             }
         }
 
@@ -59,7 +58,7 @@ namespace DiskAccessLibrary.FileSystems.NTFS
         {
             LittleEndianWriter.WriteUInt32(buffer, offset + 0x00, (uint)AttributeType);
             LittleEndianWriter.WriteUInt16(buffer, offset + 0x04, (ushort)this.Length);
-            ByteWriter.WriteByte(buffer, offset + 0x06, (byte)(AttributeName.Length * 2));
+            ByteWriter.WriteByte(buffer, offset + 0x06, (byte)AttributeName.Length);
             ByteWriter.WriteByte(buffer, offset + 0x07, (byte)HeaderLength);
             LittleEndianWriter.WriteUInt64(buffer, offset + 0x08, (ulong)LowestVCN);
             SegmentReference.WriteBytes(buffer, offset + 0x10);
