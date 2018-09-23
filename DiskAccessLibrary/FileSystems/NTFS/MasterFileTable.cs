@@ -414,22 +414,18 @@ namespace DiskAccessLibrary.FileSystems.NTFS
                 throw new DiskFullException();
             }
 
-            // We have to extend the bitmap first because one of the constructor parameters is the size of the data
-            // MFT Bitmap: ValidDataLength could be smaller than FileSize, however, we will later copy the value of ValidDataLength
+            // We have to extend the bitmap first because one of the constructor parameters is the size of the data.
+            // MFT Bitmap: ValidDataLength could be smaller than FileSize, however, we will later copy the value of ValidDataLength.
             // to the MFT mirror, we have to make sure that the copy will not become stale after writing beyond the current ValidDataLength.
             m_mftFile.Bitmap.ExtendBitmap(ExtendGranularity, true);
 
-            // MFT Data: ValidDataLength must be equal to FileSize
-            ulong currentDataLength = m_mftFile.Data.Length;
-            m_mftFile.WriteData(currentDataLength, new byte[additionalDataLength]);
-
-            // The NTFS v5.1 driver does not bother updating the FileNameRecord
-            m_mftRecord.FileNameRecord.AllocatedLength = m_mftFile.Data.AllocatedLength;
-            m_mftRecord.FileNameRecord.FileSize = m_mftFile.Data.Length;
-            UpdateFileRecord(m_mftRecord);
+            // MFT Data: ValidDataLength must be equal to FileSize.
+            // This will take care of the FileNameRecord and RootDirectory index as well.
+            // Note: The NTFS v5.1 driver does not bother updating the FileNameRecord.
+            m_mftFile.WriteData(m_mftFile.Data.Length, new byte[additionalDataLength]);
 
             // Update the MFT mirror
-            MasterFileTable mftMirror = new MasterFileTable(m_volume, true, true);
+            MasterFileTable mftMirror = new MasterFileTable(m_volume, false, true);
             FileRecord mftRecordFromMirror = mftMirror.GetFileRecord(MasterFileTableSegmentNumber);
             mftRecordFromMirror.RemoveAttributeRecord(AttributeType.Data, String.Empty);
             mftRecordFromMirror.RemoveAttributeRecord(AttributeType.Bitmap, String.Empty);
