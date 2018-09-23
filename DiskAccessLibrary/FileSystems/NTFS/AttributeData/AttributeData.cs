@@ -39,7 +39,7 @@ namespace DiskAccessLibrary.FileSystems.NTFS
             int offsetInSector = (int)(offset % (uint)m_volume.BytesPerSector);
             int sectorCount = (int)Math.Ceiling((double)(offsetInSector + length) / m_volume.BytesPerSector);
             byte[] sectorsBytes = ReadSectors(sectorIndex, sectorCount);
-            int readLength = sectorsBytes.Length - offsetInSector;
+            int readLength = Math.Min(sectorsBytes.Length - offsetInSector, length);
             return ByteReader.ReadBytes(sectorsBytes, offsetInSector, readLength);
         }
 
