@@ -253,9 +253,9 @@ namespace DiskAccessLibrary.FileSystems.NTFS
 
         public void UpdateFileRecord(FileRecord fileRecord)
         {
-            AttributeRecord oldAttributeList = fileRecord.Segments[0].GetImmediateAttributeRecord(AttributeType.AttributeList, String.Empty);
+            AttributeRecord oldAttributeList = fileRecord.BaseSegment.GetImmediateAttributeRecord(AttributeType.AttributeList, String.Empty);
             fileRecord.UpdateSegments(m_volume.BytesPerFileRecordSegment, m_volume.MinorVersion);
-            FileRecordSegment baseSegment = fileRecord.Segments[0];
+            FileRecordSegment baseSegment = fileRecord.BaseSegment;
             for(int segmentIndex = 1; segmentIndex < fileRecord.Segments.Count; segmentIndex++)
             {
                 FileRecordSegment segment = fileRecord.Segments[segmentIndex];
