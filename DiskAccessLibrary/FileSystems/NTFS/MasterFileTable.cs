@@ -368,6 +368,24 @@ namespace DiskAccessLibrary.FileSystems.NTFS
             }
         }
 
+        private MftSegmentReference AllocateReservedFileRecordSegment()
+        {
+            BitmapData bitmap = m_mftFile.Bitmap;
+            if (bitmap == null)
+            {
+                throw new InvalidDataException("Invalid MFT Record, missing Bitmap attribute");
+            }
+            long? segmentNumber = bitmap.AllocateRecord(FirstReservedSegmentNumber, FirstUserSegmentNumber - 1);
+            if (!segmentNumber.HasValue)
+            {
+                throw new DiskFullException();
+            }
+
+            FileRecordSegment previousSegment = GetFileRecordSegment(segmentNumber.Value);
+            ushort sequenceNumber = (previousSegment == null) ? (ushort)1 : previousSegment.SequenceNumber;
+            return new MftSegmentReference(segmentNumber.Value, sequenceNumber);
+        }
+
         private MftSegmentReference AllocateFileRecordSegment()
         {
             BitmapData bitmap = m_mftFile.Bitmap;
