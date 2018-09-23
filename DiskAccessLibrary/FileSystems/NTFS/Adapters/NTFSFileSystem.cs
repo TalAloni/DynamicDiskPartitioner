@@ -48,7 +48,7 @@ namespace DiskAccessLibrary.FileSystems.NTFS
             FileRecord parentDirectoryRecord = m_volume.GetFileRecord(parentDirectoryName);
             if (parentDirectoryRecord != null)
             {
-                FileRecord fileRecord = m_volume.CreateFile(parentDirectoryRecord.BaseRecordSegmentReference, fileName, false);
+                FileRecord fileRecord = m_volume.CreateFile(parentDirectoryRecord.BaseSegmentReference, fileName, false);
                 return ToFileSystemEntry(path, fileRecord);
             }
             else
@@ -64,7 +64,7 @@ namespace DiskAccessLibrary.FileSystems.NTFS
             FileRecord parentDirectoryRecord = m_volume.GetFileRecord(parentDirectoryName);
             if (parentDirectoryRecord != null)
             {
-                FileRecord directoryRecord = m_volume.CreateFile(parentDirectoryRecord.BaseRecordSegmentReference, directoryName, true);
+                FileRecord directoryRecord = m_volume.CreateFile(parentDirectoryRecord.BaseSegmentReference, directoryName, true);
                 return ToFileSystemEntry(path, directoryRecord);
             }
             else
@@ -104,7 +104,7 @@ namespace DiskAccessLibrary.FileSystems.NTFS
             FileRecord directoryRecord = m_volume.GetFileRecord(path);
             if (directoryRecord != null && directoryRecord.IsDirectory)
             {
-                KeyValuePairList<MftSegmentReference, FileNameRecord> records = m_volume.GetFileNameRecordsInDirectory(directoryRecord.BaseRecordSegmentReference);
+                KeyValuePairList<MftSegmentReference, FileNameRecord> records = m_volume.GetFileNameRecordsInDirectory(directoryRecord.BaseSegmentReference);
                 List<FileSystemEntry> result = new List<FileSystemEntry>();
 
                 path = FileSystem.GetDirectoryPath(path);

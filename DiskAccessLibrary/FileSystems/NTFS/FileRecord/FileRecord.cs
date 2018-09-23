@@ -52,11 +52,10 @@ namespace DiskAccessLibrary.FileSystems.NTFS
 
             if (segmentLength <= bytesPerFileRecordSegment)
             {
-                // a single record segment is needed
-                FileRecordSegment baseRecordSegment = m_segments[0];
+                // A single record segment is needed
                 foreach (AttributeRecord attribute in attributes)
                 {
-                    baseRecordSegment.ImmediateAttributes.Add(attribute);
+                    m_segments[0].ImmediateAttributes.Add(attribute);
                 }
 
                 // free the rest of the segments, if there are any
@@ -153,6 +152,38 @@ namespace DiskAccessLibrary.FileSystems.NTFS
             get
             {
                 return m_segments;
+            }
+        }
+
+        public FileRecordSegment BaseSegment
+        {
+            get
+            {
+                return m_segments[0];
+            }
+        }
+
+        public long BaseSegmentNumber
+        {
+            get
+            {
+                return m_segments[0].SegmentNumber;
+            }
+        }
+
+        public ushort BaseSequenceNumber
+        {
+            get
+            {
+                return m_segments[0].SequenceNumber;
+            }
+        }
+
+        public MftSegmentReference BaseSegmentReference
+        {
+            get
+            {
+                return new MftSegmentReference(BaseSegmentNumber, BaseSequenceNumber);
             }
         }
 
@@ -296,30 +327,6 @@ namespace DiskAccessLibrary.FileSystems.NTFS
             }
         }
 
-        public long BaseRecordSegmentNumber
-        {
-            get
-            {
-                return m_segments[0].SegmentNumber;
-            }
-        }
-
-        public ushort BaseRecordSequenceNumber
-        {
-            get
-            {
-                return m_segments[0].SequenceNumber;
-            }
-        }
-
-        public MftSegmentReference BaseRecordSegmentReference
-        {
-            get
-            {
-                return new MftSegmentReference(BaseRecordSegmentNumber, BaseRecordSequenceNumber);
-            }
-        }
-
         public bool IsInUse
         {
             get
@@ -353,7 +360,7 @@ namespace DiskAccessLibrary.FileSystems.NTFS
         {
             get
             {
-                return (this.BaseRecordSegmentNumber < MasterFileTable.FirstUserSegmentNumber);
+                return (this.BaseSegmentNumber < MasterFileTable.FirstUserSegmentNumber);
             }
         }
     }

@@ -177,7 +177,7 @@ namespace DiskAccessLibrary.FileSystems.NTFS
             FileRecord result = GetFileRecord(fileFeference.SegmentNumber);
             if (result != null)
             {
-                if (result.BaseRecordSequenceNumber != fileFeference.SequenceNumber)
+                if (result.BaseSequenceNumber != fileFeference.SequenceNumber)
                 {
                     // The file record segment has been freed and reallocated, and an obsolete version is being requested
                     return null;

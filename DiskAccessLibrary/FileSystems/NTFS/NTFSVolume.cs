@@ -146,7 +146,7 @@ namespace DiskAccessLibrary.FileSystems.NTFS
             // Update parent directory index
             foreach (FileNameRecord fileNameRecord in fileNameRecords)
             {
-                parentDirectoryIndex.AddEntry(fileRecord.BaseRecordSegmentReference, fileNameRecord.GetBytes());
+                parentDirectoryIndex.AddEntry(fileRecord.BaseSegmentReference, fileNameRecord.GetBytes());
             }
 
             return fileRecord;
