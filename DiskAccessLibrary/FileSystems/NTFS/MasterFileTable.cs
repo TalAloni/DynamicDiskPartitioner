@@ -188,13 +188,13 @@ namespace DiskAccessLibrary.FileSystems.NTFS
 
         public FileRecord GetFileRecord(long baseSegmentNumber)
         {
-            FileRecordSegment baseRecordSegment = GetFileRecordSegment(baseSegmentNumber);
-            if (baseRecordSegment != null && baseRecordSegment.IsBaseFileRecord)
+            FileRecordSegment baseSegment = GetFileRecordSegment(baseSegmentNumber);
+            if (baseSegment != null && baseSegment.IsBaseFileRecord)
             {
-                AttributeRecord attributeListRecord = baseRecordSegment.GetImmediateAttributeRecord(AttributeType.AttributeList, String.Empty);
+                AttributeRecord attributeListRecord = baseSegment.GetImmediateAttributeRecord(AttributeType.AttributeList, String.Empty);
                 if (attributeListRecord == null)
                 {
-                    return new FileRecord(baseRecordSegment);
+                    return new FileRecord(baseSegment);
                 }
                 else
                 {
@@ -212,7 +212,7 @@ namespace DiskAccessLibrary.FileSystems.NTFS
 
                     List<FileRecordSegment> recordSegments = new List<FileRecordSegment>();
                     // we want the base record segment first
-                    recordSegments.Add(baseRecordSegment);
+                    recordSegments.Add(baseSegment);
 
                     foreach (MftSegmentReference reference in references)
                     {
@@ -255,7 +255,7 @@ namespace DiskAccessLibrary.FileSystems.NTFS
         {
             AttributeRecord oldAttributeList = fileRecord.Segments[0].GetImmediateAttributeRecord(AttributeType.AttributeList, String.Empty);
             fileRecord.UpdateSegments(m_volume.BytesPerFileRecordSegment, m_volume.MinorVersion);
-            FileRecordSegment baseRecordSegment = fileRecord.Segments[0];
+            FileRecordSegment baseSegment = fileRecord.Segments[0];
             for(int segmentIndex = 1; segmentIndex < fileRecord.Segments.Count; segmentIndex++)
             {
                 FileRecordSegment segment = fileRecord.Segments[segmentIndex];
@@ -263,7 +263,7 @@ namespace DiskAccessLibrary.FileSystems.NTFS
                 {
                     // New segment, we must allocate space for it
                     MftSegmentReference segmentReference = AllocateFileRecordSegment();
-                    FileRecordSegment newSegment = new FileRecordSegment(segmentReference.SegmentNumber, segmentReference.SequenceNumber, baseRecordSegment.SegmentReference);
+                    FileRecordSegment newSegment = new FileRecordSegment(segmentReference.SegmentNumber, segmentReference.SequenceNumber, baseSegment.SegmentReference);
                     newSegment.IsInUse = true;
                     newSegment.IsDirectory = fileRecord.IsDirectory;
                     newSegment.NextAttributeInstance = segment.NextAttributeInstance;
@@ -294,14 +294,14 @@ namespace DiskAccessLibrary.FileSystems.NTFS
                 List<AttributeListEntry> entries = FileRecordHelper.BuildAttributeList(fileRecord.Segments, m_volume.BytesPerFileRecordSegment, m_volume.MinorVersion);
                 int dataLength = AttributeList.GetLength(entries);
                 int attributeListRecordLength = ResidentAttributeRecord.GetRecordLength(0, dataLength);
-                int numberOfBytesFreeInBaseRecordSegment = baseRecordSegment.GetNumberOfBytesFree(m_volume.BytesPerFileRecordSegment, m_volume.MinorVersion);
-                bool isResident = (attributeListRecordLength <= numberOfBytesFreeInBaseRecordSegment);
-                AttributeRecord attributeListRecord = baseRecordSegment.CreateAttributeListRecord(isResident);
+                int numberOfBytesFreeInBaseSegment = baseSegment.GetNumberOfBytesFree(m_volume.BytesPerFileRecordSegment, m_volume.MinorVersion);
+                bool isResident = (attributeListRecordLength <= numberOfBytesFreeInBaseSegment);
+                AttributeRecord attributeListRecord = baseSegment.CreateAttributeListRecord(isResident);
                 AttributeList attributeList = new AttributeList(m_volume, attributeListRecord);
                 attributeList.WriteEntries(entries);
 
-                FileRecordHelper.InsertSorted(baseRecordSegment.ImmediateAttributes, attributeListRecord);
-                UpdateFileRecordSegment(baseRecordSegment);
+                FileRecordHelper.InsertSorted(baseSegment.ImmediateAttributes, attributeListRecord);
+                UpdateFileRecordSegment(baseSegment);
             }
         }
 
