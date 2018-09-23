@@ -94,12 +94,25 @@ namespace DiskAccessLibrary.FileSystems.NTFS
 
         public void ExtendBitmap(long numberOfBits)
         {
+            ExtendBitmap(numberOfBits, false);
+        }
+
+        /// <param name="prewriteBytes">True to zero out the extension in advance, False to rely on ValidDataLength</param>
+        internal void ExtendBitmap(long numberOfBits, bool prewriteBytes)
+        {
             long numberOfUnusedBits = (long)(this.Length * 8 - (ulong)m_numberOfUsableBits);
             if (numberOfBits > numberOfUnusedBits)
             {
                 long additionalBits = numberOfBits - numberOfUnusedBits;
                 ulong additionalBytes = (ulong)Math.Ceiling((double)additionalBits / (ExtendGranularity * 8)) * ExtendGranularity;
-                this.Extend(additionalBytes);
+                if (prewriteBytes)
+                {
+                    this.WriteBytes(this.Length, new byte[additionalBytes]);
+                }
+                else
+                {
+                    this.Extend(additionalBytes);
+                }
             }
             m_numberOfUsableBits += numberOfBits;
         }

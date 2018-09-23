@@ -414,10 +414,10 @@ namespace DiskAccessLibrary.FileSystems.NTFS
             }
 
             // We have to extend the bitmap first because one of the constructor parameters is the size of the data
-            if (additionalBitmapLength > 0)
-            {
-                m_mftFile.Bitmap.ExtendBitmap(ExtendGranularity);
-            }
+            // MFT Bitmap: ValidDataLength could be smaller than FileSize, however, we will later copy the value of ValidDataLength
+            // to the MFT mirror, we have to make sure that the copy will not become stale after writing beyond the current ValidDataLength.
+            m_mftFile.Bitmap.ExtendBitmap(ExtendGranularity, true);
+
             // MFT Data: ValidDataLength must be equal to FileSize
             ulong currentDataLength = m_mftFile.Data.Length;
             m_mftFile.WriteData(currentDataLength, new byte[additionalDataLength]);
