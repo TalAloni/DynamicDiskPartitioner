@@ -252,6 +252,9 @@ namespace DiskAccessLibrary.FileSystems.NTFS
             return slice;
         }
 
+        /// <remarks>
+        /// An attribute list MUST be sorted by AttributeType with a secondary sort by AttributeName.
+        /// </remarks>
         public static List<AttributeListEntry> BuildAttributeList(List<FileRecordSegment> segments, int bytesPerFileRecordSegment, ushort minorNTFSVersion)
         {
             int bytesAvailableInSegment = FileRecordSegment.GetNumberOfBytesAvailable(bytesPerFileRecordSegment, minorNTFSVersion);
@@ -276,6 +279,9 @@ namespace DiskAccessLibrary.FileSystems.NTFS
             return result;
         }
 
+        /// <remarks>
+        /// FileRecordSegment attributes MUST be sorted by AttributeType with a secondary sort by Name.
+        /// </remarks>
         public static void InsertSorted(List<AttributeRecord> attributes, AttributeRecord attribute)
         {
             int insertIndex = SortedList<AttributeRecord>.FindIndexForSortedInsert(attributes, CompareAttributeTypes, attribute);
@@ -284,7 +290,12 @@ namespace DiskAccessLibrary.FileSystems.NTFS
 
         private static int CompareAttributeTypes(AttributeRecord attribute1, AttributeRecord attribute2)
         {
-            return attribute1.AttributeType.CompareTo(attribute2.AttributeType);
+            int result = attribute1.AttributeType.CompareTo(attribute2.AttributeType);
+            if (result == 0)
+            {
+                result = String.Compare(attribute1.Name, attribute2.Name, StringComparison.OrdinalIgnoreCase);
+            }
+            return result;
         }
     }
 }
