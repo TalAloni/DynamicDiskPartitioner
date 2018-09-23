@@ -14,7 +14,8 @@ namespace DiskAccessLibrary.FileSystems.NTFS
 {
     public class MasterFileTable
     {
-        internal const int LastReservedMftSegmentNumber = 15; // 12-15 are reserved for additional metafiles
+        internal const int FirstReservedSegmentNumber = 16; // 16-23 are reserved for additional FileRecordSegments for the MFT record
+        internal const int FirstUserSegmentNumber = 24;
         private const int ExtendGranularity = 16; // The number of records added to the MFT when extending it, MUST be multiple of 8
 
         private const long MasterFileTableSegmentNumber = 0;
@@ -308,7 +309,7 @@ namespace DiskAccessLibrary.FileSystems.NTFS
         {
             long segmentNumber = recordSegment.SegmentNumber;
             long firstSectorIndex = segmentNumber * m_volume.SectorsPerFileRecordSegment;
-            if (segmentNumber > LastReservedMftSegmentNumber)
+            if (segmentNumber >= FirstReservedSegmentNumber)
             {
                 recordSegment.UpdateSequenceNumber++;
             }
@@ -374,7 +375,7 @@ namespace DiskAccessLibrary.FileSystems.NTFS
             {
                 throw new InvalidDataException("Invalid MFT Record, missing Bitmap attribute");
             }
-            long mftBitmapSearchStartIndex = MasterFileTable.LastReservedMftSegmentNumber + 1;
+            long mftBitmapSearchStartIndex = MasterFileTable.FirstUserSegmentNumber;
             long? segmentNumber = bitmap.AllocateRecord(mftBitmapSearchStartIndex);
             if (!segmentNumber.HasValue)
             {

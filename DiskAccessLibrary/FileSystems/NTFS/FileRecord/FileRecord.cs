@@ -353,7 +353,7 @@ namespace DiskAccessLibrary.FileSystems.NTFS
         {
             get
             {
-                return (this.BaseRecordSegmentNumber <= MasterFileTable.LastReservedMftSegmentNumber);
+                return (this.BaseRecordSegmentNumber < MasterFileTable.FirstUserSegmentNumber);
             }
         }
     }

@@ -113,7 +113,7 @@ namespace DiskAccessLibrary.FileSystems.NTFS
 
                 for (int index = 0; index < result.Count; index++)
                 {
-                    bool isMetaFile = (result[index].Key.SegmentNumber <= MasterFileTable.LastReservedMftSegmentNumber);
+                    bool isMetaFile = (result[index].Key.SegmentNumber < MasterFileTable.FirstUserSegmentNumber);
                     if ((fileNameNamespace.HasValue && !result[index].Value.IsInNamespace(fileNameNamespace.Value)) || isMetaFile)
                     {
                         // The same FileRecord can have multiple FileNameRecord entries, each with its own namespace
