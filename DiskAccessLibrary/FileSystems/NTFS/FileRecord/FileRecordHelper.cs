@@ -122,12 +122,24 @@ namespace DiskAccessLibrary.FileSystems.NTFS
             int bytesAvailableInSegment = FileRecordSegment.GetNumberOfBytesAvailable(bytesPerFileRecordSegment, minorNTFSVersion);
             LinkedList<KeyValuePair<AttributeRecord, bool>> remainingAttributes = new LinkedList<KeyValuePair<AttributeRecord, bool>>();
             FileRecordSegment baseFileRecordSegment = segments[0];
+            long segmentNumber = baseFileRecordSegment.SegmentNumber;
+            bool isMftFileRecord = (segmentNumber == MasterFileTable.MasterFileTableSegmentNumber || segmentNumber == MasterFileTable.MftMirrorSegmentNumber);
             foreach (AttributeRecord attribute in attributes)
             {
                 if (attribute.AttributeType == AttributeType.StandardInformation ||
                     attribute.AttributeType == AttributeType.FileName)
                 {
                     baseFileRecordSegment.ImmediateAttributes.Add(attribute);
+                }
+                else if (isMftFileRecord && attribute.AttributeType == AttributeType.Data)
+                {
+                    List<NonResidentAttributeRecord> slices = SliceAttributeRecord((NonResidentAttributeRecord)attribute, bytesPerFileRecordSegment / 2, bytesPerFileRecordSegment);
+                    baseFileRecordSegment.ImmediateAttributes.Add(slices[0]);
+                    slices.RemoveAt(0);
+                    foreach (NonResidentAttributeRecord slice in slices)
+                    {
+                        remainingAttributes.AddLast(new KeyValuePair<AttributeRecord, bool>(slice, true));
+                    }
                 }
                 else
                 {

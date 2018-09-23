@@ -18,8 +18,8 @@ namespace DiskAccessLibrary.FileSystems.NTFS
         internal const int FirstUserSegmentNumber = 24;
         private const int ExtendGranularity = 16; // The number of records added to the MFT when extending it, MUST be multiple of 8
 
-        private const long MasterFileTableSegmentNumber = 0;
-        private const long MftMirrorSegmentNumber = 1;
+        internal const long MasterFileTableSegmentNumber = 0;
+        internal const long MftMirrorSegmentNumber = 1;
         private const long LogFileSegmentNumber = 2;
         private const long VolumeSegmentNumber = 3;
         private const long AttrDefSegmentNumber = 4;
