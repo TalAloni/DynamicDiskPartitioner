@@ -189,6 +189,18 @@ namespace DiskAccessLibrary.FileSystems.NTFS
             return null;
         }
 
+        public void RemoveAttributeRecord(AttributeType type, string name)
+        {
+            for (int index = 0; index < m_immediateAttributes.Count; index++)
+            {
+                if (m_immediateAttributes[index].AttributeType == type && m_immediateAttributes[index].Name == name)
+                {
+                    m_immediateAttributes.RemoveAt(index);
+                    break;
+                }
+            }
+        }
+
         public int GetNumberOfBytesFree(int bytesPerFileRecordSegment, ushort minorNTFSVersion)
         {
             int firstAttributeOffset = FileRecordSegment.GetFirstAttributeOffset(bytesPerFileRecordSegment, minorNTFSVersion);
