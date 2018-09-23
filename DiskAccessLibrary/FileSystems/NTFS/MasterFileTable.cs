@@ -262,7 +262,15 @@ namespace DiskAccessLibrary.FileSystems.NTFS
                 if (segment.SegmentReference == MftSegmentReference.NullReference)
                 {
                     // New segment, we must allocate space for it
-                    MftSegmentReference segmentReference = AllocateFileRecordSegment();
+                    MftSegmentReference segmentReference;
+                    if (baseSegment.SegmentNumber == MasterFileTable.MasterFileTableSegmentNumber)
+                    {
+                        segmentReference = AllocateReservedFileRecordSegment();
+                    }
+                    else
+                    {
+                        segmentReference = AllocateFileRecordSegment();
+                    }
                     FileRecordSegment newSegment = new FileRecordSegment(segmentReference.SegmentNumber, segmentReference.SequenceNumber, baseSegment.SegmentReference);
                     newSegment.IsInUse = true;
                     newSegment.IsDirectory = fileRecord.IsDirectory;
@@ -444,14 +452,13 @@ namespace DiskAccessLibrary.FileSystems.NTFS
 
             // Update the MFT mirror
             MasterFileTable mftMirror = new MasterFileTable(m_volume, false, true);
-            FileRecord mftRecordFromMirror = mftMirror.GetFileRecord(MasterFileTableSegmentNumber);
-            mftRecordFromMirror.RemoveAttributeRecord(AttributeType.Data, String.Empty);
-            mftRecordFromMirror.RemoveAttributeRecord(AttributeType.Bitmap, String.Empty);
-            mftRecordFromMirror.Attributes.Add(m_mftFile.Data.AttributeRecord);
-            mftRecordFromMirror.Attributes.Add(m_mftFile.Bitmap.AttributeRecord);
-            mftRecordFromMirror.FileNameRecord.AllocatedLength = m_mftFile.Data.AllocatedLength;
-            mftRecordFromMirror.FileNameRecord.FileSize = m_mftFile.Data.Length;
-            mftMirror.UpdateFileRecord(mftRecordFromMirror);
+            // When the MFT has an attribute list, CHKDSK expects the mirror to contain the segment references from the MFT as-is.
+            FileRecordSegment mftRecordSegmentFromMirror = mftMirror.GetFileRecordSegment(MasterFileTableSegmentNumber);
+            mftRecordSegmentFromMirror.ImmediateAttributes.Clear();
+            mftRecordSegmentFromMirror.ImmediateAttributes.AddRange(m_mftFile.FileRecord.BaseSegment.ImmediateAttributes);
+            // CHKDSK seems to expect the mirror's NextAttributeInstance to be the same as the MFT.
+            mftRecordSegmentFromMirror.NextAttributeInstance = m_mftFile.FileRecord.BaseSegment.NextAttributeInstance;
+            mftMirror.UpdateFileRecordSegment(mftRecordSegmentFromMirror);
         }
 
         // In NTFS v3.1 the FileRecord's self reference SegmentNumber is 32 bits,
