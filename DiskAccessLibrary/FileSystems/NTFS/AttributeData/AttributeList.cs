@@ -12,9 +12,9 @@ using Utilities;
 namespace DiskAccessLibrary.FileSystems.NTFS
 {
     /// <remarks>
-    /// 1. A file can only have one attribute list and the $ATTRIBUTE_LIST record must reside in the base record segment
-    /// 2. AttributeList data is not necessarily resident.
-    /// 3. AttributeList can point to both resident and non-resident records.
+    /// 1. A file can only have one attribute list and the $ATTRIBUTE_LIST record must reside in the base record segment.
+    /// 2. The attribute list's data is not necessarily resident.
+    /// 3. An attribute list can point to both resident and non-resident attributes.
     /// </remarks>
     /// http://blogs.technet.com/b/askcore/archive/2009/10/16/the-four-stages-of-ntfs-file-growth.aspx
     public class AttributeList : AttributeData
