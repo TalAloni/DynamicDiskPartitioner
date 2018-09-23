@@ -98,7 +98,7 @@ namespace DiskAccessLibrary.FileSystems.NTFS
             if (numberOfBits > numberOfUnusedBits)
             {
                 long additionalBits = numberOfBits - numberOfUnusedBits;
-                ulong additionalBytes = (ulong)Math.Ceiling((double)additionalBits / (ExtendGranularity * 8)) * 8;
+                ulong additionalBytes = (ulong)Math.Ceiling((double)additionalBits / (ExtendGranularity * 8)) * ExtendGranularity;
                 this.Extend(additionalBytes);
             }
             m_numberOfUsableBits += numberOfBits;
@@ -107,7 +107,7 @@ namespace DiskAccessLibrary.FileSystems.NTFS
         public void TruncateBitmap(long newLengthInBits)
         {
             m_numberOfUsableBits = newLengthInBits;
-            ulong newLengthInBytes = (ulong)Math.Ceiling((double)newLengthInBits / (ExtendGranularity * 8)) * 8;
+            ulong newLengthInBytes = (ulong)Math.Ceiling((double)newLengthInBits / (ExtendGranularity * 8)) * ExtendGranularity;
             this.Truncate(newLengthInBytes);
         }
 
