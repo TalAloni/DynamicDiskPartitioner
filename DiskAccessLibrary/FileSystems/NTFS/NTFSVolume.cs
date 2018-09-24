@@ -98,12 +98,12 @@ namespace DiskAccessLibrary.FileSystems.NTFS
             return null;
         }
 
-        public KeyValuePairList<MftSegmentReference, FileNameRecord> GetFileNameRecordsInDirectory(MftSegmentReference directoryReference)
+        public virtual KeyValuePairList<MftSegmentReference, FileNameRecord> GetFileNameRecordsInDirectory(MftSegmentReference directoryReference)
         {
             return GetFileNameRecordsInDirectory(directoryReference, FileNameFlags.Win32);
         }
 
-        public KeyValuePairList<MftSegmentReference, FileNameRecord> GetFileNameRecordsInDirectory(MftSegmentReference directoryReference, FileNameFlags? fileNameNamespace)
+        public virtual KeyValuePairList<MftSegmentReference, FileNameRecord> GetFileNameRecordsInDirectory(MftSegmentReference directoryReference, FileNameFlags? fileNameNamespace)
         {
             FileRecord directoryRecord = m_mft.GetFileRecord(directoryReference);
             KeyValuePairList<MftSegmentReference, FileNameRecord> result = null;
@@ -126,7 +126,7 @@ namespace DiskAccessLibrary.FileSystems.NTFS
             return result;
         }
 
-        public FileRecord CreateFile(MftSegmentReference parentDirectory, string fileName, bool isDirectory)
+        public virtual FileRecord CreateFile(MftSegmentReference parentDirectory, string fileName, bool isDirectory)
         {
             // Worst case scenrario: the MFT might be full and the parent directory index requires multiple splits
             if (NumberOfFreeClusters < 24)
@@ -153,7 +153,7 @@ namespace DiskAccessLibrary.FileSystems.NTFS
             return fileRecord;
         }
 
-        public void MoveFile(FileRecord fileRecord, MftSegmentReference newParentDirectory, string newFileName)
+        public virtual void MoveFile(FileRecord fileRecord, MftSegmentReference newParentDirectory, string newFileName)
         {
             // Worst case scenrario: the new parent directory index requires multiple splits
             if (NumberOfFreeClusters < 4)
@@ -208,7 +208,7 @@ namespace DiskAccessLibrary.FileSystems.NTFS
             }
         }
 
-        public void DeleteFile(FileRecord fileRecord)
+        public virtual void DeleteFile(FileRecord fileRecord)
         {
             MftSegmentReference parentDirectory = fileRecord.ParentDirectoryReference;
             FileRecord parentDirectoryRecord = m_mft.GetFileRecord(parentDirectory);
@@ -235,12 +235,12 @@ namespace DiskAccessLibrary.FileSystems.NTFS
         }
 
         // logical cluster
-        public byte[] ReadCluster(long clusterLCN)
+        protected internal byte[] ReadCluster(long clusterLCN)
         {
             return ReadClusters(clusterLCN, 1);
         }
 
-        public byte[] ReadClusters(long clusterLCN, int count)
+        protected internal byte[] ReadClusters(long clusterLCN, int count)
         {
             long firstSectorIndex = clusterLCN * m_bootRecord.SectorsPerCluster;
             int sectorsToRead = m_bootRecord.SectorsPerCluster * count;
@@ -250,18 +250,18 @@ namespace DiskAccessLibrary.FileSystems.NTFS
             return result;
         }
 
-        public void WriteClusters(long clusterLCN, byte[] data)
+        protected internal void WriteClusters(long clusterLCN, byte[] data)
         {
             long firstSectorIndex = clusterLCN * m_bootRecord.SectorsPerCluster;
             m_volume.WriteSectors(firstSectorIndex, data);
         }
 
-        public byte[] ReadSectors(long sectorIndex, int sectorCount)
+        protected internal byte[] ReadSectors(long sectorIndex, int sectorCount)
         {
             return m_volume.ReadSectors(sectorIndex, sectorCount);
         }
 
-        public void WriteSectors(long sectorIndex, byte[] data)
+        protected internal void WriteSectors(long sectorIndex, byte[] data)
         {
             m_volume.WriteSectors(sectorIndex, data);
         }
@@ -348,6 +348,21 @@ namespace DiskAccessLibrary.FileSystems.NTFS
                 builder.AppendLine("Free space: " + this.FreeSpace);
             }
             return builder.ToString();
+        }
+
+        internal KeyValuePairList<long, long> AllocateClusters(long numberOfClusters)
+        {
+            return m_bitmap.AllocateClusters(numberOfClusters);
+        }
+
+        internal KeyValuePairList<long, long> AllocateClusters(long desiredStartLCN, long numberOfClusters)
+        {
+            return m_bitmap.AllocateClusters(desiredStartLCN, numberOfClusters);
+        }
+
+        internal void DeallocateClusters(long startLCN, long numberOfClusters)
+        {
+            m_bitmap.DeallocateClusters(startLCN, numberOfClusters);
         }
 
         public bool IsValid
@@ -468,21 +483,6 @@ namespace DiskAccessLibrary.FileSystems.NTFS
             {
                 return m_volumeInformation.MinorVersion;
             }
-        }
-
-        internal KeyValuePairList<long, long> AllocateClusters(long numberOfClusters)
-        {
-            return m_bitmap.AllocateClusters(numberOfClusters);
-        }
-
-        internal KeyValuePairList<long, long> AllocateClusters(long desiredStartLCN, long numberOfClusters)
-        {
-            return m_bitmap.AllocateClusters(desiredStartLCN, numberOfClusters);
-        }
-
-        internal void DeallocateClusters(long startLCN, long numberOfClusters)
-        {
-            m_bitmap.DeallocateClusters(startLCN, numberOfClusters);
         }
     }
 }
