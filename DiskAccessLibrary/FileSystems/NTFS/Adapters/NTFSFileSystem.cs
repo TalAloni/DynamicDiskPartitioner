@@ -139,26 +139,61 @@ namespace DiskAccessLibrary.FileSystems.NTFS
 
         public override Stream OpenFile(string path, FileMode mode, FileAccess access, FileShare share, FileOptions options)
         {
-            if (mode == FileMode.Open || mode == FileMode.Truncate)
+            FileRecord record;
+            if (mode == FileMode.CreateNew)
             {
-                FileRecord record = m_volume.GetFileRecord(path);
-                if (record != null && !record.IsDirectory)
+                record = m_volume.GetFileRecord(path);
+                if (record != null)
                 {
-                    NTFSFile file = new NTFSFile(m_volume, record);
-                    NTFSFileStream stream = new NTFSFileStream(file);
-
-                    if (mode == FileMode.Truncate)
-                    {
-                        stream.SetLength(0);
-                    }
-                    return stream;
+                    throw new AlreadyExistsException();
                 }
-                else
+            }
+
+            if (mode == FileMode.CreateNew || mode == FileMode.Create || mode == FileMode.OpenOrCreate)
+            {
+                record = m_volume.GetFileRecord(path);
+                if (record == null)
+                {
+                    string directoryPath = Path.GetDirectoryName(path);
+                    string fileName = Path.GetFileName(path);
+                    FileRecord directoryRecord = m_volume.GetFileRecord(directoryPath);
+                    if (directoryRecord == null)
+                    {
+                        throw new DirectoryNotFoundException();
+                    }
+                    record = m_volume.CreateFile(directoryRecord.BaseSegmentReference, fileName, false);
+                }
+                else if (mode == FileMode.Create)
+                {
+                    mode = FileMode.Truncate;
+                }
+            }
+            else // Open, Truncate or Append
+            {
+                record = m_volume.GetFileRecord(path);
+                if (record == null)
                 {
                     throw new FileNotFoundException();
                 }
             }
-            throw new NotImplementedException("The method or operation is not implemented.");
+
+            if (record.IsDirectory)
+            {
+                throw new UnauthorizedAccessException();
+            }
+
+            NTFSFile file = new NTFSFile(m_volume, record);
+            NTFSFileStream stream = new NTFSFileStream(file);
+
+            if (mode == FileMode.Truncate)
+            {
+                stream.SetLength(0);
+            }
+            else if (mode == FileMode.Append)
+            {
+                stream.Seek((long)file.Length, SeekOrigin.Begin);
+            }
+            return stream;
         }
 
         public override void SetAttributes(string path, bool? isHidden, bool? isReadonly, bool? isArchived)
