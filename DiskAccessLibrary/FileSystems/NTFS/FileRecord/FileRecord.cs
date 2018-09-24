@@ -116,6 +116,18 @@ namespace DiskAccessLibrary.FileSystems.NTFS
             }
         }
 
+        public void RemoveAttributeRecords(AttributeType attributeType, string name)
+        {
+            for (int index = 0; index < Attributes.Count; index++)
+            {
+                if (Attributes[index].AttributeType == attributeType && Attributes[index].Name == name)
+                {
+                    Attributes.RemoveAt(index);
+                    index--;
+                }
+            }
+        }
+
         private List<FileNameRecord> GetFileNameRecords()
         {
             List<FileNameRecord> result = new List<FileNameRecord>();
