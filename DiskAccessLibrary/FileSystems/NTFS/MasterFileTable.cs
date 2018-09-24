@@ -12,7 +12,7 @@ using Utilities;
 
 namespace DiskAccessLibrary.FileSystems.NTFS
 {
-    public class MasterFileTable
+    internal class MasterFileTable
     {
         internal const int FirstReservedSegmentNumber = 16; // 16-23 are reserved for additional FileRecordSegments for the MFT record
         internal const int FirstUserSegmentNumber = 24;

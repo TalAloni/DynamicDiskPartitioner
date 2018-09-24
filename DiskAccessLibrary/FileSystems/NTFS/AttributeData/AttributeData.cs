@@ -186,7 +186,7 @@ namespace DiskAccessLibrary.FileSystems.NTFS
                 ByteWriter.WriteBytes(recordData, offset, data, bytesToWrite);
                 if (m_fileRecord != null)
                 {
-                    m_volume.MasterFileTable.UpdateFileRecord(m_fileRecord);
+                    m_volume.UpdateFileRecord(m_fileRecord);
                 }
             }
         }
@@ -204,7 +204,7 @@ namespace DiskAccessLibrary.FileSystems.NTFS
                 byte[] data = ((ResidentAttributeRecord)m_attributeRecord).Data;
                 ulong finalDataLength = (uint)data.Length + additionalLengthInBytes;
                 ulong finalRecordLength = (uint)m_attributeRecord.RecordLength + additionalLengthInBytes;
-                if (finalRecordLength >= (ulong)m_volume.MasterFileTable.AttributeRecordLengthToMakeNonResident &&
+                if (finalRecordLength >= (ulong)m_volume.AttributeRecordLengthToMakeNonResident &&
                     m_attributeRecord.AttributeType != AttributeType.AttributeList) // We will create an attribute list with the right attribute form in advance.
                 {
                     // Convert the attribute to non-resident
@@ -235,7 +235,7 @@ namespace DiskAccessLibrary.FileSystems.NTFS
 
                 if (m_fileRecord != null)
                 {
-                    m_volume.MasterFileTable.UpdateFileRecord(m_fileRecord);
+                    m_volume.UpdateFileRecord(m_fileRecord);
                 }
             }
         }
@@ -256,7 +256,7 @@ namespace DiskAccessLibrary.FileSystems.NTFS
                 ((ResidentAttributeRecord)m_attributeRecord).Data = temp;
                 if (m_fileRecord != null)
                 {
-                    m_volume.MasterFileTable.UpdateFileRecord(m_fileRecord);
+                    m_volume.UpdateFileRecord(m_fileRecord);
                 }
             }
         }

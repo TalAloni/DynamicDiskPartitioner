@@ -58,7 +58,7 @@ namespace DiskAccessLibrary.FileSystems.NTFS
                 if (index >= 0)
                 {
                     m_rootRecord.IndexEntries[index].Key = key;
-                    m_volume.MasterFileTable.UpdateFileRecord(m_fileRecord);
+                    m_volume.UpdateFileRecord(m_fileRecord);
                     return true;
                 }
             }
@@ -77,7 +77,7 @@ namespace DiskAccessLibrary.FileSystems.NTFS
                         entries[index].Key = key;
                         if (indexRecord == null)
                         {
-                            m_volume.MasterFileTable.UpdateFileRecord(m_fileRecord);
+                            m_volume.UpdateFileRecord(m_fileRecord);
                         }
                         else
                         {
@@ -101,7 +101,7 @@ namespace DiskAccessLibrary.FileSystems.NTFS
                     entries[index].Key = key;
                     if (indexRecord == null)
                     {
-                        m_volume.MasterFileTable.UpdateFileRecord(m_fileRecord);
+                        m_volume.UpdateFileRecord(m_fileRecord);
                     }
                     else
                     {

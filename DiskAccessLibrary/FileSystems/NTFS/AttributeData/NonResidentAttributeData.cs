@@ -173,7 +173,7 @@ namespace DiskAccessLibrary.FileSystems.NTFS
                 m_attributeRecord.ValidDataLength = nextBytePosition;
                 if (m_fileRecord != null)
                 {
-                    m_volume.MasterFileTable.UpdateFileRecord(m_fileRecord);
+                    m_volume.UpdateFileRecord(m_fileRecord);
                 }
             }
         }
@@ -195,7 +195,7 @@ namespace DiskAccessLibrary.FileSystems.NTFS
             m_attributeRecord.FileSize += additionalLengthInBytes;
             if (m_fileRecord != null)
             {
-                m_volume.MasterFileTable.UpdateFileRecord(m_fileRecord);
+                m_volume.UpdateFileRecord(m_fileRecord);
             }
         }
 
@@ -265,7 +265,7 @@ namespace DiskAccessLibrary.FileSystems.NTFS
 
             if (m_fileRecord != null)
             {
-                m_volume.MasterFileTable.UpdateFileRecord(m_fileRecord);
+                m_volume.UpdateFileRecord(m_fileRecord);
             }
         }
 

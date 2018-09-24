@@ -238,7 +238,7 @@ namespace DiskAccessLibrary.FileSystems.NTFS
                 }
 
                 record.StandardInformation.MftModificationTime = DateTime.Now;
-                m_volume.MasterFileTable.UpdateFileRecord(record);
+                m_volume.UpdateFileRecord(record);
             }
         }
 
@@ -267,7 +267,7 @@ namespace DiskAccessLibrary.FileSystems.NTFS
 
                 record.StandardInformation.MftModificationTime = DateTime.Now;
                 record.FileNameRecord.MftModificationTime = DateTime.Now;
-                m_volume.MasterFileTable.UpdateFileRecord(record);
+                m_volume.UpdateFileRecord(record);
             }
         }
 

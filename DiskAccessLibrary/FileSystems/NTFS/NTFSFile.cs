@@ -20,7 +20,7 @@ namespace DiskAccessLibrary.FileSystems.NTFS
         public NTFSFile(NTFSVolume volume, MftSegmentReference fileReference)
         {
             m_volume = volume;
-            m_fileRecord = m_volume.MasterFileTable.GetFileRecord(fileReference);
+            m_fileRecord = m_volume.GetFileRecord(fileReference);
         }
 
         public NTFSFile(NTFSVolume volume, FileRecord fileRecord)
@@ -71,11 +71,11 @@ namespace DiskAccessLibrary.FileSystems.NTFS
                 fileNameRecord.AllocatedLength = this.Data.AllocatedLength;
                 fileNameRecord.FileSize = this.Data.Length;
             }
-            m_volume.MasterFileTable.UpdateFileRecord(m_fileRecord);
+            m_volume.UpdateFileRecord(m_fileRecord);
 
             // Update directory index
             MftSegmentReference parentDirectory = m_fileRecord.ParentDirectoryReference;
-            FileRecord parentDirectoryRecord = m_volume.MasterFileTable.GetFileRecord(parentDirectory);
+            FileRecord parentDirectoryRecord = m_volume.GetFileRecord(parentDirectory);
             IndexData parentDirectoryIndex = new IndexData(m_volume, parentDirectoryRecord, AttributeType.FileName);
             foreach (FileNameRecord fileNameRecord in fileNameRecords)
             {

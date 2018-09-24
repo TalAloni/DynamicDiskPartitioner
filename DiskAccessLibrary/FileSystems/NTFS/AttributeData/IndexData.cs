@@ -110,7 +110,7 @@ namespace DiskAccessLibrary.FileSystems.NTFS
             {
                 int insertIndex = CollationHelper.FindIndexForSortedInsert(m_rootRecord.IndexEntries, key, m_rootRecord.CollationRule);
                 m_rootRecord.IndexEntries.Insert(insertIndex, entry);
-                if (m_rootRecord.RecordLength >= m_volume.MasterFileTable.AttributeRecordLengthToMakeNonResident)
+                if (m_rootRecord.RecordLength >= m_volume.AttributeRecordLengthToMakeNonResident)
                 {
                     if (m_indexAllocationRecord == null)
                     {
@@ -123,7 +123,7 @@ namespace DiskAccessLibrary.FileSystems.NTFS
                 }
                 else
                 {
-                    m_volume.MasterFileTable.UpdateFileRecord(m_fileRecord);
+                    m_volume.UpdateFileRecord(m_fileRecord);
                 }
             }
             else
@@ -183,7 +183,7 @@ namespace DiskAccessLibrary.FileSystems.NTFS
             m_rootRecord.IndexEntries.Clear();
             m_rootRecord.IsParentNode = true;
             m_rootRecord.IndexEntries.Add(rootEntry);
-            m_volume.MasterFileTable.UpdateFileRecord(m_fileRecord);
+            m_volume.UpdateFileRecord(m_fileRecord);
         }
 
         /// <param name="path">Key is index in parent node</param>
@@ -239,13 +239,13 @@ namespace DiskAccessLibrary.FileSystems.NTFS
             else
             {
                 m_rootRecord.IndexEntries.Insert(indexInParentRecord, newParentEntry);
-                if (m_rootRecord.RecordLength >= m_volume.MasterFileTable.AttributeRecordLengthToMakeNonResident)
+                if (m_rootRecord.RecordLength >= m_volume.AttributeRecordLengthToMakeNonResident)
                 {
                     SplitRootIndexRecord();
                 }
                 else
                 {
-                    m_volume.MasterFileTable.UpdateFileRecord(m_fileRecord);
+                    m_volume.UpdateFileRecord(m_fileRecord);
                 }
             }
         }
@@ -287,7 +287,7 @@ namespace DiskAccessLibrary.FileSystems.NTFS
                     }
                 }
             }
-            m_volume.MasterFileTable.UpdateFileRecord(m_fileRecord);
+            m_volume.UpdateFileRecord(m_fileRecord);
         }
 
         public KeyValuePairList<MftSegmentReference, byte[]> GetAllEntries()

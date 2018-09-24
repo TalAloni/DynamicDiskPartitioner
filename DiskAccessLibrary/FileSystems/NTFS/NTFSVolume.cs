@@ -58,14 +58,14 @@ namespace DiskAccessLibrary.FileSystems.NTFS
 
             if (path == String.Empty)
             {
-                return m_mft.GetFileRecord(MasterFileTable.RootDirSegmentReference);
+                return GetFileRecord(MasterFileTable.RootDirSegmentReference);
             }
 
             string[] components = path.Substring(1).Split('\\');
             MftSegmentReference directoryReference = MasterFileTable.RootDirSegmentReference;
             for (int index = 0; index < components.Length; index++)
             {
-                FileRecord directoryRecord = m_mft.GetFileRecord(directoryReference);
+                FileRecord directoryRecord = GetFileRecord(directoryReference);
                 if (index < components.Length - 1)
                 {
                     if (!directoryRecord.IsDirectory)
@@ -87,7 +87,7 @@ namespace DiskAccessLibrary.FileSystems.NTFS
                     {
                         return null;
                     }
-                    FileRecord fileRecord = m_mft.GetFileRecord(fileReference);
+                    FileRecord fileRecord = GetFileRecord(fileReference);
                     if (fileRecord != null && !fileRecord.IsMetaFile)
                     {
                         return fileRecord;
@@ -98,6 +98,11 @@ namespace DiskAccessLibrary.FileSystems.NTFS
             return null;
         }
 
+        protected internal virtual FileRecord GetFileRecord(MftSegmentReference fileReference)
+        {
+            return m_mft.GetFileRecord(fileReference);
+        }
+
         public virtual KeyValuePairList<MftSegmentReference, FileNameRecord> GetFileNameRecordsInDirectory(MftSegmentReference directoryReference)
         {
             return GetFileNameRecordsInDirectory(directoryReference, FileNameFlags.Win32);
@@ -105,7 +110,7 @@ namespace DiskAccessLibrary.FileSystems.NTFS
 
         public virtual KeyValuePairList<MftSegmentReference, FileNameRecord> GetFileNameRecordsInDirectory(MftSegmentReference directoryReference, FileNameFlags? fileNameNamespace)
         {
-            FileRecord directoryRecord = m_mft.GetFileRecord(directoryReference);
+            FileRecord directoryRecord = GetFileRecord(directoryReference);
             KeyValuePairList<MftSegmentReference, FileNameRecord> result = null;
             if (directoryRecord != null && directoryRecord.IsDirectory)
             {
@@ -133,7 +138,7 @@ namespace DiskAccessLibrary.FileSystems.NTFS
             {
                 throw new DiskFullException();
             }
-            FileRecord parentDirectoryRecord = m_mft.GetFileRecord(parentDirectory);
+            FileRecord parentDirectoryRecord = GetFileRecord(parentDirectory);
             IndexData parentDirectoryIndex = new IndexData(this, parentDirectoryRecord, AttributeType.FileName);
 
             if (parentDirectoryIndex.ContainsFileName(fileName))
@@ -153,6 +158,11 @@ namespace DiskAccessLibrary.FileSystems.NTFS
             return fileRecord;
         }
 
+        protected internal virtual void UpdateFileRecord(FileRecord fileRecord)
+        {
+            m_mft.UpdateFileRecord(fileRecord);
+        }
+
         public virtual void MoveFile(FileRecord fileRecord, MftSegmentReference newParentDirectory, string newFileName)
         {
             // Worst case scenrario: the new parent directory index requires multiple splits
@@ -161,7 +171,7 @@ namespace DiskAccessLibrary.FileSystems.NTFS
                 throw new DiskFullException();
             }
 
-            FileRecord oldParentDirectoryRecord = m_mft.GetFileRecord(fileRecord.ParentDirectoryReference);
+            FileRecord oldParentDirectoryRecord = GetFileRecord(fileRecord.ParentDirectoryReference);
             IndexData oldParentDirectoryIndex = new IndexData(this, oldParentDirectoryRecord, AttributeType.FileName);
             IndexData newParentDirectoryIndex;
             if (fileRecord.ParentDirectoryReference == newParentDirectory)
@@ -170,7 +180,7 @@ namespace DiskAccessLibrary.FileSystems.NTFS
             }
             else
             {
-                FileRecord newParentDirectoryRecord = m_mft.GetFileRecord(newParentDirectory);
+                FileRecord newParentDirectoryRecord = GetFileRecord(newParentDirectory);
                 newParentDirectoryIndex = new IndexData(this, newParentDirectoryRecord, AttributeType.FileName);
                 if (newParentDirectoryIndex.ContainsFileName(newFileName))
                 {
@@ -200,7 +210,7 @@ namespace DiskAccessLibrary.FileSystems.NTFS
                 fileNameAttribute.IsIndexed = true;
                 fileNameAttribute.Record = fileNameRecord;
             }
-            m_mft.UpdateFileRecord(fileRecord);
+            UpdateFileRecord(fileRecord);
 
             foreach (FileNameRecord fileNameRecord in fileNameRecords)
             {
@@ -211,7 +221,7 @@ namespace DiskAccessLibrary.FileSystems.NTFS
         public virtual void DeleteFile(FileRecord fileRecord)
         {
             MftSegmentReference parentDirectory = fileRecord.ParentDirectoryReference;
-            FileRecord parentDirectoryRecord = m_mft.GetFileRecord(parentDirectory);
+            FileRecord parentDirectoryRecord = GetFileRecord(parentDirectory);
             IndexData parentDirectoryIndex = new IndexData(this, parentDirectoryRecord, AttributeType.FileName);
 
             // Update parent directory index
@@ -413,14 +423,6 @@ namespace DiskAccessLibrary.FileSystems.NTFS
             }
         }
 
-        public MasterFileTable MasterFileTable
-        {
-            get
-            {
-                return m_mft;
-            }
-        }
-
         public int BytesPerCluster
         {
             get
@@ -482,6 +484,14 @@ namespace DiskAccessLibrary.FileSystems.NTFS
             get
             {
                 return m_volumeInformation.MinorVersion;
+            }
+        }
+
+        internal int AttributeRecordLengthToMakeNonResident
+        {
+            get
+            {
+                return m_mft.AttributeRecordLengthToMakeNonResident;
             }
         }
     }
