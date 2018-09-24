@@ -24,6 +24,7 @@ namespace DiskAccessLibrary.FileSystems.NTFS
         private MasterFileTable m_mft;
         private VolumeBitmap m_bitmap;
         private VolumeInformationRecord m_volumeInformation;
+        private readonly bool m_generateDosNames = false;
 
         public NTFSVolume(Volume volume) : this(volume, false)
         { 
@@ -140,7 +141,7 @@ namespace DiskAccessLibrary.FileSystems.NTFS
                 throw new AlreadyExistsException();
             }
 
-            List<FileNameRecord> fileNameRecords = IndexHelper.GenerateFileNameRecords(parentDirectory, fileName, isDirectory, false, parentDirectoryIndex);
+            List<FileNameRecord> fileNameRecords = IndexHelper.GenerateFileNameRecords(parentDirectory, fileName, isDirectory, m_generateDosNames, parentDirectoryIndex);
             FileRecord fileRecord = m_mft.CreateFile(fileNameRecords);
 
             // Update parent directory index
