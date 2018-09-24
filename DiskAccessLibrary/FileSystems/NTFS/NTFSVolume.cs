@@ -44,7 +44,7 @@ namespace DiskAccessLibrary.FileSystems.NTFS
             }
         }
 
-        public FileRecord GetFileRecord(string path)
+        public virtual FileRecord GetFileRecord(string path)
         {
             if (path != String.Empty && !path.StartsWith(@"\"))
             {
@@ -276,7 +276,7 @@ namespace DiskAccessLibrary.FileSystems.NTFS
             m_volume.WriteSectors(sectorIndex, data);
         }
 
-        public VolumeNameRecord GetVolumeNameRecord()
+        internal VolumeNameRecord GetVolumeNameRecord()
         {
             FileRecord volumeRecord = m_mft.GetVolumeRecord();
             if (volumeRecord != null)
@@ -289,7 +289,7 @@ namespace DiskAccessLibrary.FileSystems.NTFS
             }
         }
 
-        public VolumeInformationRecord GetVolumeInformationRecord()
+        internal VolumeInformationRecord GetVolumeInformationRecord()
         {
             FileRecord volumeRecord = m_mft.GetVolumeRecord();
             if (volumeRecord != null)
@@ -302,7 +302,7 @@ namespace DiskAccessLibrary.FileSystems.NTFS
             }
         }
 
-        public AttributeDefinition GetAttributeDefinition()
+        internal AttributeDefinition GetAttributeDefinition()
         {
             return new AttributeDefinition(this);
         }
@@ -431,7 +431,7 @@ namespace DiskAccessLibrary.FileSystems.NTFS
             }
         }
 
-        public NTFSBootRecord BootRecord
+        internal NTFSBootRecord BootRecord
         {
             get
             {
@@ -439,7 +439,7 @@ namespace DiskAccessLibrary.FileSystems.NTFS
             }
         }
 
-        public int BytesPerCluster
+        internal int BytesPerCluster
         {
             get
             {
@@ -447,7 +447,7 @@ namespace DiskAccessLibrary.FileSystems.NTFS
             }
         }
 
-        public int BytesPerSector
+        internal int BytesPerSector
         {
             get
             {
@@ -455,7 +455,7 @@ namespace DiskAccessLibrary.FileSystems.NTFS
             }
         }
 
-        public int BytesPerFileRecordSegment
+        internal int BytesPerFileRecordSegment
         {
             get
             {
@@ -463,7 +463,7 @@ namespace DiskAccessLibrary.FileSystems.NTFS
             }
         }
 
-        public int BytesPerIndexRecord
+        internal int BytesPerIndexRecord
         {
             get
             {
@@ -471,7 +471,7 @@ namespace DiskAccessLibrary.FileSystems.NTFS
             }
         }
 
-        public int SectorsPerCluster
+        internal int SectorsPerCluster
         {
             get
             {
@@ -479,7 +479,7 @@ namespace DiskAccessLibrary.FileSystems.NTFS
             }
         }
 
-        public int SectorsPerFileRecordSegment
+        internal int SectorsPerFileRecordSegment
         {
             get
             {
