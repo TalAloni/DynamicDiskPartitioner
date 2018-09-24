@@ -218,11 +218,6 @@ namespace DiskAccessLibrary.FileSystems.NTFS
 
         public virtual KeyValuePairList<MftSegmentReference, FileNameRecord> GetFileNameRecordsInDirectory(MftSegmentReference directoryReference)
         {
-            return GetFileNameRecordsInDirectory(directoryReference, FileNameFlags.Win32);
-        }
-
-        public virtual KeyValuePairList<MftSegmentReference, FileNameRecord> GetFileNameRecordsInDirectory(MftSegmentReference directoryReference, FileNameFlags? fileNameNamespace)
-        {
             FileRecord directoryRecord = GetFileRecord(directoryReference);
             KeyValuePairList<MftSegmentReference, FileNameRecord> result = null;
             if (directoryRecord != null && directoryRecord.IsDirectory)
@@ -233,7 +228,7 @@ namespace DiskAccessLibrary.FileSystems.NTFS
                 for (int index = 0; index < result.Count; index++)
                 {
                     bool isMetaFile = (result[index].Key.SegmentNumber < MasterFileTable.FirstUserSegmentNumber);
-                    if ((fileNameNamespace.HasValue && !result[index].Value.IsInNamespace(fileNameNamespace.Value)) || isMetaFile)
+                    if (result[index].Value.Flags == FileNameFlags.DOS || isMetaFile)
                     {
                         // The same FileRecord can have multiple FileNameRecord entries, each with its own namespace
                         result.RemoveAt(index);
