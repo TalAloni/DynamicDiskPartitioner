@@ -133,7 +133,7 @@ namespace DiskAccessLibrary.FileSystems.NTFS
                 }
                 else if (isMftFileRecord && attribute.AttributeType == AttributeType.Data)
                 {
-                    List<NonResidentAttributeRecord> slices = SliceAttributeRecord((NonResidentAttributeRecord)attribute, bytesPerFileRecordSegment / 2, bytesPerFileRecordSegment);
+                    List<NonResidentAttributeRecord> slices = SliceAttributeRecord((NonResidentAttributeRecord)attribute, bytesPerFileRecordSegment / 2, bytesAvailableInSegment);
                     baseFileRecordSegment.ImmediateAttributes.Add(slices[0]);
                     slices.RemoveAt(0);
                     foreach (NonResidentAttributeRecord slice in slices)
