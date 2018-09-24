@@ -75,7 +75,21 @@ namespace DiskAccessLibrary.FileSystems.NTFS
 
         public override void Move(string source, string destination)
         {
-            throw new NotImplementedException("The method or operation is not implemented.");
+            FileRecord sourceFileRecord = m_volume.GetFileRecord(source);
+            if (sourceFileRecord == null)
+            {
+                throw new FileNotFoundException();
+            }
+
+            string destinationDirectory = Path.GetDirectoryName(destination);
+            string destinationFileName = Path.GetFileName(destination);
+            FileRecord destinationDirectoryFileRecord = m_volume.GetFileRecord(destinationDirectory);
+            if (destinationDirectoryFileRecord == null)
+            {
+                throw new DirectoryNotFoundException();
+            }
+
+            m_volume.MoveFile(sourceFileRecord, destinationDirectoryFileRecord.BaseSegmentReference, destinationFileName);
         }
 
         public override void Delete(string path)
