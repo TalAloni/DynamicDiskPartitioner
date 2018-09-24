@@ -246,7 +246,7 @@ namespace DiskAccessLibrary.FileSystems.NTFS
             return GetFileRecord(VolumeSegmentReference);
         }
 
-        public FileRecord GetBitmapRecord()
+        public FileRecord GetVolumeBitmapRecord()
         {
             return GetFileRecord(BitmapSegmentReference);
         }

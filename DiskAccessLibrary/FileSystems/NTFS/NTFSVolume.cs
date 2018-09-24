@@ -329,7 +329,7 @@ namespace DiskAccessLibrary.FileSystems.NTFS
                     builder.AppendLine("Length of $MFT Attributes: " + mftRecord.AttributesLengthOnDisk);
                     builder.AppendLine();
 
-                    FileRecord bitmapRecord = m_mft.GetBitmapRecord();
+                    FileRecord bitmapRecord = m_mft.GetVolumeBitmapRecord();
                     if (bitmapRecord != null)
                     {
                         builder.AppendLine("$Bitmap LCN: " + bitmapRecord.NonResidentDataRecord.DataRunSequence.FirstDataRunLCN);
