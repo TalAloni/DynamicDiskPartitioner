@@ -202,7 +202,7 @@ namespace DiskAccessLibrary.FileSystems.NTFS
             int availableLength = remainingLengthInCurrentSegment;
             while (numberOfRunsFitted < record.DataRunSequence.Count)
             {
-                NonResidentAttributeRecord slice = FitMaxNumberOfRuns(record, numberOfRunsFitted, remainingLengthInCurrentSegment);
+                NonResidentAttributeRecord slice = FitMaxNumberOfRuns(record, numberOfRunsFitted, availableLength);
                 if (slice != null)
                 {
                     result.Add(slice);
