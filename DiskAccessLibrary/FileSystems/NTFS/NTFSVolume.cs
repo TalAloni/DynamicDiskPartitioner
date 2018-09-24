@@ -103,34 +103,6 @@ namespace DiskAccessLibrary.FileSystems.NTFS
             return m_mft.GetFileRecord(fileReference);
         }
 
-        public virtual KeyValuePairList<MftSegmentReference, FileNameRecord> GetFileNameRecordsInDirectory(MftSegmentReference directoryReference)
-        {
-            return GetFileNameRecordsInDirectory(directoryReference, FileNameFlags.Win32);
-        }
-
-        public virtual KeyValuePairList<MftSegmentReference, FileNameRecord> GetFileNameRecordsInDirectory(MftSegmentReference directoryReference, FileNameFlags? fileNameNamespace)
-        {
-            FileRecord directoryRecord = GetFileRecord(directoryReference);
-            KeyValuePairList<MftSegmentReference, FileNameRecord> result = null;
-            if (directoryRecord != null && directoryRecord.IsDirectory)
-            {
-                IndexData indexData = new IndexData(this, directoryRecord, AttributeType.FileName);
-                result = indexData.GetAllFileNameRecords();
-
-                for (int index = 0; index < result.Count; index++)
-                {
-                    bool isMetaFile = (result[index].Key.SegmentNumber < MasterFileTable.FirstUserSegmentNumber);
-                    if ((fileNameNamespace.HasValue && !result[index].Value.IsInNamespace(fileNameNamespace.Value)) || isMetaFile)
-                    {
-                        // The same FileRecord can have multiple FileNameRecord entries, each with its own namespace
-                        result.RemoveAt(index);
-                        index--;
-                    }
-                }
-            }
-            return result;
-        }
-
         public virtual FileRecord CreateFile(MftSegmentReference parentDirectory, string fileName, bool isDirectory)
         {
             // Worst case scenrario: the MFT might be full and the parent directory index requires multiple splits
@@ -242,6 +214,34 @@ namespace DiskAccessLibrary.FileSystems.NTFS
             }
 
             m_mft.DeleteFile(fileRecord);
+        }
+
+        public virtual KeyValuePairList<MftSegmentReference, FileNameRecord> GetFileNameRecordsInDirectory(MftSegmentReference directoryReference)
+        {
+            return GetFileNameRecordsInDirectory(directoryReference, FileNameFlags.Win32);
+        }
+
+        public virtual KeyValuePairList<MftSegmentReference, FileNameRecord> GetFileNameRecordsInDirectory(MftSegmentReference directoryReference, FileNameFlags? fileNameNamespace)
+        {
+            FileRecord directoryRecord = GetFileRecord(directoryReference);
+            KeyValuePairList<MftSegmentReference, FileNameRecord> result = null;
+            if (directoryRecord != null && directoryRecord.IsDirectory)
+            {
+                IndexData indexData = new IndexData(this, directoryRecord, AttributeType.FileName);
+                result = indexData.GetAllFileNameRecords();
+
+                for (int index = 0; index < result.Count; index++)
+                {
+                    bool isMetaFile = (result[index].Key.SegmentNumber < MasterFileTable.FirstUserSegmentNumber);
+                    if ((fileNameNamespace.HasValue && !result[index].Value.IsInNamespace(fileNameNamespace.Value)) || isMetaFile)
+                    {
+                        // The same FileRecord can have multiple FileNameRecord entries, each with its own namespace
+                        result.RemoveAt(index);
+                        index--;
+                    }
+                }
+            }
+            return result;
         }
 
         // logical cluster
@@ -391,6 +391,22 @@ namespace DiskAccessLibrary.FileSystems.NTFS
             }
         }
 
+        public ushort MajorVersion
+        {
+            get
+            {
+                return m_volumeInformation.MajorVersion;
+            }
+        }
+
+        public ushort MinorVersion
+        {
+            get
+            {
+                return m_volumeInformation.MinorVersion;
+            }
+        }
+
         public long Size
         {
             get
@@ -468,22 +484,6 @@ namespace DiskAccessLibrary.FileSystems.NTFS
             get
             {
                 return m_bootRecord.SectorsPerFileRecordSegment;
-            }
-        }
-
-        public ushort MajorVersion
-        {
-            get
-            {
-                return m_volumeInformation.MajorVersion;
-            }
-        }
-
-        public ushort MinorVersion
-        {
-            get
-            {
-                return m_volumeInformation.MinorVersion;
             }
         }
 
