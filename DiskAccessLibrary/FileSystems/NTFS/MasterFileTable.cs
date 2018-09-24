@@ -307,8 +307,6 @@ namespace DiskAccessLibrary.FileSystems.NTFS
                 AttributeRecord attributeListRecord = baseSegment.CreateAttributeListRecord(isResident);
                 AttributeList attributeList = new AttributeList(m_volume, attributeListRecord);
                 attributeList.WriteEntries(entries);
-
-                FileRecordHelper.InsertSorted(baseSegment.ImmediateAttributes, attributeListRecord);
                 UpdateFileRecordSegment(baseSegment);
             }
         }

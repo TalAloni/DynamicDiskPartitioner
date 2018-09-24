@@ -173,6 +173,7 @@ namespace DiskAccessLibrary.FileSystems.NTFS
                 attribute = NonResidentAttributeRecord.Create(AttributeType.AttributeList, String.Empty, NextAttributeInstance);
             }
             NextAttributeInstance++;
+            FileRecordHelper.InsertSorted(m_immediateAttributes, attribute);
             return attribute;
         }
 
