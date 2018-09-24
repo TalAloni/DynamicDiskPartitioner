@@ -153,6 +153,61 @@ namespace DiskAccessLibrary.FileSystems.NTFS
             return fileRecord;
         }
 
+        public void MoveFile(FileRecord fileRecord, MftSegmentReference newParentDirectory, string newFileName)
+        {
+            // Worst case scenrario: the new parent directory index requires multiple splits
+            if (NumberOfFreeClusters < 4)
+            {
+                throw new DiskFullException();
+            }
+
+            FileRecord oldParentDirectoryRecord = m_mft.GetFileRecord(fileRecord.ParentDirectoryReference);
+            IndexData oldParentDirectoryIndex = new IndexData(this, oldParentDirectoryRecord, AttributeType.FileName);
+            IndexData newParentDirectoryIndex;
+            if (fileRecord.ParentDirectoryReference == newParentDirectory)
+            {
+                newParentDirectoryIndex = oldParentDirectoryIndex;
+            }
+            else
+            {
+                FileRecord newParentDirectoryRecord = m_mft.GetFileRecord(newParentDirectory);
+                newParentDirectoryIndex = new IndexData(this, newParentDirectoryRecord, AttributeType.FileName);
+                if (newParentDirectoryIndex.ContainsFileName(newFileName))
+                {
+                    throw new AlreadyExistsException();
+                }
+            }
+
+            List<FileNameRecord> fileNameRecords = fileRecord.FileNameRecords;
+            foreach (FileNameRecord fileNameRecord in fileNameRecords)
+            {
+                oldParentDirectoryIndex.RemoveEntry(fileNameRecord.GetBytes());
+            }
+
+            DateTime creationTime = fileRecord.FileNameRecord.CreationTime;
+            DateTime modificationTime = fileRecord.FileNameRecord.ModificationTime;
+            DateTime mftModificationTime = fileRecord.FileNameRecord.MftModificationTime;
+            DateTime lastAccessTime = fileRecord.FileNameRecord.LastAccessTime;
+            ulong allocatedLength = fileRecord.FileNameRecord.AllocatedLength;
+            ulong fileSize = fileRecord.FileNameRecord.FileSize;
+            FileAttributes fileAttributes = fileRecord.FileNameRecord.FileAttributes;
+            ushort packedEASize = fileRecord.FileNameRecord.PackedEASize;
+            fileNameRecords = IndexHelper.GenerateFileNameRecords(newParentDirectory, newFileName, fileRecord.IsDirectory, m_generateDosNames, newParentDirectoryIndex, creationTime, modificationTime, mftModificationTime, lastAccessTime, allocatedLength, fileSize, fileAttributes, packedEASize);
+            fileRecord.RemoveAttributeRecords(AttributeType.FileName, String.Empty);
+            foreach (FileNameRecord fileNameRecord in fileNameRecords)
+            {
+                FileNameAttributeRecord fileNameAttribute = (FileNameAttributeRecord)fileRecord.CreateAttributeRecord(AttributeType.FileName, String.Empty);
+                fileNameAttribute.IsIndexed = true;
+                fileNameAttribute.Record = fileNameRecord;
+            }
+            m_mft.UpdateFileRecord(fileRecord);
+
+            foreach (FileNameRecord fileNameRecord in fileNameRecords)
+            {
+                newParentDirectoryIndex.AddEntry(fileRecord.BaseSegmentReference, fileNameRecord.GetBytes());
+            }
+        }
+
         public void DeleteFile(FileRecord fileRecord)
         {
             MftSegmentReference parentDirectory = fileRecord.ParentDirectoryReference;
