@@ -321,7 +321,7 @@ namespace DiskAccessLibrary.FileSystems.NTFS
                 if (mftRecord != null)
                 {
                     builder.AppendLine("Number of $MFT Data Runs: " + mftRecord.NonResidentDataRecord.DataRunSequence.Count);
-                    builder.AppendLine("Number of $MFT Clusters: " + mftRecord.NonResidentDataRecord.DataRunSequence.DataClusterCount);
+                    builder.AppendLine("$MFT Size in Clusters: " + mftRecord.NonResidentDataRecord.DataRunSequence.DataClusterCount);
 
                     builder.Append(mftRecord.NonResidentDataRecord.DataRunSequence.ToString());
 
@@ -329,14 +329,14 @@ namespace DiskAccessLibrary.FileSystems.NTFS
                     builder.AppendLine("Length of $MFT Attributes: " + mftRecord.AttributesLengthOnDisk);
                     builder.AppendLine();
 
-                    FileRecord bitmapRecord = m_mft.GetVolumeBitmapRecord();
-                    if (bitmapRecord != null)
+                    FileRecord volumeBitmapRecord = m_mft.GetVolumeBitmapRecord();
+                    if (volumeBitmapRecord != null)
                     {
-                        builder.AppendLine("$Bitmap LCN: " + bitmapRecord.NonResidentDataRecord.DataRunSequence.FirstDataRunLCN);
-                        builder.AppendLine("$Bitmap Clusters: " + bitmapRecord.NonResidentDataRecord.DataRunSequence.DataClusterCount);
+                        builder.AppendLine("Volume Bitmap Start LCN: " + volumeBitmapRecord.NonResidentDataRecord.DataRunSequence.FirstDataRunLCN);
+                        builder.AppendLine("Volume Bitmap Size in Clusters: " + volumeBitmapRecord.NonResidentDataRecord.DataRunSequence.DataClusterCount);
 
-                        builder.AppendLine("Number of $Bitmap Attributes: " + bitmapRecord.Attributes.Count);
-                        builder.AppendLine("Length of $Bitmap Attributes: " + bitmapRecord.AttributesLengthOnDisk);
+                        builder.AppendLine("Number of Volume Bitmap Attributes: " + volumeBitmapRecord.Attributes.Count);
+                        builder.AppendLine("Length of Volume Bitmap Attributes: " + volumeBitmapRecord.AttributesLengthOnDisk);
                     }
                 }
 
