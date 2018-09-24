@@ -39,13 +39,21 @@ namespace DiskAccessLibrary.FileSystems.NTFS
         public static List<FileNameRecord> GenerateFileNameRecords(MftSegmentReference parentDirectory, string fileName, bool isDirectory, bool generateDosName, IndexData parentDirectoryIndex)
         {
             DateTime creationTime = DateTime.Now;
+            return GenerateFileNameRecords(parentDirectory, fileName, isDirectory, generateDosName, parentDirectoryIndex, creationTime, creationTime, creationTime, creationTime, 0, 0, 0, 0);
+        }
 
+        public static List<FileNameRecord> GenerateFileNameRecords(MftSegmentReference parentDirectory, string fileName, bool isDirectory, bool generateDosName, IndexData parentDirectoryIndex, DateTime creationTime, DateTime modificationTime, DateTime mftModificationTime, DateTime lastAccessTime, ulong allocatedLength, ulong fileSize, FileAttributes fileAttributes, ushort packedEASize)
+        {
             FileNameRecord fileNameRecord = new FileNameRecord(parentDirectory, fileName, isDirectory, creationTime);
             fileNameRecord.ParentDirectory = parentDirectory;
             fileNameRecord.CreationTime = creationTime;
-            fileNameRecord.ModificationTime = creationTime;
-            fileNameRecord.MftModificationTime = creationTime;
-            fileNameRecord.LastAccessTime = creationTime;
+            fileNameRecord.ModificationTime = modificationTime;
+            fileNameRecord.MftModificationTime = mftModificationTime;
+            fileNameRecord.LastAccessTime = lastAccessTime;
+            fileNameRecord.AllocatedLength = allocatedLength;
+            fileNameRecord.FileSize = fileSize;
+            fileNameRecord.FileAttributes = fileAttributes;
+            fileNameRecord.PackedEASize = packedEASize;
             fileNameRecord.IsDirectory = isDirectory;
             fileNameRecord.FileName = fileName;
             bool createDosOnlyRecord = false;
