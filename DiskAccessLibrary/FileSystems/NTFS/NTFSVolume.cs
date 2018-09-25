@@ -489,5 +489,13 @@ namespace DiskAccessLibrary.FileSystems.NTFS
                 return m_mft.AttributeRecordLengthToMakeNonResident;
             }
         }
+
+        protected internal static MftSegmentReference RootDirSegmentReference
+        {
+            get
+            {
+                return MasterFileTable.RootDirSegmentReference;
+            }
+        }
     }
 }
