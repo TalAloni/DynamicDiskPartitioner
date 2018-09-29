@@ -161,7 +161,7 @@ namespace DiskAccessLibrary
                 // get error code and throw
                 int errorCode = Marshal.GetLastWin32Error();
                 string message = String.Format("Can't write to sector {0} of disk {1}", sectorIndex, m_physicalDiskIndex);
-                FileStreamEx.ThrowIOError(errorCode, message);
+                IOExceptionHelper.ThrowIOError(errorCode, message);
             }
         }
 
@@ -256,7 +256,7 @@ namespace DiskAccessLibrary
                 }
                 else
                 {
-                    FileStreamEx.ThrowIOError(errorCode, message);
+                    IOExceptionHelper.ThrowIOError(errorCode, message);
                 }
             }
         }
@@ -288,7 +288,7 @@ namespace DiskAccessLibrary
                 }
                 else
                 {
-                    FileStreamEx.ThrowIOError(errorCode, message);
+                    IOExceptionHelper.ThrowIOError(errorCode, message);
                 }
             }
         }

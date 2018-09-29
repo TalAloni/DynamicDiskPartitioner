@@ -53,40 +53,8 @@ namespace DiskAccessLibrary
             {
                 int errorCode = Marshal.GetLastWin32Error();
                 string message = String.Format("Could not read from position {0} the requested number of bytes ({1}).", this.Position, count);
-                ThrowIOError(errorCode, message);
+                IOExceptionHelper.ThrowIOError(errorCode, message);
                 return 0; // this line will not be reached
-            }
-        }
-
-        internal static void ThrowIOError(int errorCode, string defaultMessage)
-        {
-            if (errorCode == (int)Win32Error.ERROR_ACCESS_DENIED)
-            {
-                // UnauthorizedAccessException will be thrown if stream was opened only for writing or if a user is not an administrator
-                throw new UnauthorizedAccessException(defaultMessage);
-            }
-            else if (errorCode == (int)Win32Error.ERROR_SHARING_VIOLATION)
-            {
-                throw new SharingViolationException(defaultMessage);
-            }
-            else if (errorCode == (int)Win32Error.ERROR_SECTOR_NOT_FOUND)
-            {
-                string message = defaultMessage + " The sector does not exist.";
-                throw new IOException(message, (int)Win32Error.ERROR_SECTOR_NOT_FOUND);
-            }
-            else if (errorCode == (int)Win32Error.ERROR_CRC)
-            {
-                string message = defaultMessage + " Data Error (Cyclic Redundancy Check).";
-                throw new CyclicRedundancyCheckException(message);
-            }
-            else if (errorCode == (int)Win32Error.ERROR_NO_SYSTEM_RESOURCES)
-            {
-                throw new OutOfMemoryException();
-            }
-            else
-            {
-                string message = defaultMessage + String.Format(" Win32 Error: {0}", errorCode);
-                throw new IOException(message, errorCode);
             }
         }
 
