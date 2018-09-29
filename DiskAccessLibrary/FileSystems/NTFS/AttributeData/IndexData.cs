@@ -259,33 +259,209 @@ namespace DiskAccessLibrary.FileSystems.NTFS
                 {
                     m_rootRecord.IndexEntries.RemoveAt(index);
                 }
+                m_volume.UpdateFileRecord(m_fileRecord);
             }
             else
             {
-                // For now we'll just rebuild the entire index
-                KeyValuePairList<MftSegmentReference, byte[]> entries = GetAllEntries();
-                if (m_rootRecord.IsParentNode)
+                int indexOfEntryToRemove;
+                KeyValuePairList<int, IndexRecord> path = FindRemovalPath(key, out indexOfEntryToRemove);
+                if (path == null)
                 {
-                    m_indexAllocationData.Truncate(0);
-                    m_bitmapData.TruncateBitmap(0);
-                    m_indexAllocationRecord = null;
-                    m_indexAllocationData = null;
-                    m_bitmapRecord = null;
-                    m_bitmapData = null;
-                    m_fileRecord.RemoveAttributeRecord(AttributeType.IndexAllocation, m_indexName);
-                    m_fileRecord.RemoveAttributeRecord(AttributeType.Bitmap, m_indexName);
-
-                    m_rootRecord.IsParentNode = false;
+                    return;
                 }
-                m_rootRecord.IndexEntries = new List<IndexEntry>();
-                
-                foreach (KeyValuePair<MftSegmentReference, byte[]> entry in entries)
+
+                if ((path.Count > 0 && path[path.Count - 1].Value.IsParentNode) || path.Count == 0)
                 {
-                    if (CollationHelper.Compare(entry.Value, key, m_rootRecord.CollationRule) != 0)
+                    // We find the rightmost leaf entry in the left branch and put it instead.
+                    // Note: Excluding the root of the branch, the rightmost leaf entry in the branch collates last.
+                    KeyValuePairList<int, IndexRecord> pathToLeaf = FindPathToRightmostLeaf(path, indexOfEntryToRemove);
+                    IndexRecord leaf = pathToLeaf[pathToLeaf.Count - 1].Value;
+                    IndexEntry entryToRemoveFromLeaf = leaf.IndexEntries[leaf.IndexEntries.Count - 1];
+                    leaf.IndexEntries.RemoveAt(leaf.IndexEntries.Count - 1);
+                    long leafRecordIndex = ConvertToRecordIndex(leaf.RecordVBN);
+                    // Note: CHKDSK does not accept an empty IndexRecord, however, we must not call RemovePointer just yet because it might affect the parent as well.
+                    WriteIndexRecord(leafRecordIndex, leaf);
+
+                    if (path.Count == 0)
                     {
-                        AddEntry(entry.Key, entry.Value);
+                        m_rootRecord.IndexEntries[indexOfEntryToRemove].FileReference = entryToRemoveFromLeaf.FileReference;
+                        m_rootRecord.IndexEntries[indexOfEntryToRemove].Key = entryToRemoveFromLeaf.Key;
+                        m_volume.UpdateFileRecord(m_fileRecord);
+                    }
+                    else
+                    {
+                        path[path.Count - 1].Value.IndexEntries[indexOfEntryToRemove].FileReference = entryToRemoveFromLeaf.FileReference;
+                        path[path.Count - 1].Value.IndexEntries[indexOfEntryToRemove].Key = entryToRemoveFromLeaf.Key;
+                        long recordIndex = ConvertToRecordIndex(path[path.Count - 1].Value.RecordVBN);
+                        WriteIndexRecord(recordIndex, path[path.Count - 1].Value);
+                    }
+
+                    if (leaf.IndexEntries.Count == 0)
+                    {
+                        int indexOfLeafPointer = pathToLeaf[pathToLeaf.Count - 1].Key;
+                        RemovePointer(pathToLeaf.GetRange(0, pathToLeaf.Count - 1), indexOfLeafPointer);
+                        DeallocateIndexRecord(leafRecordIndex);
                     }
                 }
+                else
+                {
+                    int indexInParentRecord = path[path.Count - 1].Key;
+                    IndexRecord leaf = path[path.Count - 1].Value;
+
+                    leaf.IndexEntries.RemoveAt(indexOfEntryToRemove);
+                    long recordIndex = ConvertToRecordIndex(leaf.RecordVBN);
+                    if (leaf.IndexEntries.Count > 0)
+                    {
+                        WriteIndexRecord(recordIndex, leaf);
+                    }
+                    else
+                    {
+                        path.RemoveAt(path.Count - 1);
+                        RemovePointer(path, indexInParentRecord);
+                        DeallocateIndexRecord(recordIndex);
+                    }
+                }
+            }
+        }
+
+        private KeyValuePairList<int, IndexRecord> FindRemovalPath(byte[] key, out int indexOfEntryToRemove)
+        {
+            bool isParentNode = true;
+            List<IndexEntry> entries = m_rootRecord.IndexEntries;
+            KeyValuePairList<int, IndexRecord> path = new KeyValuePairList<int, IndexRecord>();
+            while (isParentNode)
+            {
+                int index = CollationHelper.FindIndexInParentNode(entries, key, m_rootRecord.CollationRule);
+                if (!entries[index].IsLastEntry && CollationHelper.Compare(entries[index].Key, key, m_rootRecord.CollationRule) == 0)
+                {
+                    indexOfEntryToRemove = index;
+                    return path;
+                }
+                long subnodeVBN = entries[index].SubnodeVBN;
+                IndexRecord indexRecord = ReadIndexRecord(subnodeVBN);
+                isParentNode = indexRecord.IsParentNode;
+                entries = indexRecord.IndexEntries;
+                path.Add(index, indexRecord);
+            }
+
+            indexOfEntryToRemove = CollationHelper.FindIndexInLeafNode(entries, key, m_rootRecord.CollationRule);
+            if (indexOfEntryToRemove >= 0)
+            {
+                return path;
+            }
+            else
+            {
+                return null;
+            }
+        }
+
+        private KeyValuePairList<int, IndexRecord> FindPathToRightmostLeaf(KeyValuePairList<int, IndexRecord> startPath, int indexInLastEntry)
+        {
+            KeyValuePairList<int, IndexRecord> path = new KeyValuePairList<int, IndexRecord>(startPath);
+            List<IndexEntry> entries;
+            if (startPath.Count == 0)
+            {
+                entries = m_rootRecord.IndexEntries;
+            }
+            else
+            {
+                entries = startPath[startPath.Count - 1].Value.IndexEntries;
+            }
+            IndexRecord indexRecord = ReadIndexRecord(entries[indexInLastEntry].SubnodeVBN);
+            path.Add(indexInLastEntry, indexRecord);
+            return FindPathToRightmostLeaf(path);
+        }
+
+        private KeyValuePairList<int, IndexRecord> FindPathToRightmostLeaf(KeyValuePairList<int, IndexRecord> startPath)
+        {
+            KeyValuePairList<int, IndexRecord> path = new KeyValuePairList<int, IndexRecord>(startPath);
+            int indexInParentRecord = startPath[startPath.Count - 1].Key;
+            IndexRecord indexRecord = startPath[startPath.Count - 1].Value;
+            while (indexRecord.IsParentNode)
+            {
+                indexInParentRecord = indexRecord.IndexEntries.Count - 1;
+                long subnodeVBN = indexRecord.IndexEntries[indexInParentRecord].SubnodeVBN;
+                indexRecord = ReadIndexRecord(subnodeVBN);
+                path.Add(indexInParentRecord, indexRecord);
+            }
+
+            return path;
+        }
+
+        /// <summary>
+        /// Will remove the pointer while preserving the entry (if present)
+        /// </summary>
+        private void RemovePointer(KeyValuePairList<int, IndexRecord> path, int indexOfEntryToRemove)
+        {
+            int indexInParentRecord = path[path.Count - 1].Key;
+            IndexRecord indexRecord = path[path.Count - 1].Value;
+            long recordIndex = ConvertToRecordIndex(indexRecord.RecordVBN);
+            IndexEntry pointer = indexRecord.IndexEntries[indexOfEntryToRemove];
+            if (pointer.IsLastEntry)
+            {
+                if (indexRecord.IndexEntries.Count == 1)
+                {
+                    if (path.Count > 1)
+                    {
+                        path.RemoveAt(path.Count - 1);
+                        RemovePointer(path, indexInParentRecord);
+                    }
+                    else
+                    {
+                        RemovePointerFromRoot(indexInParentRecord);
+                    }
+                    DeallocateIndexRecord(recordIndex);
+                }
+                else
+                {
+                    MftSegmentReference fileReferenceToReinsert = indexRecord.IndexEntries[indexOfEntryToRemove - 1].FileReference;
+                    byte[] keyToReinsert = indexRecord.IndexEntries[indexOfEntryToRemove - 1].Key;
+                    indexRecord.IndexEntries.RemoveAt(indexOfEntryToRemove);
+                    indexRecord.IndexEntries[indexOfEntryToRemove - 1].FileReference = MftSegmentReference.NullReference;
+                    indexRecord.IndexEntries[indexOfEntryToRemove - 1].Key = new byte[0];
+                    WriteIndexRecord(recordIndex, indexRecord);
+                    AddEntry(fileReferenceToReinsert, keyToReinsert);
+                }
+            }
+            else
+            {
+                MftSegmentReference fileReferenceToReinsert = indexRecord.IndexEntries[indexOfEntryToRemove].FileReference;
+                byte[] keyToReinsert = indexRecord.IndexEntries[indexOfEntryToRemove].Key;
+                indexRecord.IndexEntries.RemoveAt(indexOfEntryToRemove);
+                WriteIndexRecord(recordIndex, indexRecord);
+                AddEntry(fileReferenceToReinsert, keyToReinsert);
+            }
+        }
+
+        /// <summary>
+        /// Will remove the pointer while preserving the entry (if present)
+        /// </summary>
+        private void RemovePointerFromRoot(int indexOfEntryToRemove)
+        {
+            IndexEntry pointer = m_rootRecord.IndexEntries[indexOfEntryToRemove];
+            if (pointer.IsLastEntry)
+            {
+                if (m_rootRecord.IndexEntries.Count == 1)
+                {
+                    m_rootRecord.IndexEntries.RemoveAt(indexOfEntryToRemove);
+                    m_rootRecord.IsParentNode = false;
+                }
+                else
+                {
+                    MftSegmentReference fileReferenceToReinsert = m_rootRecord.IndexEntries[indexOfEntryToRemove - 1].FileReference;
+                    byte[] keyToReinsert = m_rootRecord.IndexEntries[indexOfEntryToRemove - 1].Key;
+                    m_rootRecord.IndexEntries.RemoveAt(indexOfEntryToRemove);
+                    m_rootRecord.IndexEntries[indexOfEntryToRemove - 1].FileReference = MftSegmentReference.NullReference;
+                    m_rootRecord.IndexEntries[indexOfEntryToRemove - 1].Key = new byte[0];
+                    AddEntry(fileReferenceToReinsert, keyToReinsert);
+                }
+            }
+            else
+            {
+                MftSegmentReference fileReferenceToReinsert = pointer.FileReference;
+                byte[] keyToReinsert = pointer.Key;
+                m_rootRecord.IndexEntries.RemoveAt(indexOfEntryToRemove);
+                AddEntry(fileReferenceToReinsert, keyToReinsert);
             }
             m_volume.UpdateFileRecord(m_fileRecord);
         }
@@ -350,6 +526,12 @@ namespace DiskAccessLibrary.FileSystems.NTFS
                 indexRecord = m_bitmapData.AllocateRecord(numberOfUsableBits);
             }
             return indexRecord.Value;
+        }
+
+        private void DeallocateIndexRecord(long recordIndex)
+        {
+            m_bitmapData.DeallocateRecord(recordIndex);
+            // TODO: We may truncate the IndexAllocation attribute data and bitmap
         }
 
         private IndexRecord ReadIndexRecord(long subnodeVBN)
