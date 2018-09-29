@@ -24,7 +24,7 @@ namespace DiskAccessLibrary.FileSystems.NTFS
         public ushort PagePosition;
         /* End of LFS_RECORD_PAGE_HEADER */
         /* Start of LFS_PACKED_RECORD_PAGE */
-        // ushort NextRecordOffset;
+        // ushort NextRecordOffset; // The offset of the free space in the page
         // ushort WordAlign
         // uint DWordAlign
         public ulong LastEndLsn;
