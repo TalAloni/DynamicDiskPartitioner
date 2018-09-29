@@ -38,7 +38,8 @@ namespace DiskAccessLibrary
             else if (errorCode == (int)Win32Error.ERROR_SECTOR_NOT_FOUND)
             {
                 string message = defaultMessage + " The sector does not exist.";
-                throw new IOException(message, (int)Win32Error.ERROR_SECTOR_NOT_FOUND);
+                int hresult = GetHResultFromWin32Error((Win32Error)errorCode);
+                throw new IOException(message, hresult);
             }
             else if (errorCode == (int)Win32Error.ERROR_CRC)
             {
@@ -52,7 +53,8 @@ namespace DiskAccessLibrary
             else
             {
                 string message = defaultMessage + String.Format(" Win32 Error: {0}", errorCode);
-                throw new IOException(message, errorCode);
+                int hresult = GetHResultFromWin32Error((Win32Error)errorCode);
+                throw new IOException(message, hresult);
             }
         }
     }

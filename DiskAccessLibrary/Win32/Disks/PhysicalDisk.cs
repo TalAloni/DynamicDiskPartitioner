@@ -93,7 +93,8 @@ namespace DiskAccessLibrary
                 // get error code and throw
                 int errorCode = Marshal.GetLastWin32Error();
                 string message = String.Format("Can't read sector {0} from disk {1}, Win32 Error: {2}", sectorIndex, m_physicalDiskIndex, errorCode);
-                throw new IOException(message, errorCode);
+                IOExceptionHelper.ThrowIOError(errorCode, message);
+                return null; // this line will not be reached
             }
         }
 
