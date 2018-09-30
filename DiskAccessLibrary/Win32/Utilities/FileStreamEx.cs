@@ -93,7 +93,7 @@ namespace DiskAccessLibrary
             else
             {
                 int errorCode = Marshal.GetLastWin32Error();
-                string message = String.Format("Could not read from position {0} the requested number of bytes ({1}).", this.Position, count);
+                string message = String.Format("Failed to read from position {0} the requested number of bytes ({1}).", this.Position, count);
                 IOExceptionHelper.ThrowIOError(errorCode, message);
                 return 0; // this line will not be reached
             }
@@ -120,7 +120,7 @@ namespace DiskAccessLibrary
             else
             {
                 int errorCode = Marshal.GetLastWin32Error();
-                string message = String.Format("Could not write to position {0} the requested number of bytes ({1}).", this.Position, count);
+                string message = String.Format("Failed to write to position {0} the requested number of bytes ({1}).", this.Position, count);
                 IOExceptionHelper.ThrowIOError(errorCode, message);
             }
         }
@@ -154,7 +154,7 @@ namespace DiskAccessLibrary
                 int errorCode = Marshal.GetLastWin32Error();
                 if (errorCode != (int)Win32Error.ERROR_IO_PENDING)
                 {
-                    string message = String.Format("Could not read from position {0} the requested number of bytes ({1}).", this.Position, count);
+                    string message = String.Format("Failed to read from position {0} the requested number of bytes ({1}).", this.Position, count);
                     IOExceptionHelper.ThrowIOError(errorCode, message);
                 }
                 bool completed = completionEvent.WaitOne();
@@ -192,7 +192,7 @@ namespace DiskAccessLibrary
                 int errorCode = Marshal.GetLastWin32Error();
                 if (errorCode != (int)Win32Error.ERROR_IO_PENDING)
                 {
-                    string message = String.Format("Could not write to position {0} the requested number of bytes ({1}).", this.Position, count);
+                    string message = String.Format("Failed to write to position {0} the requested number of bytes ({1}).", this.Position, count);
                     IOExceptionHelper.ThrowIOError(errorCode, message);
                 }
                 bool completed = completionEvent.WaitOne();
@@ -211,7 +211,7 @@ namespace DiskAccessLibrary
             if (!success)
             {
                 int errorCode = Marshal.GetLastWin32Error();
-                string message = String.Format("Could not seek to offset {0}, origin: {1}", offset, origin);
+                string message = String.Format("Failed to seek to offset {0}, origin: {1}.", offset, origin);
                 IOExceptionHelper.ThrowIOError(errorCode, message);
             }
             return m_position;
@@ -254,7 +254,7 @@ namespace DiskAccessLibrary
             if (!success)
             {
                 int errorCode = Marshal.GetLastWin32Error();
-                string message = String.Format("Could not set file length {0}", value);
+                string message = String.Format("Failed to set file length to {0}.", value);
                 IOExceptionHelper.ThrowIOError(errorCode, message);
             }
             Seek(position, SeekOrigin.Begin);
@@ -269,7 +269,7 @@ namespace DiskAccessLibrary
                 if (!success)
                 {
                     int errorCode = Marshal.GetLastWin32Error();
-                    string message = "Could not get file size";
+                    string message = "Failed to get file size.";
                     IOExceptionHelper.ThrowIOError(errorCode, message);
                 }
                 return fileSize;
