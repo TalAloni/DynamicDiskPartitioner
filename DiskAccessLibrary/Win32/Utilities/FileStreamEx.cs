@@ -160,7 +160,7 @@ namespace DiskAccessLibrary
                 int errorCode = Marshal.GetLastWin32Error();
                 if (errorCode != (int)Win32Error.ERROR_IO_PENDING)
                 {
-                    string message = String.Format("Failed to read from position {0} the requested number of bytes ({1}).", this.Position, count);
+                    string message = String.Format("Failed to read from position {0} the requested number of bytes ({1}).", position, count);
                     IOExceptionHelper.ThrowIOError(errorCode, message);
                 }
                 bool completed = completionEvent.WaitOne();
@@ -198,7 +198,7 @@ namespace DiskAccessLibrary
                 int errorCode = Marshal.GetLastWin32Error();
                 if (errorCode != (int)Win32Error.ERROR_IO_PENDING)
                 {
-                    string message = String.Format("Failed to write to position {0} the requested number of bytes ({1}).", this.Position, count);
+                    string message = String.Format("Failed to write to position {0} the requested number of bytes ({1}).", position, count);
                     IOExceptionHelper.ThrowIOError(errorCode, message);
                 }
                 bool completed = completionEvent.WaitOne();
