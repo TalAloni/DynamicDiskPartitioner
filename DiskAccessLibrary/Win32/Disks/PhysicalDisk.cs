@@ -92,7 +92,7 @@ namespace DiskAccessLibrary
                 PhysicalDiskHandlePool.ReleaseHandle(m_physicalDiskIndex);
                 // get error code and throw
                 int errorCode = Marshal.GetLastWin32Error();
-                string message = String.Format("Can't read sector {0} from disk {1}, Win32 Error: {2}", sectorIndex, m_physicalDiskIndex, errorCode);
+                string message = String.Format("Failed to read sector {0} from disk {1}.", sectorIndex, m_physicalDiskIndex);
                 IOExceptionHelper.ThrowIOError(errorCode, message);
                 return null; // this line will not be reached
             }
@@ -161,7 +161,7 @@ namespace DiskAccessLibrary
                 PhysicalDiskHandlePool.ReleaseHandle(m_physicalDiskIndex);
                 // get error code and throw
                 int errorCode = Marshal.GetLastWin32Error();
-                string message = String.Format("Can't write to sector {0} of disk {1}", sectorIndex, m_physicalDiskIndex);
+                string message = String.Format("Failed to write to sector {0} of disk {1}.", sectorIndex, m_physicalDiskIndex);
                 IOExceptionHelper.ThrowIOError(errorCode, message);
             }
         }
@@ -250,7 +250,7 @@ namespace DiskAccessLibrary
 
                 // get error code and throw
                 int errorCode = Marshal.GetLastWin32Error();
-                string message = String.Format("Can't read from disk {0}", m_physicalDiskIndex);
+                string message = String.Format("Failed to access disk {0}.", m_physicalDiskIndex);
                 if (errorCode == (int)Win32Error.ERROR_FILE_NOT_FOUND)
                 {
                     throw new DriveNotFoundException(message);
@@ -282,7 +282,7 @@ namespace DiskAccessLibrary
 
                 // get error code and throw
                 int errorCode = Marshal.GetLastWin32Error();
-                string message = String.Format("Can't read from disk {0}", m_physicalDiskIndex);
+                string message = String.Format("Failed to access disk {0}.", m_physicalDiskIndex);
                 if (errorCode == (int)Win32Error.ERROR_FILE_NOT_FOUND)
                 {
                     throw new DriveNotFoundException(message);
@@ -327,7 +327,7 @@ namespace DiskAccessLibrary
 
                 // get error code and throw
                 int errorCode = Marshal.GetLastWin32Error();
-                string message = String.Format("Can't get disk {0} online status, Win32 Error: {1}", m_physicalDiskIndex, errorCode);
+                string message = String.Format("Failed to get disk {0} online status, Win32 Error: {1}", m_physicalDiskIndex, errorCode);
                 throw new IOException(message);
             }
         }
@@ -369,7 +369,7 @@ namespace DiskAccessLibrary
                 }
                 else
                 {
-                    string message = String.Format("Can't take disk {0} offline, Win32 Error: {1}", m_physicalDiskIndex, errorCode);
+                    string message = String.Format("Failed to take disk {0} offline, Win32 Error: {1}", m_physicalDiskIndex, errorCode);
                     throw new IOException(message);
                 }
             }
