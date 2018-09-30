@@ -20,7 +20,7 @@ namespace DiskAccessLibrary
     /// <remarks>
     /// Note that it is possible to curcumvent FileStream's buffering by setting the buffer size to the sector size.
     /// </remarks>
-    public class FileStreamEx : FileStream
+    public class FileStreamEx : Stream
     {
         [DllImport("Kernel32.dll", SetLastError = true)]
         private static extern bool ReadFile(SafeFileHandle handle, byte[] buffer, uint numberOfBytesToRead, out uint numberOfBytesRead, IntPtr lpOverlapped);
@@ -28,10 +28,26 @@ namespace DiskAccessLibrary
         [DllImport("Kernel32.dll", SetLastError = true)]
         private static extern bool WriteFile(SafeFileHandle handle, byte[] buffer, uint numberOfBytesToWrite, out uint numberOfBytesWritten, IntPtr lpOverlapped);
 
+        [DllImport("kernel32.dll", SetLastError = true)]
+        private static extern bool GetFileSizeEx(SafeFileHandle handle, out long fileSize);
+
+        [DllImport("kernel32.dll", SetLastError = true)]
+        private static extern bool SetFilePointerEx(SafeFileHandle handle, long distanceToMove, out long newFilePointer, uint moveMethod);
+
+        [DllImport("kernel32.dll", SetLastError = true)]
+        private static extern bool SetEndOfFile(SafeFileHandle handle);
+
+        private SafeFileHandle m_handle;
+        private bool m_canRead;
+        private bool m_canWrite;
+        private long m_position;
         private bool m_releaseHandle = true;
 
-        public FileStreamEx(SafeFileHandle handle, FileAccess access) : base(handle, access)
+        public FileStreamEx(SafeFileHandle handle, FileAccess access)
         {
+            m_handle = handle;
+            m_canRead = (access & FileAccess.Read) != 0;
+            m_canWrite = (access & FileAccess.Write) != 0;
         }
 
         /// <param name="offset">The byte offset in array at which the read bytes will be placed</param>
@@ -41,17 +57,18 @@ namespace DiskAccessLibrary
             uint numberOfBytesRead;
             if (offset == 0)
             {
-                ReadFile(this.SafeFileHandle, array, (uint)count, out numberOfBytesRead, IntPtr.Zero);
+                ReadFile(m_handle, array, (uint)count, out numberOfBytesRead, IntPtr.Zero);
             }
             else
             {
                 byte[] buffer = new byte[count];
-                ReadFile(this.SafeFileHandle, buffer, (uint)count, out numberOfBytesRead, IntPtr.Zero);
+                ReadFile(m_handle, buffer, (uint)count, out numberOfBytesRead, IntPtr.Zero);
                 Array.Copy(buffer, 0, array, offset, buffer.Length);
             }
 
             if (numberOfBytesRead == count)
             {
+                m_position += count;
                 return (int)numberOfBytesRead;
             }
             else
@@ -68,16 +85,20 @@ namespace DiskAccessLibrary
             uint numberOfBytesWritten;
             if (offset == 0)
             {
-                WriteFile(this.SafeFileHandle, array, (uint)count, out numberOfBytesWritten, IntPtr.Zero);
+                WriteFile(m_handle, array, (uint)count, out numberOfBytesWritten, IntPtr.Zero);
             }
             else
             {
                 byte[] buffer = new byte[count];
                 Array.Copy(array, offset, buffer, 0, buffer.Length);
-                WriteFile(this.SafeFileHandle, buffer, (uint)count, out numberOfBytesWritten, IntPtr.Zero);
+                WriteFile(m_handle, buffer, (uint)count, out numberOfBytesWritten, IntPtr.Zero);
             }
 
-            if (numberOfBytesWritten < count)
+            if (numberOfBytesWritten == count)
+            {
+                m_position += count;
+            }
+            else
             {
                 int errorCode = Marshal.GetLastWin32Error();
                 string message = String.Format("Could not write to position {0} the requested number of bytes ({1}).", this.Position, count);
@@ -88,6 +109,18 @@ namespace DiskAccessLibrary
         public override void Flush()
         {
             // Everything was written directly, no need to flush
+        }
+
+        public override long Seek(long offset, SeekOrigin origin)
+        {
+            bool success = SetFilePointerEx(m_handle, offset, out m_position, (uint)origin);
+            if (!success)
+            {
+                int errorCode = Marshal.GetLastWin32Error();
+                string message = String.Format("Could not seek to offset {0}, origin: {1}", offset, origin);
+                IOExceptionHelper.ThrowIOError(errorCode, message);
+            }
+            return m_position;
         }
 
         /// <remarks>we are working with block devices, and we are only supposed to read sectors</remarks>
@@ -116,6 +149,72 @@ namespace DiskAccessLibrary
             if (m_releaseHandle)
             {
                 base.Dispose(disposing);
+            }
+        }
+
+        public override void SetLength(long value)
+        {
+            long position = m_position;
+            Seek(value, SeekOrigin.Begin);
+            bool success = SetEndOfFile(m_handle);
+            if (!success)
+            {
+                int errorCode = Marshal.GetLastWin32Error();
+                string message = String.Format("Could not set file length {0}", value);
+                IOExceptionHelper.ThrowIOError(errorCode, message);
+            }
+            Seek(position, SeekOrigin.Begin);
+        }
+
+        public override long Length
+        {
+            get
+            {
+                long fileSize;
+                bool success = GetFileSizeEx(m_handle, out fileSize);
+                if (!success)
+                {
+                    int errorCode = Marshal.GetLastWin32Error();
+                    string message = "Could not get file size";
+                    IOExceptionHelper.ThrowIOError(errorCode, message);
+                }
+                return fileSize;
+            }
+        }
+
+        public override long Position
+        {
+            get
+            {
+                return m_position;
+            }
+            set
+            {
+                Seek(value, SeekOrigin.Begin);
+            }
+        }
+
+        public override bool CanRead
+        {
+            get
+            {
+                return m_canRead;
+            }
+        }
+
+        public override bool CanSeek
+        {
+            get
+            {
+                return true;
+            }
+        }
+
+        public override bool CanWrite
+        {
+            get
+            {
+                return m_canWrite;
             }
         }
     }
