@@ -22,6 +22,7 @@ namespace DiskAccessLibrary
         ERROR_ALREADY_EXISTS = 0x00B7,
         ERROR_MORE_DATA = 0x00EA, // buffer was not long enough
         ERROR_NO_MORE_ITEMS = 0x0103,
+        ERROR_IO_PENDING = 0x3E5,
         ERROR_MEDIA_CHANGED = 0x0456,
         ERROR_NO_MEDIA_IN_DRIVE = 0x0458,
         ERROR_IO_DEVICE = 0x045D, // Reading from disk region that has sectors with mismatching CRC may return this

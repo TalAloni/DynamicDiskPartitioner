@@ -8,7 +8,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Runtime.InteropServices;
-using System.Text;
+using System.Threading;
 using Microsoft.Win32.SafeHandles;
 
 namespace DiskAccessLibrary
@@ -36,6 +36,25 @@ namespace DiskAccessLibrary
 
         [DllImport("kernel32.dll", SetLastError = true)]
         private static extern bool SetEndOfFile(SafeFileHandle handle);
+
+        [StructLayout(LayoutKind.Sequential, Pack = 8)]
+        private struct OVERLAPPED
+        {
+            public UIntPtr Internal;
+            public UIntPtr InternalHigh;
+            public uint OffsetLow;
+            public uint OffsetHigh;
+            public IntPtr hEvent;
+
+            public long Offset
+            {
+                set
+                {
+                    OffsetLow = (uint)value;
+                    OffsetHigh = (uint)(value >> 32);
+                }
+            }
+        }
 
         private SafeFileHandle m_handle;
         private bool m_canRead;
@@ -104,6 +123,81 @@ namespace DiskAccessLibrary
                 string message = String.Format("Could not write to position {0} the requested number of bytes ({1}).", this.Position, count);
                 IOExceptionHelper.ThrowIOError(errorCode, message);
             }
+        }
+
+        /// <remarks>
+        /// The caller can use this method with both synchronous and asynchronous (FILE_FLAG_OVERLAPPED) file handles.
+        /// </remarks>
+        public int ReadOverlapped(byte[] array, int offset, int count, long position)
+        {
+            uint temp; // will not be updated on async operation
+            ManualResetEvent completionEvent = new ManualResetEvent(false);
+            OVERLAPPED overlapped = new OVERLAPPED();
+            overlapped.Offset = position;
+            overlapped.hEvent = completionEvent.SafeWaitHandle.DangerousGetHandle();
+            IntPtr lpOverlapped = Marshal.AllocHGlobal(Marshal.SizeOf(overlapped));
+            Marshal.StructureToPtr(overlapped, lpOverlapped, false);
+            bool success;
+            if (offset == 0)
+            {
+                success = ReadFile(m_handle, array, (uint)count, out temp, lpOverlapped);
+            }
+            else
+            {
+                byte[] buffer = new byte[count];
+                success = ReadFile(m_handle, buffer, (uint)buffer.Length, out temp, lpOverlapped);
+                Array.Copy(buffer, 0, array, offset, buffer.Length);
+            }
+
+            if (!success)
+            {
+                int errorCode = Marshal.GetLastWin32Error();
+                if (errorCode != (int)Win32Error.ERROR_IO_PENDING)
+                {
+                    string message = String.Format("Could not read from position {0} the requested number of bytes ({1}).", this.Position, count);
+                    IOExceptionHelper.ThrowIOError(errorCode, message);
+                }
+                bool completed = completionEvent.WaitOne();
+            }
+            Marshal.FreeHGlobal(lpOverlapped);
+            return count;
+        }
+
+        /// <remarks>
+        /// The caller can use this method with both synchronous and asynchronous (FILE_FLAG_OVERLAPPED) file handles.
+        /// </remarks>
+        public void WriteOverlapped(byte[] array, int offset, int count, long position)
+        {
+            uint temp; // will not be updated on async operation
+            ManualResetEvent completionEvent = new ManualResetEvent(false);
+            OVERLAPPED overlapped = new OVERLAPPED();
+            overlapped.Offset = position;
+            overlapped.hEvent = completionEvent.SafeWaitHandle.DangerousGetHandle();
+            IntPtr lpOverlapped = Marshal.AllocHGlobal(Marshal.SizeOf(overlapped));
+            Marshal.StructureToPtr(overlapped, lpOverlapped, false);
+            bool success;
+            if (offset == 0)
+            {
+                success = WriteFile(m_handle, array, (uint)count, out temp, lpOverlapped);
+            }
+            else
+            {
+                byte[] buffer = new byte[count];
+                Array.Copy(array, offset, buffer, 0, buffer.Length);
+                success = WriteFile(m_handle, buffer, (uint)buffer.Length, out temp, lpOverlapped);
+            }
+
+            if (!success)
+            {
+                int errorCode = Marshal.GetLastWin32Error();
+                if (errorCode != (int)Win32Error.ERROR_IO_PENDING)
+                {
+                    string message = String.Format("Could not write to position {0} the requested number of bytes ({1}).", this.Position, count);
+                    IOExceptionHelper.ThrowIOError(errorCode, message);
+                }
+                bool completed = completionEvent.WaitOne();
+            }
+            Marshal.FreeHGlobal(lpOverlapped);
         }
 
         public override void Flush()
