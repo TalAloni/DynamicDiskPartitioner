@@ -13,41 +13,46 @@ using Microsoft.Win32.SafeHandles;
 
 namespace DiskAccessLibrary
 {
-    // FileStream reads will try to fill the internal buffer,
-    // this may cause issues when reading the last few sectors of the disk,
-    // (FileStream will try to read sectors that do not exist).
-    // This can be solved by setting the FileStream buffer size to the sector size.
-    // An alternative is to use FileStreamEx which does not use an internal read buffer at all.
+    /// <summary>
+    /// This class was designed to offer unencumbered access to files. (Block devices such as disks, volumes and virtual disk files were specifically in mind).
+    /// Unlike FileStream, this class does not implement any internal read or write buffering.
+    /// </summary>
+    /// <remarks>
+    /// Note that it is possible to curcumvent FileStream's buffering by setting the buffer size to the sector size.
+    /// </remarks>
     public class FileStreamEx : FileStream
     {
-        [DllImport("Kernel32.dll", SetLastError = true, CharSet = CharSet.Unicode)]
-        static extern bool ReadFile(SafeFileHandle handle, byte[] buffer, uint numberOfBytesToRead, out uint numberOfBytesRead, IntPtr lpOverlapped);
+        [DllImport("Kernel32.dll", SetLastError = true)]
+        private static extern bool ReadFile(SafeFileHandle handle, byte[] buffer, uint numberOfBytesToRead, out uint numberOfBytesRead, IntPtr lpOverlapped);
+
+        [DllImport("Kernel32.dll", SetLastError = true)]
+        private static extern bool WriteFile(SafeFileHandle handle, byte[] buffer, uint numberOfBytesToWrite, out uint numberOfBytesWritten, IntPtr lpOverlapped);
 
         private bool m_releaseHandle = true;
 
         public FileStreamEx(SafeFileHandle handle, FileAccess access) : base(handle, access)
         {
-
         }
 
         /// <param name="offset">The byte offset in array at which the read bytes will be placed</param>
         /// <param name="count">The maximum number of bytes to read</param>
         public override int Read(byte[] array, int offset, int count)
         {
-            uint result;
+            uint numberOfBytesRead;
             if (offset == 0)
             {
-                ReadFile(this.SafeFileHandle, array, (uint)count, out result, IntPtr.Zero);
+                ReadFile(this.SafeFileHandle, array, (uint)count, out numberOfBytesRead, IntPtr.Zero);
             }
             else
             {
                 byte[] buffer = new byte[count];
-                ReadFile(this.SafeFileHandle, buffer, (uint)buffer.Length, out result, IntPtr.Zero);
+                ReadFile(this.SafeFileHandle, buffer, (uint)count, out numberOfBytesRead, IntPtr.Zero);
                 Array.Copy(buffer, 0, array, offset, buffer.Length);
             }
-            if (count == result)
+
+            if (numberOfBytesRead == count)
             {
-                return (int)result;
+                return (int)numberOfBytesRead;
             }
             else
             {
@@ -58,10 +63,43 @@ namespace DiskAccessLibrary
             }
         }
 
-        // we are working with disks, and we are only supposed to read sectors
+        public override void Write(byte[] array, int offset, int count)
+        {
+            uint numberOfBytesWritten;
+            if (offset == 0)
+            {
+                WriteFile(this.SafeFileHandle, array, (uint)count, out numberOfBytesWritten, IntPtr.Zero);
+            }
+            else
+            {
+                byte[] buffer = new byte[count];
+                Array.Copy(array, offset, buffer, 0, buffer.Length);
+                WriteFile(this.SafeFileHandle, buffer, (uint)count, out numberOfBytesWritten, IntPtr.Zero);
+            }
+
+            if (numberOfBytesWritten < count)
+            {
+                int errorCode = Marshal.GetLastWin32Error();
+                string message = String.Format("Could not write to position {0} the requested number of bytes ({1}).", this.Position, count);
+                IOExceptionHelper.ThrowIOError(errorCode, message);
+            }
+        }
+
+        public override void Flush()
+        {
+            // Everything was written directly, no need to flush
+        }
+
+        /// <remarks>we are working with block devices, and we are only supposed to read sectors</remarks>
         public override int ReadByte()
         {
             throw new NotImplementedException("Cannot read a single byte from disk");
+        }
+
+        /// <remarks>we are working with block devices, and we are only supposed to write sectors</remarks>
+        public override void WriteByte(byte value)
+        {
+            throw new NotImplementedException("Cannot write a single byte to disk");
         }
 
         public void Close(bool releaseHandle)
@@ -78,16 +116,6 @@ namespace DiskAccessLibrary
             if (m_releaseHandle)
             {
                 base.Dispose(disposing);
-            }
-            else
-            {
-                try
-                {
-                    this.Flush();
-                }
-                catch
-                { 
-                }
             }
         }
     }
