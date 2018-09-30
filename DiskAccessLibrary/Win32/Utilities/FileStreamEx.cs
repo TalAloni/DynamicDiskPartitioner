@@ -37,6 +37,9 @@ namespace DiskAccessLibrary
         [DllImport("kernel32.dll", SetLastError = true)]
         private static extern bool SetEndOfFile(SafeFileHandle handle);
 
+        [DllImport("kernel32.dll", SetLastError = true)]
+        private static extern bool FlushFileBuffers(SafeFileHandle handle);
+
         [StructLayout(LayoutKind.Sequential, Pack = 8)]
         private struct OVERLAPPED
         {
@@ -202,7 +205,13 @@ namespace DiskAccessLibrary
 
         public override void Flush()
         {
-            // Everything was written directly, no need to flush
+            bool success = FlushFileBuffers(m_handle);
+            if (!success)
+            {
+                int errorCode = Marshal.GetLastWin32Error();
+                string message = "Failed to flush file buffers.";
+                IOExceptionHelper.ThrowIOError(errorCode, message);
+            }
         }
 
         public override long Seek(long offset, SeekOrigin origin)
