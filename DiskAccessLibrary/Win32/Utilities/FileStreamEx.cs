@@ -40,6 +40,9 @@ namespace DiskAccessLibrary
         [DllImport("kernel32.dll", SetLastError = true)]
         private static extern bool FlushFileBuffers(SafeFileHandle handle);
 
+        [DllImport("kernel32.dll", SetLastError = true)]
+        private static extern bool SetFileValidData(SafeFileHandle handle, long validDataLength);
+
         [StructLayout(LayoutKind.Sequential, Pack = 8)]
         private struct OVERLAPPED
         {
@@ -267,6 +270,27 @@ namespace DiskAccessLibrary
                 IOExceptionHelper.ThrowIOError(errorCode, message);
             }
             Seek(position, SeekOrigin.Begin);
+        }
+
+        /// <summary>
+        /// On NTFS, extending a file reserves disk space but does not zero out the data.
+        /// Instead, NTFS keeps track of the "last byte written", technically known as the valid data length, and only zeroes out up to that point.
+        /// The data past the valid data length are logically zero but are not physically zero on disk.
+        /// When you write to a point past the current valid data length, all the bytes between the valid data length and the start of your write need to be zeroed out before the new valid data length can be set to the end of your write operation.
+        /// Extending the file and then calling SetValidLength() may save a considerable amount of time zeroing out the extended portion of the file.
+        /// </summary>
+        /// <remarks>
+        /// Calling SetFileValidData requires SeManageVolumePrivilege privileges.
+        /// </remarks>
+        public void SetValidLength(long value)
+        {
+            bool success = SetFileValidData(m_handle, value);
+            if (!success)
+            {
+                int errorCode = Marshal.GetLastWin32Error();
+                string message = String.Format("Failed to set valid file length to {0}.", value);
+                IOExceptionHelper.ThrowIOError(errorCode, message);
+            }
         }
 
         public override long Length
