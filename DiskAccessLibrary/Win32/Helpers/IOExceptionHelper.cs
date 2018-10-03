@@ -6,11 +6,25 @@
  */
 using System;
 using System.IO;
+using System.Reflection;
 
 namespace DiskAccessLibrary
 {
     public class IOExceptionHelper
     {
+        public static ushort GetWin32ErrorCode(IOException ex)
+        {
+            int hResult = GetExceptionHResult(ex);
+            // The Win32 error code is stored in the 16 first bits of the value
+            return (ushort)(hResult & 0x0000FFFF);
+        }
+
+        public static int GetExceptionHResult(IOException ex)
+        {
+            PropertyInfo hResult = ex.GetType().GetProperty("HResult", BindingFlags.NonPublic | BindingFlags.Public | BindingFlags.Instance);
+            return (int)hResult.GetValue(ex, null);
+        }
+
         public static int GetHResultFromWin32Error(Win32Error error)
         {
             if (error == Win32Error.ERROR_SUCCESS)
