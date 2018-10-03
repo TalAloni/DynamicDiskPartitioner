@@ -254,6 +254,12 @@ namespace DiskAccessLibrary
         {
             if (m_releaseHandle)
             {
+                if (!m_handle.IsClosed)
+                {
+                    m_handle.Close();
+                    m_canRead = false;
+                    m_canWrite = false;
+                }
                 base.Dispose(disposing);
             }
         }
