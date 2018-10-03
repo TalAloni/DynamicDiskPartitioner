@@ -208,12 +208,20 @@ namespace DiskAccessLibrary
 
         public override void Flush()
         {
-            bool success = FlushFileBuffers(m_handle);
-            if (!success)
+            Flush(false);
+        }
+
+        public void Flush(bool flushToDisk)
+        {
+            if (flushToDisk)
             {
-                int errorCode = Marshal.GetLastWin32Error();
-                string message = "Failed to flush file buffers.";
-                IOExceptionHelper.ThrowIOError(errorCode, message);
+                bool success = FlushFileBuffers(m_handle);
+                if (!success)
+                {
+                    int errorCode = Marshal.GetLastWin32Error();
+                    string message = "Failed to flush file buffers.";
+                    IOExceptionHelper.ThrowIOError(errorCode, message);
+                }
             }
         }
 
