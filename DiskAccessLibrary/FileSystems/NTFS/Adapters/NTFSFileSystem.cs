@@ -16,7 +16,7 @@ namespace DiskAccessLibrary.FileSystems.NTFS
     /// </summary>
     public class NTFSFileSystem : FileSystem, IExtendableFileSystem
     {
-        NTFSVolume m_volume;
+        private NTFSVolume m_volume;
 
         public NTFSFileSystem(Volume volume)
         {
