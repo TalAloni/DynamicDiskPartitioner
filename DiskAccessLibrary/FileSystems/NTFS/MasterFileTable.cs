@@ -7,7 +7,6 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
-using System.Text;
 using Utilities;
 
 namespace DiskAccessLibrary.FileSystems.NTFS
@@ -319,6 +318,7 @@ namespace DiskAccessLibrary.FileSystems.NTFS
             {
                 recordSegment.UpdateSequenceNumber++;
             }
+            recordSegment.LogFileSequenceNumber = 0;
             byte[] recordSegmentBytes = recordSegment.GetBytes(m_volume.BytesPerFileRecordSegment, m_volume.MinorVersion);
 
             m_mftFile.Data.WriteSectors(firstSectorIndex, recordSegmentBytes);
