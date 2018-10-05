@@ -17,11 +17,12 @@ namespace DiskAccessLibrary.FileSystems.NTFS
     {
         public const int FixedLengthNTFS12 = 0x30;
         public const int FixedLengthNTFS31 = 0x40;
+        public const ushort NoClients = 0xFFFF;
 
         public ulong CurrentLsn;
         // ushort LogClients;
-        public ushort ClientFreeList;
-        public ushort ClientInUseList;
+        public ushort ClientFreeList;  // The index of the first free log client record in the array
+        public ushort ClientInUseList; // The index of the first in-use log client record in the array
         public LogRestartFlags Flags;
         public uint SeqNumberBits;
         public ushort RestartAreaLength;
