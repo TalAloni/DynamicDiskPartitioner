@@ -131,7 +131,7 @@ namespace DiskAccessLibrary
                 m_descriptor.UpdateExtentEntries(lines);
 
                 File.WriteAllLines(m_descriptorPath, lines.ToArray(), Encoding.ASCII);
-                ((DiskImage)m_extent).Extend(numberOfAdditionalBytes);
+                m_extent.Extend(numberOfAdditionalBytes);
             }
             else
             {
