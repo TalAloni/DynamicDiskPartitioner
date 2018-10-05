@@ -26,7 +26,7 @@ namespace DiskAccessLibrary.FileSystems.NTFS
 
         /* Start of FILE_RECORD_SEGMENT_HEADER */
         // MULTI_SECTOR_HEADER
-        public ulong LogFileSequenceNumber;
+        public ulong LogFileSequenceNumber; // LSN of last logged update to this file record segment
         private ushort m_sequenceNumber; // This value is incremented each time that a file record segment is freed
         public ushort ReferenceCount;
         // ushort FirstAttributeOffset;
