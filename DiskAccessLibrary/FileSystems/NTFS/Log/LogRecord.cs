@@ -47,6 +47,13 @@ namespace DiskAccessLibrary.FileSystems.NTFS
             Data = ByteReader.ReadBytes(buffer, offset + HeaderLength, (int)clientDataLength);
         }
 
+        public byte[] GetBytes()
+        {
+            byte[] buffer = new byte[this.Length];
+            WriteBytes(buffer, 0);
+            return buffer;
+        }
+
         public void WriteBytes(byte[] buffer, int offset)
         {
             LittleEndianWriter.WriteUInt64(buffer, offset + 0x00, ThisLsn);
