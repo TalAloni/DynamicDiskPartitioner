@@ -66,6 +66,7 @@ namespace DiskAccessLibrary.FileSystems.NTFS
             int strideCount = bytesPerLogPage / MultiSectorHelper.BytesPerStride;
             ushort updateSequenceArraySize = (ushort)(1 + strideCount);
             MultiSectorHeader multiSectorHeader = new MultiSectorHeader(ValidSignature, UpdateSequenceArrayOffset, updateSequenceArraySize);
+            ushort nextRecordOffset = (ushort)(dataOffset + Data.Length);
 
             byte[] buffer = new byte[bytesPerLogPage];
             multiSectorHeader.WriteBytes(buffer, 0);
@@ -73,10 +74,9 @@ namespace DiskAccessLibrary.FileSystems.NTFS
             LittleEndianWriter.WriteUInt32(buffer, 0x10, (uint)Flags);
             LittleEndianWriter.WriteUInt16(buffer, 0x14, PageCount);
             LittleEndianWriter.WriteUInt16(buffer, 0x16, PagePosition);
+            LittleEndianWriter.WriteUInt16(buffer, 0x18, nextRecordOffset);
             LittleEndianWriter.WriteUInt64(buffer, 0x20, LastEndLsn);
             ByteWriter.WriteBytes(buffer, dataOffset, Data);
-            dataOffset += Data.Length;
-            LittleEndianWriter.WriteUInt16(buffer, 0x18, (ushort)dataOffset);
 
             // Write UpdateSequenceNumber and UpdateSequenceReplacementData
             List<byte[]> updateSequenceReplacementData = MultiSectorHelper.EncodeSegmentBuffer(buffer, 0, bytesPerLogPage, UpdateSequenceNumber);
