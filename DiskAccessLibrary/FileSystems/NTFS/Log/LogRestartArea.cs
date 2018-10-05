@@ -28,7 +28,7 @@ namespace DiskAccessLibrary.FileSystems.NTFS
         public ushort RestartAreaLength;
         // ushort ClientArrayOffset;
         public ulong FileSize;
-        public uint LastLsnDataLength;
+        public uint LastLsnDataLength; // Not including the LFS_RECORD_HEADER
         public ushort RecordHeaderLength;
         public ushort LogPageDataOffset;
         // uint Unknown
