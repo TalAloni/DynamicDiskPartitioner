@@ -98,19 +98,25 @@ namespace DiskAccessLibrary.FileSystems.NTFS
 
             ulong pageOffsetInFile = LsnToPageOffsetInFile(lsn);
             int recordOffsetInPage = LsnToRecordOffsetInPage(lsn);
+            LogRecordPage page = ReadPage(pageOffsetInFile);
+            return page.ReadRecord(recordOffsetInPage, m_restartPage.LogRestartArea.LogPageDataOffset);
+        }
+
+        private LogRecordPage ReadPage(ulong pageOffset)
+        {
             if (m_firstTailPage == null || m_secondTailPage == null)
             {
-                m_firstTailPage = ReadPage(m_restartPage.SystemPageSize * 2);
-                m_secondTailPage = ReadPage(m_restartPage.SystemPageSize * 2 + m_restartPage.LogPageSize);
+                m_firstTailPage = ReadPageFromFile(m_restartPage.SystemPageSize * 2);
+                m_secondTailPage = ReadPageFromFile(m_restartPage.SystemPageSize * 2 + m_restartPage.LogPageSize);
             }
 
             LogRecordPage page = null;
-            if (pageOffsetInFile == m_firstTailPage.LastLsnOrFileOffset)
+            if (pageOffset == m_firstTailPage.LastLsnOrFileOffset)
             {
                 page = m_firstTailPage;
             }
-            
-            if (pageOffsetInFile == m_secondTailPage.LastLsnOrFileOffset)
+
+            if (pageOffset == m_secondTailPage.LastLsnOrFileOffset)
             {
                 if (page == null || m_secondTailPage.LastEndLsn >= m_firstTailPage.LastEndLsn)
                 {
@@ -120,12 +126,12 @@ namespace DiskAccessLibrary.FileSystems.NTFS
 
             if (page == null)
             {
-                page = ReadPage(pageOffsetInFile);
+                page = ReadPageFromFile(pageOffset);
             }
-            return page.ReadRecord(recordOffsetInPage, m_restartPage.LogRestartArea.LogPageDataOffset);
+            return page;
         }
 
-        private LogRecordPage ReadPage(ulong pageOffset)
+        private LogRecordPage ReadPageFromFile(ulong pageOffset)
         {
             if (m_restartPage == null)
             {
