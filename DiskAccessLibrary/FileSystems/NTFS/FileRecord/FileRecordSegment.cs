@@ -24,7 +24,7 @@ namespace DiskAccessLibrary.FileSystems.NTFS
         public const int NTFS30UpdateSequenceArrayOffset = 0x2A; // NTFS v3.0 and earlier (up to Windows 2000)
         public const int NTFS31UpdateSequenceArrayOffset = 0x30; // NTFS v3.1 and later   (XP and later)
 
-        /* Start of header */
+        /* Start of FILE_RECORD_SEGMENT_HEADER */
         // MULTI_SECTOR_HEADER
         public ulong LogFileSequenceNumber;
         private ushort m_sequenceNumber; // This value is incremented each time that a file record segment is freed
@@ -39,7 +39,7 @@ namespace DiskAccessLibrary.FileSystems.NTFS
         private uint m_segmentNumberOnDisk; // Self-reference, NTFS v3.0+
         public ushort UpdateSequenceNumber; // a.k.a. USN
         // byte[] UpdateSequenceReplacementData
-        /* End of header */
+        /* End of FILE_RECORD_SEGMENT_HEADER */
         private List<AttributeRecord> m_immediateAttributes = new List<AttributeRecord>(); // Attribute records that are stored in the base file record
 
         private long m_segmentNumber; // We use our own segment number to support NTFS v3.0 (note that SegmentNumberOnDisk is UInt32, which is another reason to avoid it)

@@ -11,6 +11,10 @@ using Utilities;
 
 namespace DiskAccessLibrary.FileSystems.NTFS
 {
+    /// <remarks>
+    /// Windows NT 3.51 sets the version to 1.0
+    /// Windows NT 4.0 and later set the version to 1.1
+    /// </remarks>
     public class LogRestartPage
     {
         private const string ValidSignature = "RSTR";

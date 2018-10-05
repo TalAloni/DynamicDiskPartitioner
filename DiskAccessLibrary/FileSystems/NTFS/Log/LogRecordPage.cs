@@ -11,6 +11,10 @@ using Utilities;
 
 namespace DiskAccessLibrary.FileSystems.NTFS
 {
+    /// <remarks>
+    /// This record should be read according to the version number specified in LogRestartPage.
+    /// v1.0 use the LFS_UNPACKED_RECORD_PAGE structure, which is not being used in later versions.
+    /// </remarks>
     public class LogRecordPage
     {
         private const string ValidSignature = "RCRD";
@@ -18,11 +22,10 @@ namespace DiskAccessLibrary.FileSystems.NTFS
 
         /* Start of LFS_RECORD_PAGE_HEADER */
         // MULTI_SECTOR_HEADER
-        public ulong LastLsnOrFileOffset;
+        public ulong LastLsnOrFileOffset; // LastLsn for regular log pages, FileOffset for tail copies (indicates the location in the file where the page should be placed)
         public LogRecordPageFlags Flags;
         public ushort PageCount;
         public ushort PagePosition;
-        /* End of LFS_RECORD_PAGE_HEADER */
         /* Start of LFS_PACKED_RECORD_PAGE */
         // ushort NextRecordOffset; // The offset of the free space in the page
         // ushort WordAlign
@@ -31,6 +34,7 @@ namespace DiskAccessLibrary.FileSystems.NTFS
         public ushort UpdateSequenceNumber; // a.k.a. USN
         // byte[] UpdateSequenceReplacementData
         /* End of LFS_PACKED_RECORD_PAGE */
+        /* End of LFS_RECORD_PAGE_HEADER */
         public byte[] Data;
 
         public LogRecordPage()

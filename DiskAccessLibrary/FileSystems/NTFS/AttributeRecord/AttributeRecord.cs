@@ -17,7 +17,7 @@ namespace DiskAccessLibrary.FileSystems.NTFS
     {
         public const int AttributeRecordHeaderLength = 16; // The part that is common to both resident and non-resident attributes
 
-        /* Start of header */
+        /* Start of ATTRIBUTE_RECORD_HEADER */
         private AttributeType m_attribueType;
         private uint m_recordLengthOnDisk;
         private AttributeForm m_attributeForm;
@@ -25,7 +25,7 @@ namespace DiskAccessLibrary.FileSystems.NTFS
         // ushort NameOffset;
         public AttributeFlags Flags;
         private ushort m_instance;
-        /* End of header */
+        /* End of ATTRIBUTE_RECORD_HEADER */
         private string m_name = String.Empty;
 
         protected AttributeRecord(AttributeType attributeType, string name, bool isResident, ushort instance)
