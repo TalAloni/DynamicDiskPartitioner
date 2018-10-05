@@ -60,6 +60,35 @@ namespace DiskAccessLibrary.FileSystems.NTFS
             return ReadRecord(m_restartPage.LogRestartArea.CurrentLsn);
         }
 
+        public bool IsLogClean()
+        {
+            if (m_restartPage == null)
+            {
+                m_restartPage = ReadRestartPage();
+            }
+
+            bool isLogFileClosed = (m_restartPage.LogRestartArea.ClientInUseList == LogRestartArea.NoClients);
+            if  (isLogFileClosed)
+            {
+                // Windows 2000 and earlier will close the log file by setting the ClientInUseList to NoClients when the volume is shutdown cleanly.
+                // If the log file is closed than it must be clean.
+                return true;
+            }
+            else if ((m_restartPage.LogRestartArea.Flags & LogRestartFlags.LogFileIsClean) != 0)
+            {
+                // Windows XP and later will set the clean bit when the volume is shutdown cleanly.
+                // If the clean bit is set than the log file must be clean.
+                return true;
+            }
+            else
+            {
+                // The volume has not been shutdown cleanly.
+                // It's possible that the log is clean if the volume was completely idle for at least five seconds preceding the unclean shutdown.
+                // Currently, we skip the analysis and assume that's not the case.
+                return false;
+            }
+        }
+
         public LogRecord ReadRecord(ulong lsn)
         {
             if (m_restartPage == null)
