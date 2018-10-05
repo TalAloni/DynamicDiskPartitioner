@@ -10,7 +10,7 @@ using Utilities;
 
 namespace DiskAccessLibrary.FileSystems.NTFS
 {
-    public class LogFile : NTFSFile
+    public partial class LogFile : NTFSFile
     {
         private LogRestartPage m_restartPage;
 
@@ -32,7 +32,24 @@ namespace DiskAccessLibrary.FileSystems.NTFS
             return m_restartPage;
         }
 
-        public LogRecord ReadCurrentRecord()
+        private int FindClientIndex(string clientName)
+        {
+            if (m_restartPage == null)
+            {
+                m_restartPage = ReadRestartPage();
+            }
+
+            for (int index = 0; index < m_restartPage.LogRestartArea.LogClientArray.Count; index++)
+            {
+                if (String.Equals(m_restartPage.LogRestartArea.LogClientArray[index].ClientName, clientName, StringComparison.OrdinalIgnoreCase))
+                {
+                    return index;
+                }
+            }
+            return -1;
+        }
+
+        public LogRecord ReadCurrentRestartRecord()
         {
             if (m_restartPage == null)
             {
@@ -48,8 +65,8 @@ namespace DiskAccessLibrary.FileSystems.NTFS
                 m_restartPage = ReadRestartPage();
             }
 
-            ulong pageOffsetInFile = LSNToPageOffsetInFile(lsn);
-            int recordOffsetInPage = LSNToRecordOffsetInPage(lsn);
+            ulong pageOffsetInFile = LsnToPageOffsetInFile(lsn);
+            int recordOffsetInPage = LsnToRecordOffsetInPage(lsn);
             LogRecordPage page = ReadPage(pageOffsetInFile);
             return page.ReadRecord(recordOffsetInPage, m_restartPage.LogRestartArea.LogPageDataOffset);
         }
@@ -65,14 +82,25 @@ namespace DiskAccessLibrary.FileSystems.NTFS
             return new LogRecordPage(pageBytes, 0, m_restartPage.LogRestartArea.LogPageDataOffset);
         }
 
-        private ulong LSNToPageOffsetInFile(ulong lsn)
+        private void WritePage(ulong pageOffset, LogRecordPage page)
+        {
+            if (m_restartPage == null)
+            {
+                m_restartPage = ReadRestartPage();
+            }
+
+            byte[] pageBytes = page.GetBytes((int)m_restartPage.LogPageSize, m_restartPage.LogRestartArea.LogPageDataOffset);
+            WriteData(pageOffset, pageBytes);
+        }
+
+        private ulong LsnToPageOffsetInFile(ulong lsn)
         {
             int seqNumberBits = (int)m_restartPage.LogRestartArea.SeqNumberBits;
             ulong fileOffset = (lsn << seqNumberBits) >> (seqNumberBits - 3);
             return fileOffset & ~(m_restartPage.LogPageSize - 1);
         }
 
-        private int LSNToRecordOffsetInPage(ulong lsn)
+        private int LsnToRecordOffsetInPage(ulong lsn)
         {
             if (m_restartPage == null)
             {
