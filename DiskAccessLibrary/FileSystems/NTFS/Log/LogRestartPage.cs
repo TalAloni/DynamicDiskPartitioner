@@ -23,8 +23,8 @@ namespace DiskAccessLibrary.FileSystems.NTFS
         /* Start of LFS_RESTART_PAGE_HEADER */
         // MULTI_SECTOR_HEADER
         public ulong ChkDskLsn;
-        private uint SystemPageSize;
-        private uint m_logPageSize;
+        private uint m_systemPageSize;
+        public uint LogPageSize;
         // ushort RestartOffset;
         public short MinorVersion;
         public short MajorVersion;
@@ -36,6 +36,8 @@ namespace DiskAccessLibrary.FileSystems.NTFS
         public LogRestartPage()
         {
             LogRestartArea = new LogRestartArea();
+            MinorVersion = 1;
+            MajorVersion = 1;
         }
 
         public LogRestartPage(byte[] buffer, int offset)
@@ -46,8 +48,8 @@ namespace DiskAccessLibrary.FileSystems.NTFS
                 throw new InvalidDataException("Invalid RSTR record signature");
             }
             ChkDskLsn = LittleEndianConverter.ToUInt64(buffer, offset + 0x08);
-            SystemPageSize = LittleEndianConverter.ToUInt32(buffer, offset + 0x10);
-            m_logPageSize = LittleEndianConverter.ToUInt32(buffer, offset + 0x14);
+            m_systemPageSize = LittleEndianConverter.ToUInt32(buffer, offset + 0x10);
+            LogPageSize = LittleEndianConverter.ToUInt32(buffer, offset + 0x14);
             ushort restartOffset = LittleEndianConverter.ToUInt16(buffer, offset + 0x18);
             MinorVersion = LittleEndianConverter.ToInt16(buffer, offset + 0x1A);
             MajorVersion = LittleEndianConverter.ToInt16(buffer, offset + 0x1C);
@@ -57,41 +59,40 @@ namespace DiskAccessLibrary.FileSystems.NTFS
             LogRestartArea = new LogRestartArea(buffer, offset + restartOffset);
         }
 
-        public byte[] GetBytes(int bytesPerLogPage)
+        public byte[] GetBytes(int bytesPerSystemPage)
         {
-            m_logPageSize = (uint)bytesPerLogPage;
-            LogRestartArea.LogPageDataOffset = (ushort)LogRecordPage.GetDataOffset(bytesPerLogPage);
-            int strideCount = bytesPerLogPage / MultiSectorHelper.BytesPerStride;
+            m_systemPageSize = (uint)bytesPerSystemPage;
+            int strideCount = bytesPerSystemPage / MultiSectorHelper.BytesPerStride;
             ushort updateSequenceArraySize = (ushort)(1 + strideCount);
             MultiSectorHeader multiSectorHeader = new MultiSectorHeader(ValidSignature, UpdateSequenceArrayOffset, updateSequenceArraySize);
             int restartOffset = (int)Math.Ceiling((double)(UpdateSequenceArrayOffset + updateSequenceArraySize * 2) / 8) * 8;
-            
-            byte[] buffer = new byte[bytesPerLogPage];
+
+            byte[] buffer = new byte[bytesPerSystemPage];
             multiSectorHeader.WriteBytes(buffer, 0);
             LittleEndianWriter.WriteUInt64(buffer, 0x08, ChkDskLsn);
-            LittleEndianWriter.WriteUInt32(buffer, 0x10, SystemPageSize);
-            LittleEndianWriter.WriteUInt32(buffer, 0x14, m_logPageSize);
+            LittleEndianWriter.WriteUInt32(buffer, 0x10, m_systemPageSize);
+            LittleEndianWriter.WriteUInt32(buffer, 0x14, LogPageSize);
             LittleEndianWriter.WriteUInt16(buffer, 0x18, (ushort)restartOffset);
             LittleEndianWriter.WriteInt16(buffer, 0x1A, MinorVersion);
             LittleEndianWriter.WriteInt16(buffer, 0x1C, MajorVersion);
             LogRestartArea.WriteBytes(buffer, restartOffset);
 
             // Write UpdateSequenceNumber and UpdateSequenceReplacementData
-            List<byte[]> updateSequenceReplacementData = MultiSectorHelper.EncodeSegmentBuffer(buffer, 0, bytesPerLogPage, UpdateSequenceNumber);
+            List<byte[]> updateSequenceReplacementData = MultiSectorHelper.EncodeSegmentBuffer(buffer, 0, bytesPerSystemPage, UpdateSequenceNumber);
             MultiSectorHelper.WriteUpdateSequenceArray(buffer, UpdateSequenceArrayOffset, updateSequenceArraySize, UpdateSequenceNumber, updateSequenceReplacementData);
             return buffer;
         }
 
-        public static uint GetLogPageSize(byte[] buffer, int offset)
+        public static uint GetSystemPageSize(byte[] buffer, int offset)
         {
-            return LittleEndianConverter.ToUInt32(buffer, offset + 0x14);
+            return LittleEndianConverter.ToUInt32(buffer, offset + 0x10);
         }
 
-        public uint LogPageSize
+        public uint SystemPageSize
         {
             get
             {
-                return m_logPageSize;
+                return m_systemPageSize;
             }
         }
     }

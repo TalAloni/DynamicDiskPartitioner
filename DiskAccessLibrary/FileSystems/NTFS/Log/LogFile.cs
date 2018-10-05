@@ -21,8 +21,8 @@ namespace DiskAccessLibrary.FileSystems.NTFS
         public LogRestartPage ReadRestartPage()
         {
             byte[] pageBytes = ReadData(0, Volume.BytesPerSector);
-            uint logPageSize = LogRestartPage.GetLogPageSize(pageBytes, 0);
-            int bytesToRead = (int)logPageSize - pageBytes.Length;
+            uint systemPageSize = LogRestartPage.GetSystemPageSize(pageBytes, 0);
+            int bytesToRead = (int)systemPageSize - pageBytes.Length;
             if (bytesToRead > 0)
             {
                 byte[] temp = ReadData((ulong)pageBytes.Length, bytesToRead);
