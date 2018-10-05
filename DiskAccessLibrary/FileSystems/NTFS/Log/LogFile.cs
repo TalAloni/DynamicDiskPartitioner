@@ -13,6 +13,8 @@ namespace DiskAccessLibrary.FileSystems.NTFS
     public partial class LogFile : NTFSFile
     {
         private LogRestartPage m_restartPage;
+        private LogRecordPage m_firstTailPage;
+        private LogRecordPage m_secondTailPage;
 
         public LogFile(NTFSVolume volume) : base(volume, MasterFileTable.LogSegmentReference)
         {
@@ -67,7 +69,30 @@ namespace DiskAccessLibrary.FileSystems.NTFS
 
             ulong pageOffsetInFile = LsnToPageOffsetInFile(lsn);
             int recordOffsetInPage = LsnToRecordOffsetInPage(lsn);
-            LogRecordPage page = ReadPage(pageOffsetInFile);
+            if (m_firstTailPage == null || m_secondTailPage == null)
+            {
+                m_firstTailPage = ReadPage(m_restartPage.SystemPageSize * 2);
+                m_secondTailPage = ReadPage(m_restartPage.SystemPageSize * 2 + m_restartPage.LogPageSize);
+            }
+
+            LogRecordPage page = null;
+            if (pageOffsetInFile == m_firstTailPage.LastLsnOrFileOffset)
+            {
+                page = m_firstTailPage;
+            }
+            
+            if (pageOffsetInFile == m_secondTailPage.LastLsnOrFileOffset)
+            {
+                if (page == null || m_secondTailPage.LastEndLsn >= m_firstTailPage.LastEndLsn)
+                {
+                    page = m_secondTailPage;
+                }
+            }
+
+            if (page == null)
+            {
+                page = ReadPage(pageOffsetInFile);
+            }
             return page.ReadRecord(recordOffsetInPage, m_restartPage.LogRestartArea.LogPageDataOffset);
         }
 
