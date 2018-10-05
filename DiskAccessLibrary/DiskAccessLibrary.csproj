@@ -104,12 +104,15 @@
     <Compile Include="FileSystems\NTFS\Log\Enums\LogRecordPageFlags.cs" />
     <Compile Include="FileSystems\NTFS\Log\Enums\LogRecordType.cs" />
     <Compile Include="FileSystems\NTFS\Log\Enums\LogRestartFlags.cs" />
+    <Compile Include="FileSystems\NTFS\Log\Enums\NTFSLogOperation.cs" />
     <Compile Include="FileSystems\NTFS\Log\LogClientRecord.cs" />
     <Compile Include="FileSystems\NTFS\Log\LogFile.cs" />
     <Compile Include="FileSystems\NTFS\Log\LogRecord.cs" />
     <Compile Include="FileSystems\NTFS\Log\LogRecordPage.cs" />
     <Compile Include="FileSystems\NTFS\Log\LogRestartArea.cs" />
     <Compile Include="FileSystems\NTFS\Log\LogRestartPage.cs" />
+    <Compile Include="FileSystems\NTFS\Log\NTFSLogRecord.cs" />
+    <Compile Include="FileSystems\NTFS\Log\NTFSRestartRecord.cs" />
     <Compile Include="FileSystems\NTFS\MasterFileTable.cs" />
     <Compile Include="FileSystems\NTFS\NTFSBootRecord.cs" />
     <Compile Include="FileSystems\NTFS\NTFSFile.cs" />
