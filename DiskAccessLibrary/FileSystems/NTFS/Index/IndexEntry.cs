@@ -10,6 +10,9 @@ using Utilities;
 
 namespace DiskAccessLibrary.FileSystems.NTFS
 {
+    /// <summary>
+    /// INDEX_ENTRY
+    /// </summary>
     public class IndexEntry
     {
         public const int FixedLength = 16;
@@ -34,6 +37,10 @@ namespace DiskAccessLibrary.FileSystems.NTFS
         {
             FileReference = fileReference;
             Key = key;
+        }
+
+        public IndexEntry(byte[] buffer, int offset) : this(buffer, ref offset)
+        {
         }
 
         public IndexEntry(byte[] buffer, ref int offset)
