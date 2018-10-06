@@ -23,6 +23,7 @@ namespace DynamicDiskPartitioner
                 builder.AppendLine(physicalDisk.Description);
             }
             builder.AppendFormat("Size: {0} bytes\n", disk.Size.ToString("###,###,###,###,##0"));
+            builder.AppendFormat("Bytes per sector (logical): {0}\n", disk.BytesPerSector);
             if (disk is PhysicalDisk)
             {
                 PhysicalDisk physicalDisk = (PhysicalDisk)disk;
