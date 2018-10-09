@@ -38,10 +38,10 @@ namespace DiskAccessLibrary.FileSystems.NTFS
         public uint DirtyPageTableLength;
         public uint TransactionTableLength;
 
-        public NTFSRestartRecord()
+        public NTFSRestartRecord(uint majorVersion, uint minorVersion)
         {
-            MajorVersion = 1;
-            MinorVersion = 0;
+            MajorVersion = majorVersion;
+            MinorVersion = minorVersion;
         }
 
         public NTFSRestartRecord(byte[] recordBytes)
