@@ -127,7 +127,7 @@ namespace DiskAccessLibrary.FileSystems.NTFS
                 }
                 else
                 {
-                    length += (int)Math.Ceiling((double)UndoData.Length / 8);
+                    length += (int)Math.Ceiling((double)UndoData.Length / 8) * 8;
                     length += RedoData.Length;
                 }
                 return length;
