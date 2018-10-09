@@ -71,9 +71,9 @@ namespace DiskAccessLibrary.FileSystems.NTFS
             LittleEndianWriter.WriteUInt64(recordBytes, 0x20, DirtyPageTableLsn);
             LittleEndianWriter.WriteUInt64(recordBytes, 0x28, TransactionTableLsn);
             LittleEndianWriter.WriteUInt32(recordBytes, 0x30, OpenAttributeTableLength);
-            LittleEndianWriter.WriteUInt32(recordBytes, 0x30, AttributeNamesLength);
-            LittleEndianWriter.WriteUInt32(recordBytes, 0x30, DirtyPageTableLength);
-            LittleEndianWriter.WriteUInt32(recordBytes, 0x30, TransactionTableLength);
+            LittleEndianWriter.WriteUInt32(recordBytes, 0x34, AttributeNamesLength);
+            LittleEndianWriter.WriteUInt32(recordBytes, 0x38, DirtyPageTableLength);
+            LittleEndianWriter.WriteUInt32(recordBytes, 0x3C, TransactionTableLength);
             return recordBytes;
         }
     }
