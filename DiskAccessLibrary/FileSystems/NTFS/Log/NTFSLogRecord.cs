@@ -108,10 +108,10 @@ namespace DiskAccessLibrary.FileSystems.NTFS
             {
                 LittleEndianWriter.WriteUInt64(recordBytes, 0x20 + index * 8, (ulong)LCNsForPage[index]);
             }
-            ByteWriter.WriteBytes(recordBytes, undoDataOffset, UndoData);
+            ByteWriter.WriteBytes(recordBytes, redoDataOffset, RedoData);
             if (UndoData != RedoData)
             {
-                ByteWriter.WriteBytes(recordBytes, redoDataOffset, RedoData);
+                ByteWriter.WriteBytes(recordBytes, undoDataOffset, UndoData);
             }
             return recordBytes;
         }
