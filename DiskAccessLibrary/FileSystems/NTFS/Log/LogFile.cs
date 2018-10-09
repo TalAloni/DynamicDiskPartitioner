@@ -51,15 +51,6 @@ namespace DiskAccessLibrary.FileSystems.NTFS
             return -1;
         }
 
-        public LogRecord ReadCurrentRestartRecord()
-        {
-            if (m_restartPage == null)
-            {
-                m_restartPage = ReadRestartPage();
-            }
-            return ReadRecord(m_restartPage.LogRestartArea.CurrentLsn);
-        }
-
         public bool IsLogClean()
         {
             if (m_restartPage == null)

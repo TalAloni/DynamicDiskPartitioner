@@ -14,10 +14,17 @@ namespace DiskAccessLibrary.FileSystems.NTFS
     public partial class LogFile
     {
         private const string NTFSClientName = "NTFS";
+        private int? m_ntfsClientIndex;
 
         public NTFSRestartRecord ReadNTFSRestartRecord()
         {
-            LogRecord record = ReadCurrentRestartRecord();
+            if (m_restartPage == null)
+            {
+                m_restartPage = ReadRestartPage();
+            }
+
+            ulong clientRestartLsn = m_restartPage.LogRestartArea.LogClientArray[NTFSClientIndex].ClientRestartLsn;
+            LogRecord record = ReadRecord(clientRestartLsn);
             if (record.RecordType == LogRecordType.ClientRestart)
             {
                 return new NTFSRestartRecord(record.Data);
@@ -39,6 +46,23 @@ namespace DiskAccessLibrary.FileSystems.NTFS
             else
             {
                 return null;
+
+            }
+        }
+
+        private int NTFSClientIndex
+        {
+            get
+            {
+                if (m_ntfsClientIndex == null)
+                {
+                    m_ntfsClientIndex = FindClientIndex(NTFSClientName);
+                    if (m_ntfsClientIndex == -1)
+                    {
+                        throw new InvalidDataException("NTFS Client was not found");
+                    }
+                }
+                return m_ntfsClientIndex.Value;
             }
         }
     }
