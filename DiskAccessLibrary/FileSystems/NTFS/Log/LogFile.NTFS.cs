@@ -36,6 +36,84 @@ namespace DiskAccessLibrary.FileSystems.NTFS
             }
         }
 
+        public List<OpenAttributeEntry> ReadCurrentOpenAttributeTable()
+        {
+            NTFSRestartRecord restartRecord = ReadNTFSRestartRecord();
+            ulong openAttributeTableLsn = restartRecord.OpenAttributeTableLsn;
+            if (openAttributeTableLsn != 0)
+            {
+                NTFSLogRecord record = ReadNTFSLogRecord(openAttributeTableLsn);
+                if (record.RedoOperation != NTFSLogOperation.OpenAttributeTableDump)
+                {
+                    string message = String.Format("Current restart record OpenAttributeTableLsn points to a record with RedoOperation {0}", record.RedoOperation);
+                    throw new InvalidDataException(message);
+                }
+
+                if (restartRecord.OpenAttributeTableLength != record.RedoData.Length)
+                {
+                    throw new InvalidDataException("Open attribute table length does not match restart record");
+                }
+
+                return RestartTableHelper.ReadTable<OpenAttributeEntry>(record.RedoData, restartRecord.MajorVersion);
+            }
+            else
+            {
+                return null;
+            }
+        }
+
+        public List<DirtyPageEntry> ReadCurrentDirtyPageTable()
+        {
+            NTFSRestartRecord restartRecord = ReadNTFSRestartRecord();
+            ulong dirtyPageTableLsn = restartRecord.DirtyPageTableLsn;
+            if (dirtyPageTableLsn != 0)
+            {
+                NTFSLogRecord record = ReadNTFSLogRecord(dirtyPageTableLsn);
+                if (record.RedoOperation != NTFSLogOperation.DirtyPageTableDump)
+                {
+                    string message = String.Format("Current restart record DirtyPageTableLsn points to a record with RedoOperation {0}", record.RedoOperation);
+                    throw new InvalidDataException(message);
+                }
+
+                if (restartRecord.DirtyPageTableLength != record.RedoData.Length)
+                {
+                    throw new InvalidDataException("Dirty page table length does not match restart record");
+                }
+
+                return RestartTableHelper.ReadTable<DirtyPageEntry>(record.RedoData, restartRecord.MajorVersion);
+            }
+            else
+            {
+                return null;
+            }
+        }
+
+        public List<TransactionEntry> ReadCurrentTransactionTable()
+        {
+            NTFSRestartRecord restartRecord = ReadNTFSRestartRecord();
+            ulong transactionTableLsn = restartRecord.TransactionTableLsn;
+            if (transactionTableLsn != 0)
+            {
+                NTFSLogRecord record = ReadNTFSLogRecord(transactionTableLsn);
+                if (record.RedoOperation != NTFSLogOperation.TransactionTableDump)
+                {
+                    string message = String.Format("Current restart record TransactionTableLsn points to a record with RedoOperation {0}", record.RedoOperation);
+                    throw new InvalidDataException(message);
+                }
+
+                if (restartRecord.TransactionTableLength != record.RedoData.Length)
+                {
+                    throw new InvalidDataException("Transcation table length does not match restart record");
+                }
+
+                return RestartTableHelper.ReadTable<TransactionEntry>(record.RedoData, restartRecord.MajorVersion);
+            }
+            else
+            {
+                return null;
+            }
+        }
+
         public NTFSLogRecord ReadNTFSLogRecord(ulong lsn)
         {
             LogRecord record = ReadRecord(lsn);
