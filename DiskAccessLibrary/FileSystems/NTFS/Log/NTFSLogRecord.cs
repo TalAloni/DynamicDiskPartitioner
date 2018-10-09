@@ -21,7 +21,7 @@ namespace DiskAccessLibrary.FileSystems.NTFS
         // ushort RedoLength;
         // ushort UndoOffset; // Offset MUST be aligned to 8 byte boundary
         // ushort UndoLength;
-        public ushort TargetAttributeIndex; // 0 for the MFT itself
+        public ushort TargetAttributeOffset; // Offset of the attribute in the open attribute table, 0 for the MFT itself
         // ushort LCNsToFollow;
         public ushort RecordOffset;
         public ushort AttributeOffset;
@@ -47,7 +47,7 @@ namespace DiskAccessLibrary.FileSystems.NTFS
             ushort redoLength = LittleEndianConverter.ToUInt16(recordBytes, 0x06);
             ushort undoOffset = LittleEndianConverter.ToUInt16(recordBytes, 0x08);
             ushort undoLength = LittleEndianConverter.ToUInt16(recordBytes, 0x0A);
-            TargetAttributeIndex = LittleEndianConverter.ToUInt16(recordBytes, 0x0C);
+            TargetAttributeOffset = LittleEndianConverter.ToUInt16(recordBytes, 0x0C);
             ushort lcnsToFollow = LittleEndianConverter.ToUInt16(recordBytes, 0x0E);
             RecordOffset = LittleEndianConverter.ToUInt16(recordBytes, 0x10);
             AttributeOffset = LittleEndianConverter.ToUInt16(recordBytes, 0x12);
@@ -97,7 +97,7 @@ namespace DiskAccessLibrary.FileSystems.NTFS
             LittleEndianWriter.WriteUInt16(recordBytes, 0x06, (ushort)RedoData.Length);
             LittleEndianWriter.WriteUInt16(recordBytes, 0x08, (ushort)undoDataOffset);
             LittleEndianWriter.WriteUInt16(recordBytes, 0x0A, (ushort)UndoData.Length);
-            LittleEndianWriter.WriteUInt16(recordBytes, 0x0C, TargetAttributeIndex);
+            LittleEndianWriter.WriteUInt16(recordBytes, 0x0C, TargetAttributeOffset);
             LittleEndianWriter.WriteUInt16(recordBytes, 0x0E, (ushort)LCNsForPage.Count);
             LittleEndianWriter.WriteUInt16(recordBytes, 0x10, RecordOffset);
             LittleEndianWriter.WriteUInt16(recordBytes, 0x12, AttributeOffset);
