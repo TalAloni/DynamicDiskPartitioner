@@ -105,6 +105,7 @@
     <Compile Include="FileSystems\NTFS\Log\Enums\LogRecordType.cs" />
     <Compile Include="FileSystems\NTFS\Log\Enums\LogRestartFlags.cs" />
     <Compile Include="FileSystems\NTFS\Log\Enums\NTFSLogOperation.cs" />
+    <Compile Include="FileSystems\NTFS\Log\Enums\TransactionState.cs" />
     <Compile Include="FileSystems\NTFS\Log\LogClientRecord.cs" />
     <Compile Include="FileSystems\NTFS\Log\LogFile.cs" />
     <Compile Include="FileSystems\NTFS\Log\LogFile.NTFS.cs" />
@@ -114,6 +115,12 @@
     <Compile Include="FileSystems\NTFS\Log\LogRestartPage.cs" />
     <Compile Include="FileSystems\NTFS\Log\NTFSLogRecord.cs" />
     <Compile Include="FileSystems\NTFS\Log\NTFSRestartRecord.cs" />
+    <Compile Include="FileSystems\NTFS\Log\RestartTables\DirtyPageEntry.cs" />
+    <Compile Include="FileSystems\NTFS\Log\RestartTables\OpenAttributeEntry.cs" />
+    <Compile Include="FileSystems\NTFS\Log\RestartTables\RestartTableEntry.cs" />
+    <Compile Include="FileSystems\NTFS\Log\RestartTables\RestartTableHeader.cs" />
+    <Compile Include="FileSystems\NTFS\Log\RestartTables\RestartTableHelper.cs" />
+    <Compile Include="FileSystems\NTFS\Log\RestartTables\TransactionEntry.cs" />
     <Compile Include="FileSystems\NTFS\MasterFileTable.cs" />
     <Compile Include="FileSystems\NTFS\NTFSBootRecord.cs" />
     <Compile Include="FileSystems\NTFS\NTFSFile.cs" />
