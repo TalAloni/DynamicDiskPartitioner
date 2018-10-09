@@ -22,15 +22,15 @@ namespace DiskAccessLibrary.FileSystems.NTFS
 
         /* Start of LFS_RECORD_PAGE_HEADER */
         // MULTI_SECTOR_HEADER
-        public ulong LastLsnOrFileOffset; // LastLsn for regular log pages, FileOffset for tail copies (indicates the location in the file where the page should be placed)
+        public ulong LastLsnOrFileOffset; // Last LSN that starts on this page for regular log pages, FileOffset for tail copies (indicates the location in the file where the page should be placed)
         public LogRecordPageFlags Flags;
-        public ushort PageCount;
-        public ushort PagePosition;
+        public ushort PageCount; // Number of pages written as part of the IO transfer. a MultiPage record is likely to be written in two separate IO transfers (since the last page may have room for more records that will be written in a later transfer)
+        public ushort PagePosition; // One-based
         /* Start of LFS_PACKED_RECORD_PAGE */
-        // ushort NextRecordOffset; // The offset of the free space in the page
+        // ushort NextRecordOffset; // The offset of the free space in the page, if the last record has MultiPage flag set this value is not incremented and will point to the start of the record.
         // ushort WordAlign
         // uint DWordAlign
-        public ulong LastEndLsn;
+        public ulong LastEndLsn; // Last LSN that ends on this page
         public ushort UpdateSequenceNumber; // a.k.a. USN
         // byte[] UpdateSequenceReplacementData
         /* End of LFS_PACKED_RECORD_PAGE */
