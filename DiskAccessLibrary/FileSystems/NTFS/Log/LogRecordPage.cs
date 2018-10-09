@@ -27,7 +27,7 @@ namespace DiskAccessLibrary.FileSystems.NTFS
         public ushort PageCount; // Number of pages written as part of the IO transfer. a MultiPage record is likely to be written in two separate IO transfers (since the last page may have room for more records that will be written in a later transfer)
         public ushort PagePosition; // One-based
         /* Start of LFS_PACKED_RECORD_PAGE */
-        // ushort NextRecordOffset; // The offset of the free space in the page, if the last record has MultiPage flag set this value is not incremented and will point to the start of the record.
+        public ushort NextRecordOffset; // The offset of the free space in the page, if the last record has MultiPage flag set this value is not incremented and will point to the start of the record.
         // ushort WordAlign
         // uint DWordAlign
         public ulong LastEndLsn; // Last LSN that ends on this page
@@ -42,23 +42,23 @@ namespace DiskAccessLibrary.FileSystems.NTFS
             Data = new byte[0];
         }
 
-        public LogRecordPage(byte[] buffer, int offset, int dataOffset)
+        public LogRecordPage(byte[] pageBytes, int dataOffset)
         {
-            MultiSectorHeader multiSectorHeader = new MultiSectorHeader(buffer, offset + 0x00);
+            MultiSectorHeader multiSectorHeader = new MultiSectorHeader(pageBytes, 0x00);
             if (multiSectorHeader.Signature != ValidSignature)
             {
                 throw new InvalidDataException("Invalid RCRD record signature");
             }
-            LastLsnOrFileOffset = LittleEndianConverter.ToUInt64(buffer, offset + 0x08);
-            Flags = (LogRecordPageFlags)LittleEndianConverter.ToUInt32(buffer, offset + 0x10);
-            PageCount = LittleEndianConverter.ToUInt16(buffer, offset + 0x14);
-            PagePosition = LittleEndianConverter.ToUInt16(buffer, offset + 0x16);
-            ushort nextRecordOffset = LittleEndianConverter.ToUInt16(buffer, offset + 0x18);
-            LastEndLsn = LittleEndianConverter.ToUInt64(buffer, offset + 0x20);
-            int position = offset + multiSectorHeader.UpdateSequenceArrayOffset;
-            List<byte[]> updateSequenceReplacementData = MultiSectorHelper.ReadUpdateSequenceArray(buffer, position, multiSectorHeader.UpdateSequenceArraySize, out UpdateSequenceNumber);
-            MultiSectorHelper.DecodeSegmentBuffer(buffer, offset, UpdateSequenceNumber, updateSequenceReplacementData);
-            Data = ByteReader.ReadBytes(buffer, offset + dataOffset, (int)(nextRecordOffset - dataOffset));
+            LastLsnOrFileOffset = LittleEndianConverter.ToUInt64(pageBytes, 0x08);
+            Flags = (LogRecordPageFlags)LittleEndianConverter.ToUInt32(pageBytes, 0x10);
+            PageCount = LittleEndianConverter.ToUInt16(pageBytes, 0x14);
+            PagePosition = LittleEndianConverter.ToUInt16(pageBytes, 0x16);
+            NextRecordOffset = LittleEndianConverter.ToUInt16(pageBytes, 0x18);
+            LastEndLsn = LittleEndianConverter.ToUInt64(pageBytes, 0x20);
+            int position = multiSectorHeader.UpdateSequenceArrayOffset;
+            List<byte[]> updateSequenceReplacementData = MultiSectorHelper.ReadUpdateSequenceArray(pageBytes, position, multiSectorHeader.UpdateSequenceArraySize, out UpdateSequenceNumber);
+            MultiSectorHelper.DecodeSegmentBuffer(pageBytes, 0, UpdateSequenceNumber, updateSequenceReplacementData);
+            Data = ByteReader.ReadBytes(pageBytes, dataOffset, pageBytes.Length - dataOffset);
         }
 
         public byte[] GetBytes(int bytesPerLogPage, int dataOffset)
@@ -66,7 +66,6 @@ namespace DiskAccessLibrary.FileSystems.NTFS
             int strideCount = bytesPerLogPage / MultiSectorHelper.BytesPerStride;
             ushort updateSequenceArraySize = (ushort)(1 + strideCount);
             MultiSectorHeader multiSectorHeader = new MultiSectorHeader(ValidSignature, UpdateSequenceArrayOffset, updateSequenceArraySize);
-            ushort nextRecordOffset = (ushort)(dataOffset + Data.Length);
 
             byte[] buffer = new byte[bytesPerLogPage];
             multiSectorHeader.WriteBytes(buffer, 0);
@@ -74,7 +73,7 @@ namespace DiskAccessLibrary.FileSystems.NTFS
             LittleEndianWriter.WriteUInt32(buffer, 0x10, (uint)Flags);
             LittleEndianWriter.WriteUInt16(buffer, 0x14, PageCount);
             LittleEndianWriter.WriteUInt16(buffer, 0x16, PagePosition);
-            LittleEndianWriter.WriteUInt16(buffer, 0x18, nextRecordOffset);
+            LittleEndianWriter.WriteUInt16(buffer, 0x18, NextRecordOffset);
             LittleEndianWriter.WriteUInt64(buffer, 0x20, LastEndLsn);
             ByteWriter.WriteBytes(buffer, dataOffset, Data);
 
@@ -87,6 +86,30 @@ namespace DiskAccessLibrary.FileSystems.NTFS
         public LogRecord ReadRecord(int recordOffset, int dataOffset)
         {
             return new LogRecord(Data, recordOffset - dataOffset);
+        }
+
+        public byte[] ReadBytes(int recordOffset, int recordLength, int dataOffset)
+        {
+            return ByteReader.ReadBytes(Data, recordOffset - dataOffset, recordLength);
+        }
+
+        public bool HasRecordEnd
+        {
+            get
+            {
+                return (Flags & LogRecordPageFlags.RecordEnd) != 0;
+            }
+            set
+            {
+                if (value)
+                {
+                    Flags |= LogRecordPageFlags.RecordEnd;
+                }
+                else
+                {
+                    Flags &= ~LogRecordPageFlags.RecordEnd;
+                }
+            }
         }
 
         public static int GetDataOffset(int bytesPerLogPage)

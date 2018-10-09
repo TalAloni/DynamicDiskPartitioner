@@ -139,7 +139,7 @@ namespace DiskAccessLibrary.FileSystems.NTFS
             }
 
             byte[] pageBytes = ReadData(pageOffset, (int)m_restartPage.LogPageSize);
-            return new LogRecordPage(pageBytes, 0, m_restartPage.LogRestartArea.LogPageDataOffset);
+            return new LogRecordPage(pageBytes, m_restartPage.LogRestartArea.LogPageDataOffset);
         }
 
         private void WritePage(ulong pageOffset, LogRecordPage page)
