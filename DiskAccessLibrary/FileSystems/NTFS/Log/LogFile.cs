@@ -87,7 +87,26 @@ namespace DiskAccessLibrary.FileSystems.NTFS
             ulong pageOffsetInFile = LsnToPageOffsetInFile(lsn);
             int recordOffsetInPage = LsnToRecordOffsetInPage(lsn);
             LogRecordPage page = ReadPage(pageOffsetInFile);
-            return page.ReadRecord(recordOffsetInPage, m_restartPage.LogRestartArea.LogPageDataOffset);
+            int dataOffset = m_restartPage.LogRestartArea.LogPageDataOffset;
+            LogRecord record = page.ReadRecord(recordOffsetInPage, dataOffset);
+            if (record.IsMultiPageRecord)
+            {
+                int recordLength = (int)(LogRecord.HeaderLength + record.ClientDataLength);
+                int bytesRemaining = recordLength - (LogRecord.HeaderLength + record.Data.Length);
+                while (bytesRemaining > 0)
+                {
+                    pageOffsetInFile += m_restartPage.LogPageSize;
+                    if (pageOffsetInFile == m_restartPage.LogRestartArea.FileSize)
+                    {
+                        pageOffsetInFile = m_restartPage.SystemPageSize * 2 + m_restartPage.LogPageSize * 2;
+                    }
+                    page = ReadPage(pageOffsetInFile);
+                    int bytesToRead = Math.Min((int)m_restartPage.LogPageSize - dataOffset, bytesRemaining);
+                    record.Data = ByteUtils.Concatenate(record.Data, page.ReadBytes(dataOffset, bytesToRead, dataOffset));
+                    bytesRemaining -= bytesToRead;
+                }
+            }
+            return record;
         }
 
         private LogRecordPage ReadPage(ulong pageOffset)
