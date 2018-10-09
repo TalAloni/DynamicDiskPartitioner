@@ -17,7 +17,7 @@ namespace DiskAccessLibrary.FileSystems.NTFS
     {
         public const int FixedLengthNTFS12 = 0x30;
         public const int FixedLengthNTFS31 = 0x40;
-        public const ushort NoClients = 0xFFFF;
+        public const ushort NoClient = 0xFFFF;
 
         public ulong CurrentLsn;
         // ushort LogClients;
@@ -83,6 +83,40 @@ namespace DiskAccessLibrary.FileSystems.NTFS
             {
                 clientRecord.WriteBytes(buffer, position);
                 position += clientRecord.Length;
+            }
+        }
+
+        /// <summary>
+        /// Windows 2000 and earlier will close the log file by setting the
+        /// ClientInUseList to NoClient when the volume is shutdown cleanly.
+        /// </summary>
+        public bool IsInUse
+        {
+            get
+            {
+                return (ClientInUseList != NoClient);
+            }
+        }
+
+        /// <summary>
+        /// Windows XP and later will set the clean bit when the volume is shutdown cleanly.
+        /// </summary>
+        public bool IsClean
+        {
+            get
+            {
+                return (Flags & LogRestartFlags.CleanDismount) != 0;
+            }
+            set
+            {
+                if (value)
+                {
+                    Flags |= LogRestartFlags.CleanDismount;
+                }
+                else
+                {
+                    Flags &= ~LogRestartFlags.CleanDismount;
+                }
             }
         }
 

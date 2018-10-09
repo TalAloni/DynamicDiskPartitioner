@@ -67,16 +67,13 @@ namespace DiskAccessLibrary.FileSystems.NTFS
                 m_restartPage = ReadRestartPage();
             }
 
-            bool isLogFileClosed = (m_restartPage.LogRestartArea.ClientInUseList == LogRestartArea.NoClients);
-            if  (isLogFileClosed)
+            if (m_restartPage.LogRestartArea.IsInUse)
             {
-                // Windows 2000 and earlier will close the log file by setting the ClientInUseList to NoClients when the volume is shutdown cleanly.
-                // If the log file is closed than it must be clean.
+                // If the log file is not in use than it must be clean.
                 return true;
             }
-            else if ((m_restartPage.LogRestartArea.Flags & LogRestartFlags.LogFileIsClean) != 0)
+            else if (m_restartPage.LogRestartArea.IsClean)
             {
-                // Windows XP and later will set the clean bit when the volume is shutdown cleanly.
                 // If the clean bit is set than the log file must be clean.
                 return true;
             }
