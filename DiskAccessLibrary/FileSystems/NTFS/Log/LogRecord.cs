@@ -22,7 +22,7 @@ namespace DiskAccessLibrary.FileSystems.NTFS
         public ushort ClientSeqNumber;
         public ushort ClientIndex;
         public LogRecordType RecordType;
-        public uint TransactionId;
+        public uint TransactionId; // The offset of the transaction in the transaction table
         public LogRecordFlags Flags;
         // ushort AlignWord
         /* End of LFS_RECORD_HEADER */
