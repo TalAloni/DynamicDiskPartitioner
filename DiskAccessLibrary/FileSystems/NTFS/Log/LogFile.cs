@@ -107,25 +107,29 @@ namespace DiskAccessLibrary.FileSystems.NTFS
                 m_secondTailPage = ReadPageFromFile(m_restartPage.SystemPageSize * 2 + m_restartPage.LogPageSize);
             }
 
-            LogRecordPage page = null;
+            LogRecordPage tailPage = null;
             if (pageOffset == m_firstTailPage.LastLsnOrFileOffset)
             {
-                page = m_firstTailPage;
+                tailPage = m_firstTailPage;
             }
 
             if (pageOffset == m_secondTailPage.LastLsnOrFileOffset)
             {
-                if (page == null || m_secondTailPage.LastEndLsn >= m_firstTailPage.LastEndLsn)
+                if (tailPage == null || m_secondTailPage.LastEndLsn >= m_firstTailPage.LastEndLsn)
                 {
-                    page = m_secondTailPage;
+                    tailPage = m_secondTailPage;
                 }
             }
 
-            if (page == null)
+            LogRecordPage page = ReadPageFromFile(pageOffset);
+            if (tailPage != null && tailPage.LastEndLsn >= page.LastEndLsn)
             {
-                page = ReadPageFromFile(pageOffset);
+                return tailPage;
             }
-            return page;
+            else
+            {
+                return page;
+            }
         }
 
         private LogRecordPage ReadPageFromFile(ulong pageOffset)
