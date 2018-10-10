@@ -135,8 +135,8 @@ namespace DiskAccessLibrary.FileSystems.NTFS
         private FileRecordSegment ReadFileRecordSegment(long mftStartLCN, long segmentNumber)
         {
             long sectorIndex = mftStartLCN * m_volume.SectorsPerCluster + segmentNumber * m_volume.SectorsPerFileRecordSegment;
-            byte[] bytes = m_volume.ReadSectors(sectorIndex, m_volume.SectorsPerFileRecordSegment);
-            FileRecordSegment result = new FileRecordSegment(bytes, 0, segmentNumber);
+            byte[] segmentBytes = m_volume.ReadSectors(sectorIndex, m_volume.SectorsPerFileRecordSegment);
+            FileRecordSegment result = new FileRecordSegment(segmentBytes, 0, segmentNumber);
             return result;
         }
 
