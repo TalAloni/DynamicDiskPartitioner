@@ -73,13 +73,10 @@ namespace DiskAccessLibrary.FileSystems.NTFS
             NextAttributeInstance = LittleEndianConverter.ToUInt16(buffer, offset + 0x28);
             // 2 bytes padding
             m_segmentNumberOnDisk = LittleEndianConverter.ToUInt32(buffer, offset + 0x2C);
-
-            int position = offset + multiSectorHeader.UpdateSequenceArrayOffset;
-            List<byte[]> updateSequenceReplacementData = MultiSectorHelper.ReadUpdateSequenceArray(buffer, position, multiSectorHeader.UpdateSequenceArraySize, out UpdateSequenceNumber);
-            MultiSectorHelper.DecodeSegmentBuffer(buffer, offset, UpdateSequenceNumber, updateSequenceReplacementData);
+            UpdateSequenceNumber = LittleEndianConverter.ToUInt16(buffer, offset + multiSectorHeader.UpdateSequenceArrayOffset);
 
             // Read attributes
-            position = offset + firstAttributeOffset;
+            int position = offset + firstAttributeOffset;
             while (!IsEndMarker(buffer, position))
             {
                 AttributeRecord attribute = AttributeRecord.FromBytes(buffer, position);
@@ -95,8 +92,7 @@ namespace DiskAccessLibrary.FileSystems.NTFS
             m_segmentNumber = segmentNumber;
         }
 
-        /// <param name="segmentLength">This refers to the maximum length of FileRecord as defined in the Volume's BootRecord</param>
-        public byte[] GetBytes(int bytesPerFileRecordSegment, ushort minorNTFSVersion)
+        public byte[] GetBytes(int bytesPerFileRecordSegment, ushort minorNTFSVersion, bool applyUsaProtection)
         {
             int strideCount = bytesPerFileRecordSegment / MultiSectorHelper.BytesPerStride;
             ushort updateSequenceArraySize = (ushort)(1 + strideCount);
@@ -129,6 +125,7 @@ namespace DiskAccessLibrary.FileSystems.NTFS
             {
                 LittleEndianWriter.WriteUInt32(buffer, 0x2C, (uint)m_segmentNumber);
             }
+            LittleEndianWriter.WriteUInt32(buffer, updateSequenceArrayOffset, UpdateSequenceNumber);
 
             // write attributes
             int position = firstAttributeOffset;
@@ -147,9 +144,10 @@ namespace DiskAccessLibrary.FileSystems.NTFS
             uint segmentLength = (uint)position;
             LittleEndianWriter.WriteUInt32(buffer, 0x18, segmentLength);
 
-            // Write UpdateSequenceNumber and UpdateSequenceReplacementData
-            List<byte[]> updateSequenceReplacementData = MultiSectorHelper.EncodeSegmentBuffer(buffer, 0, bytesPerFileRecordSegment, UpdateSequenceNumber);
-            MultiSectorHelper.WriteUpdateSequenceArray(buffer, updateSequenceArrayOffset, updateSequenceArraySize, UpdateSequenceNumber, updateSequenceReplacementData);
+            if (applyUsaProtection)
+            {
+                MultiSectorHelper.ApplyUsaProtection(buffer, 0);
+            }
             return buffer;
         }
 

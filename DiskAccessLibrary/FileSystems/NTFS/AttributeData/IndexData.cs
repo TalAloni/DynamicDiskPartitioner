@@ -538,6 +538,7 @@ namespace DiskAccessLibrary.FileSystems.NTFS
         {
             long sectorIndex = ConvertToSectorIndex(subnodeVBN);
             byte[] recordBytes = m_indexAllocationData.ReadSectors(sectorIndex, this.SectorsPerIndexRecord);
+            MultiSectorHelper.RevertUsaProtection(recordBytes, 0);
             IndexRecord record = new IndexRecord(recordBytes, 0);
             return record;
         }
@@ -547,7 +548,7 @@ namespace DiskAccessLibrary.FileSystems.NTFS
             long sectorsPerIndexRecord = m_rootRecord.BytesPerIndexRecord / m_volume.BytesPerSector;
             long sectorIndex = recordIndex * sectorsPerIndexRecord;
 
-            m_indexAllocationData.WriteSectors(sectorIndex, indexRecord.GetBytes((int)m_rootRecord.BytesPerIndexRecord));
+            m_indexAllocationData.WriteSectors(sectorIndex, indexRecord.GetBytes((int)m_rootRecord.BytesPerIndexRecord, true));
         }
 
         private long ConvertToSectorIndex(long recordVBN)

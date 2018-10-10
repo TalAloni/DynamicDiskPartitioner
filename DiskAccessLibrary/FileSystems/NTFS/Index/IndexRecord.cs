@@ -46,16 +46,13 @@ namespace DiskAccessLibrary.FileSystems.NTFS
             LogFileSequenceNumber = LittleEndianConverter.ToUInt64(buffer, offset + 0x08);
             RecordVBN = (long)LittleEndianConverter.ToUInt64(buffer, offset + 0x10);
             m_indexHeader = new IndexHeader(buffer, offset + 0x18);
-
-            int position = offset + multiSectorHeader.UpdateSequenceArrayOffset;
-            List<byte[]> updateSequenceReplacementData = MultiSectorHelper.ReadUpdateSequenceArray(buffer, position, multiSectorHeader.UpdateSequenceArraySize, out UpdateSequenceNumber);
-            MultiSectorHelper.DecodeSegmentBuffer(buffer, offset, UpdateSequenceNumber, updateSequenceReplacementData);
+            UpdateSequenceNumber = LittleEndianConverter.ToUInt16(buffer, offset + multiSectorHeader.UpdateSequenceArrayOffset);
 
             int entriesOffset = 0x18 + (int)m_indexHeader.EntriesOffset;
             IndexEntries = IndexEntry.ReadIndexEntries(buffer, entriesOffset);
         }
 
-        public byte[] GetBytes(int bytesPerIndexRecord)
+        public byte[] GetBytes(int bytesPerIndexRecord, bool applyUsaProtection)
         {
             int strideCount = bytesPerIndexRecord / MultiSectorHelper.BytesPerStride;
             ushort updateSequenceArraySize = (ushort)(1 + strideCount);
@@ -72,12 +69,14 @@ namespace DiskAccessLibrary.FileSystems.NTFS
             LittleEndianWriter.WriteUInt64(buffer, 0x08, LogFileSequenceNumber);
             LittleEndianWriter.WriteUInt64(buffer, 0x10, (ulong)RecordVBN);
             m_indexHeader.WriteBytes(buffer, 0x18);
+            LittleEndianWriter.WriteUInt16(buffer, UpdateSequenceArrayOffset, UpdateSequenceNumber);
 
             IndexEntry.WriteIndexEntries(buffer, UpdateSequenceArrayOffset + updateSequenceArrayPaddedLength, IndexEntries);
 
-            // Write UpdateSequenceNumber and UpdateSequenceReplacementData
-            List<byte[]> updateSequenceReplacementData = MultiSectorHelper.EncodeSegmentBuffer(buffer, 0, bytesPerIndexRecord, UpdateSequenceNumber);
-            MultiSectorHelper.WriteUpdateSequenceArray(buffer, UpdateSequenceArrayOffset, updateSequenceArraySize, UpdateSequenceNumber, updateSequenceReplacementData);
+            if (applyUsaProtection)
+            {
+                MultiSectorHelper.ApplyUsaProtection(buffer, 0);
+            }
             return buffer;
         }
 

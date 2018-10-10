@@ -53,13 +53,11 @@ namespace DiskAccessLibrary.FileSystems.NTFS
             ushort restartOffset = LittleEndianConverter.ToUInt16(buffer, offset + 0x18);
             MinorVersion = LittleEndianConverter.ToInt16(buffer, offset + 0x1A);
             MajorVersion = LittleEndianConverter.ToInt16(buffer, offset + 0x1C);
-            int position = offset + multiSectorHeader.UpdateSequenceArrayOffset;
-            List<byte[]> updateSequenceReplacementData = MultiSectorHelper.ReadUpdateSequenceArray(buffer, position, multiSectorHeader.UpdateSequenceArraySize, out UpdateSequenceNumber);
-            MultiSectorHelper.DecodeSegmentBuffer(buffer, offset, UpdateSequenceNumber, updateSequenceReplacementData);
+            UpdateSequenceNumber = LittleEndianConverter.ToUInt16(buffer, offset + multiSectorHeader.UpdateSequenceArrayOffset);
             LogRestartArea = new LogRestartArea(buffer, offset + restartOffset);
         }
 
-        public byte[] GetBytes(int bytesPerSystemPage)
+        public byte[] GetBytes(int bytesPerSystemPage, bool applyUsaProtection)
         {
             m_systemPageSize = (uint)bytesPerSystemPage;
             int strideCount = bytesPerSystemPage / MultiSectorHelper.BytesPerStride;
@@ -75,11 +73,13 @@ namespace DiskAccessLibrary.FileSystems.NTFS
             LittleEndianWriter.WriteUInt16(buffer, 0x18, (ushort)restartOffset);
             LittleEndianWriter.WriteInt16(buffer, 0x1A, MinorVersion);
             LittleEndianWriter.WriteInt16(buffer, 0x1C, MajorVersion);
+            LittleEndianWriter.WriteUInt16(buffer, UpdateSequenceArrayOffset, UpdateSequenceNumber);
             LogRestartArea.WriteBytes(buffer, restartOffset);
 
-            // Write UpdateSequenceNumber and UpdateSequenceReplacementData
-            List<byte[]> updateSequenceReplacementData = MultiSectorHelper.EncodeSegmentBuffer(buffer, 0, bytesPerSystemPage, UpdateSequenceNumber);
-            MultiSectorHelper.WriteUpdateSequenceArray(buffer, UpdateSequenceArrayOffset, updateSequenceArraySize, UpdateSequenceNumber, updateSequenceReplacementData);
+            if (applyUsaProtection)
+            {
+                MultiSectorHelper.ApplyUsaProtection(buffer, 0);
+            }
             return buffer;
         }
 

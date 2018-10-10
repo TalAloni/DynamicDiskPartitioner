@@ -136,6 +136,7 @@ namespace DiskAccessLibrary.FileSystems.NTFS
         {
             long sectorIndex = mftStartLCN * m_volume.SectorsPerCluster + segmentNumber * m_volume.SectorsPerFileRecordSegment;
             byte[] segmentBytes = m_volume.ReadSectors(sectorIndex, m_volume.SectorsPerFileRecordSegment);
+            MultiSectorHelper.RevertUsaProtection(segmentBytes, 0);
             FileRecordSegment result = new FileRecordSegment(segmentBytes, 0, segmentNumber);
             return result;
         }
@@ -162,6 +163,7 @@ namespace DiskAccessLibrary.FileSystems.NTFS
 
             if (FileRecordSegment.ContainsFileRecordSegment(segmentBytes))
             {
+                MultiSectorHelper.RevertUsaProtection(segmentBytes, 0);
                 FileRecordSegment recordSegment = new FileRecordSegment(segmentBytes, 0, segmentNumber);
                 return recordSegment;
             }
@@ -319,7 +321,7 @@ namespace DiskAccessLibrary.FileSystems.NTFS
                 recordSegment.UpdateSequenceNumber++;
             }
             recordSegment.LogFileSequenceNumber = 0;
-            byte[] recordSegmentBytes = recordSegment.GetBytes(m_volume.BytesPerFileRecordSegment, m_volume.MinorVersion);
+            byte[] recordSegmentBytes = recordSegment.GetBytes(m_volume.BytesPerFileRecordSegment, m_volume.MinorVersion, true);
 
             m_mftFile.Data.WriteSectors(firstSectorIndex, recordSegmentBytes);
         }

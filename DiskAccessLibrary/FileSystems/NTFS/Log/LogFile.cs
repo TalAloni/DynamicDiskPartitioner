@@ -30,6 +30,7 @@ namespace DiskAccessLibrary.FileSystems.NTFS
                 byte[] temp = ReadData((ulong)pageBytes.Length, bytesToRead);
                 pageBytes = ByteUtils.Concatenate(pageBytes, temp);
             }
+            MultiSectorHelper.RevertUsaProtection(pageBytes, 0);
             m_restartPage = new LogRestartPage(pageBytes, 0);
             return m_restartPage;
         }
@@ -150,6 +151,7 @@ namespace DiskAccessLibrary.FileSystems.NTFS
             }
 
             byte[] pageBytes = ReadData(pageOffset, (int)m_restartPage.LogPageSize);
+            MultiSectorHelper.RevertUsaProtection(pageBytes, 0);
             return new LogRecordPage(pageBytes, m_restartPage.LogRestartArea.LogPageDataOffset);
         }
 
@@ -160,7 +162,7 @@ namespace DiskAccessLibrary.FileSystems.NTFS
                 m_restartPage = ReadRestartPage();
             }
 
-            byte[] pageBytes = page.GetBytes((int)m_restartPage.LogPageSize, m_restartPage.LogRestartArea.LogPageDataOffset);
+            byte[] pageBytes = page.GetBytes((int)m_restartPage.LogPageSize, m_restartPage.LogRestartArea.LogPageDataOffset, true);
             WriteData(pageOffset, pageBytes);
         }
 
