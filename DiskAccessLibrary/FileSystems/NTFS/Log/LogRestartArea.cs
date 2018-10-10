@@ -15,7 +15,7 @@ namespace DiskAccessLibrary.FileSystems.NTFS
     /// </summary>
     public class LogRestartArea
     {
-        public const int FixedLengthNTFS12 = 0x30;
+        public const int FixedLengthNTFS12 = 0x30; // Note: Windows NT 4.0 uses 0x30, Windows NT 3.51 uses 0x28
         public const int FixedLengthNTFS31 = 0x40;
         public const ushort NoClient = 0xFFFF;
 
@@ -31,7 +31,7 @@ namespace DiskAccessLibrary.FileSystems.NTFS
         public uint LastLsnDataLength; // Not including the LFS_RECORD_HEADER
         public ushort RecordHeaderLength;
         public ushort LogPageDataOffset;
-        // uint Unknown
+        public uint RevisionNumber; // This value is incremented by 1 every time the LogRestartArea is being written (initial value is chosen at random)
         public List<LogClientRecord> LogClientArray = new List<LogClientRecord>();
 
         public LogRestartArea()
@@ -53,6 +53,10 @@ namespace DiskAccessLibrary.FileSystems.NTFS
             LastLsnDataLength = LittleEndianConverter.ToUInt32(buffer, offset + 0x20);
             RecordHeaderLength = LittleEndianConverter.ToUInt16(buffer, offset + 0x24);
             LogPageDataOffset = LittleEndianConverter.ToUInt16(buffer, offset + 0x26);
+            if (clientArrayOffset >= 0x30)
+            {
+                RevisionNumber = LittleEndianConverter.ToUInt32(buffer, offset + 0x28);
+            }
             int position = offset + clientArrayOffset;
             for (int index = 0; index < logClients; index++)
             {
@@ -78,8 +82,9 @@ namespace DiskAccessLibrary.FileSystems.NTFS
             LittleEndianWriter.WriteUInt32(buffer, offset + 0x20, LastLsnDataLength);
             LittleEndianWriter.WriteUInt16(buffer, offset + 0x24, RecordHeaderLength);
             LittleEndianWriter.WriteUInt16(buffer, offset + 0x26, LogPageDataOffset);
+            LittleEndianWriter.WriteUInt32(buffer, offset + 0x28, RevisionNumber);
             int position = offset + clientArrayOffset;
-            foreach(LogClientRecord clientRecord in LogClientArray)
+            foreach (LogClientRecord clientRecord in LogClientArray)
             {
                 clientRecord.WriteBytes(buffer, position);
                 position += clientRecord.Length;
