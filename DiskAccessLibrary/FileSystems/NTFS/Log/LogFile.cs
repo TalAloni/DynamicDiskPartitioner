@@ -143,7 +143,7 @@ namespace DiskAccessLibrary.FileSystems.NTFS
             }
 
             LogRecordPage page = ReadPageFromFile(pageOffset);
-            if (tailPage != null && tailPage.LastEndLsn >= page.LastEndLsn)
+            if (tailPage != null && tailPage.LastEndLsn >= page.LastLsnOrFileOffset)
             {
                 return tailPage;
             }
