@@ -11,20 +11,27 @@ using Utilities;
 
 namespace DiskAccessLibrary.FileSystems.NTFS
 {
-    public partial class LogFile
+    public class NTFSLogClient
     {
-        private const string NTFSClientName = "NTFS";
-        private int? m_ntfsClientIndex;
+        private const string ClientName = "NTFS";
 
-        public NTFSRestartRecord ReadNTFSRestartRecord()
+        private LogFile m_logFile;
+        private int m_clientIndex;
+
+        public NTFSLogClient(NTFSVolume volume)
         {
-            if (m_restartPage == null)
+            m_logFile = new LogFile(volume);
+            m_clientIndex = m_logFile.FindClientIndex(ClientName);
+            if (m_clientIndex == -1)
             {
-                m_restartPage = ReadRestartPage();
+                throw new InvalidDataException("NTFS Client was not found");
             }
+        }
 
-            ulong clientRestartLsn = m_restartPage.LogRestartArea.LogClientArray[NTFSClientIndex].ClientRestartLsn;
-            LogRecord record = ReadRecord(clientRestartLsn);
+        public NTFSRestartRecord ReadRestartRecord()
+        {
+            ulong clientRestartLsn = m_logFile.GetClientRecord(m_clientIndex).ClientRestartLsn;
+            LogRecord record = m_logFile.ReadRecord(clientRestartLsn);
             if (record.RecordType == LogRecordType.ClientRestart)
             {
                 return new NTFSRestartRecord(record.Data);
@@ -38,11 +45,11 @@ namespace DiskAccessLibrary.FileSystems.NTFS
 
         public List<OpenAttributeEntry> ReadCurrentOpenAttributeTable()
         {
-            NTFSRestartRecord restartRecord = ReadNTFSRestartRecord();
+            NTFSRestartRecord restartRecord = ReadRestartRecord();
             ulong openAttributeTableLsn = restartRecord.OpenAttributeTableLsn;
             if (openAttributeTableLsn != 0)
             {
-                NTFSLogRecord record = ReadNTFSLogRecord(openAttributeTableLsn);
+                NTFSLogRecord record = ReadLogRecord(openAttributeTableLsn);
                 if (record.RedoOperation != NTFSLogOperation.OpenAttributeTableDump)
                 {
                     string message = String.Format("Current restart record OpenAttributeTableLsn points to a record with RedoOperation {0}", record.RedoOperation);
@@ -64,11 +71,11 @@ namespace DiskAccessLibrary.FileSystems.NTFS
 
         public List<DirtyPageEntry> ReadCurrentDirtyPageTable()
         {
-            NTFSRestartRecord restartRecord = ReadNTFSRestartRecord();
+            NTFSRestartRecord restartRecord = ReadRestartRecord();
             ulong dirtyPageTableLsn = restartRecord.DirtyPageTableLsn;
             if (dirtyPageTableLsn != 0)
             {
-                NTFSLogRecord record = ReadNTFSLogRecord(dirtyPageTableLsn);
+                NTFSLogRecord record = ReadLogRecord(dirtyPageTableLsn);
                 if (record.RedoOperation != NTFSLogOperation.DirtyPageTableDump)
                 {
                     string message = String.Format("Current restart record DirtyPageTableLsn points to a record with RedoOperation {0}", record.RedoOperation);
@@ -90,11 +97,11 @@ namespace DiskAccessLibrary.FileSystems.NTFS
 
         public List<TransactionEntry> ReadCurrentTransactionTable()
         {
-            NTFSRestartRecord restartRecord = ReadNTFSRestartRecord();
+            NTFSRestartRecord restartRecord = ReadRestartRecord();
             ulong transactionTableLsn = restartRecord.TransactionTableLsn;
             if (transactionTableLsn != 0)
             {
-                NTFSLogRecord record = ReadNTFSLogRecord(transactionTableLsn);
+                NTFSLogRecord record = ReadLogRecord(transactionTableLsn);
                 if (record.RedoOperation != NTFSLogOperation.TransactionTableDump)
                 {
                     string message = String.Format("Current restart record TransactionTableLsn points to a record with RedoOperation {0}", record.RedoOperation);
@@ -114,9 +121,9 @@ namespace DiskAccessLibrary.FileSystems.NTFS
             }
         }
 
-        public NTFSLogRecord ReadNTFSLogRecord(ulong lsn)
+        public NTFSLogRecord ReadLogRecord(ulong lsn)
         {
-            LogRecord record = ReadRecord(lsn);
+            LogRecord record = m_logFile.ReadRecord(lsn);
             if (record.RecordType == LogRecordType.ClientRecord)
             {
                 return new NTFSLogRecord(record.Data);
@@ -124,23 +131,6 @@ namespace DiskAccessLibrary.FileSystems.NTFS
             else
             {
                 return null;
-
-            }
-        }
-
-        private int NTFSClientIndex
-        {
-            get
-            {
-                if (m_ntfsClientIndex == null)
-                {
-                    m_ntfsClientIndex = FindClientIndex(NTFSClientName);
-                    if (m_ntfsClientIndex == -1)
-                    {
-                        throw new InvalidDataException("NTFS Client was not found");
-                    }
-                }
-                return m_ntfsClientIndex.Value;
             }
         }
     }

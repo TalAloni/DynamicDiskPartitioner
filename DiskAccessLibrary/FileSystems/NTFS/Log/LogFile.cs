@@ -10,7 +10,7 @@ using Utilities;
 
 namespace DiskAccessLibrary.FileSystems.NTFS
 {
-    public partial class LogFile : NTFSFile
+    public class LogFile : NTFSFile
     {
         private LogRestartPage m_restartPage;
         private LogRecordPage m_firstTailPage;
@@ -20,7 +20,7 @@ namespace DiskAccessLibrary.FileSystems.NTFS
         {
         }
 
-        public LogRestartPage ReadRestartPage()
+        private LogRestartPage ReadRestartPage()
         {
             byte[] pageBytes = ReadData(0, Volume.BytesPerSector);
             uint systemPageSize = LogRestartPage.GetSystemPageSize(pageBytes, 0);
@@ -35,7 +35,7 @@ namespace DiskAccessLibrary.FileSystems.NTFS
             return m_restartPage;
         }
 
-        private int FindClientIndex(string clientName)
+        public int FindClientIndex(string clientName)
         {
             if (m_restartPage == null)
             {
@@ -50,6 +50,16 @@ namespace DiskAccessLibrary.FileSystems.NTFS
                 }
             }
             return -1;
+        }
+
+        public LogClientRecord GetClientRecord(int clientIndex)
+        {
+            if (m_restartPage == null)
+            {
+                m_restartPage = ReadRestartPage();
+            }
+
+            return m_restartPage.LogRestartArea.LogClientArray[clientIndex];
         }
 
         public bool IsLogClean()

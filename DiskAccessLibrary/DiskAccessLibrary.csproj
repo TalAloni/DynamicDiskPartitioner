@@ -108,11 +108,11 @@
     <Compile Include="FileSystems\NTFS\Log\Enums\TransactionState.cs" />
     <Compile Include="FileSystems\NTFS\Log\LogClientRecord.cs" />
     <Compile Include="FileSystems\NTFS\Log\LogFile.cs" />
-    <Compile Include="FileSystems\NTFS\Log\LogFile.NTFS.cs" />
     <Compile Include="FileSystems\NTFS\Log\LogRecord.cs" />
     <Compile Include="FileSystems\NTFS\Log\LogRecordPage.cs" />
     <Compile Include="FileSystems\NTFS\Log\LogRestartArea.cs" />
     <Compile Include="FileSystems\NTFS\Log\LogRestartPage.cs" />
+    <Compile Include="FileSystems\NTFS\Log\NTFSLogClient.cs" />
     <Compile Include="FileSystems\NTFS\Log\NTFSLogRecord.cs" />
     <Compile Include="FileSystems\NTFS\Log\NTFSRestartRecord.cs" />
     <Compile Include="FileSystems\NTFS\Log\RestartTables\DirtyPageEntry.cs" />
