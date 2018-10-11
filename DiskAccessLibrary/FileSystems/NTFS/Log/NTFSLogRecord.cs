@@ -13,6 +13,7 @@ namespace DiskAccessLibrary.FileSystems.NTFS
     public class NTFSLogRecord
     {
         private const int FixedLength = 32;
+        public const int BytesPerLogBlock = 512;
 
         /* Start of NTFS_LOG_RECORD_HEADER */
         public NTFSLogOperation RedoOperation;
@@ -25,7 +26,7 @@ namespace DiskAccessLibrary.FileSystems.NTFS
         // ushort LCNsToFollow;
         public ushort RecordOffset;
         public ushort AttributeOffset;
-        public ushort ClusterBlockOffset;
+        public ushort ClusterBlockOffset; // Number of 512 byte blocks
         public ushort Reserved;
         public long TargetVCN;
         public List<long> LCNsForPage = new List<long>();
