@@ -11,7 +11,7 @@ using Utilities;
 
 namespace DiskAccessLibrary.FileSystems.NTFS
 {
-    public class NTFSLogClient
+    public partial class NTFSLogClient
     {
         private const string ClientName = "NTFS";
 

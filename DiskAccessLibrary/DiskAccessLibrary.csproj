@@ -113,6 +113,7 @@
     <Compile Include="FileSystems\NTFS\Log\LogRecordPage.cs" />
     <Compile Include="FileSystems\NTFS\Log\LogRestartArea.cs" />
     <Compile Include="FileSystems\NTFS\Log\LogRestartPage.cs" />
+    <Compile Include="FileSystems\NTFS\Log\NTFSLogClient.Analysis.cs" />
     <Compile Include="FileSystems\NTFS\Log\NTFSLogClient.cs" />
     <Compile Include="FileSystems\NTFS\Log\NTFSLogRecord.cs" />
     <Compile Include="FileSystems\NTFS\Log\NTFSRestartRecord.cs" />
