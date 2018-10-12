@@ -28,9 +28,32 @@ namespace DiskAccessLibrary.FileSystems.NTFS
             }
         }
 
-        public NTFSRestartRecord ReadRestartRecord()
+        public NTFSRestartRecord ReadCurrentRestartRecord()
         {
             ulong clientRestartLsn = m_logFile.GetClientRecord(m_clientIndex).ClientRestartLsn;
+            return ReadRestartRecord(clientRestartLsn);
+        }
+
+        public List<OpenAttributeEntry> ReadCurrentOpenAttributeTable()
+        {
+            NTFSRestartRecord restartRecord = ReadCurrentRestartRecord();
+            return ReadOpenAttributeTable(restartRecord);
+        }
+
+        public List<DirtyPageEntry> ReadCurrentDirtyPageTable()
+        {
+            NTFSRestartRecord restartRecord = ReadCurrentRestartRecord();
+            return ReadDirtyPageTable(restartRecord);
+        }
+
+        public List<TransactionEntry> ReadCurrentTransactionTable()
+        {
+            NTFSRestartRecord restartRecord = ReadCurrentRestartRecord();
+            return ReadTransactionTable(restartRecord);
+        }
+
+        public NTFSRestartRecord ReadRestartRecord(ulong clientRestartLsn)
+        {
             LogRecord record = m_logFile.ReadRecord(clientRestartLsn);
             if (record.RecordType == LogRecordType.ClientRestart)
             {
@@ -43,16 +66,15 @@ namespace DiskAccessLibrary.FileSystems.NTFS
             }
         }
 
-        public List<OpenAttributeEntry> ReadCurrentOpenAttributeTable()
+        public List<OpenAttributeEntry> ReadOpenAttributeTable(NTFSRestartRecord restartRecord)
         {
-            NTFSRestartRecord restartRecord = ReadRestartRecord();
             ulong openAttributeTableLsn = restartRecord.OpenAttributeTableLsn;
             if (openAttributeTableLsn != 0)
             {
                 NTFSLogRecord record = ReadLogRecord(openAttributeTableLsn);
                 if (record.RedoOperation != NTFSLogOperation.OpenAttributeTableDump)
                 {
-                    string message = String.Format("Current restart record OpenAttributeTableLsn points to a record with RedoOperation {0}", record.RedoOperation);
+                    string message = String.Format("Restart record OpenAttributeTableLsn points to a record with RedoOperation {0}", record.RedoOperation);
                     throw new InvalidDataException(message);
                 }
 
@@ -69,16 +91,15 @@ namespace DiskAccessLibrary.FileSystems.NTFS
             }
         }
 
-        public List<DirtyPageEntry> ReadCurrentDirtyPageTable()
+        public List<DirtyPageEntry> ReadDirtyPageTable(NTFSRestartRecord restartRecord)
         {
-            NTFSRestartRecord restartRecord = ReadRestartRecord();
             ulong dirtyPageTableLsn = restartRecord.DirtyPageTableLsn;
             if (dirtyPageTableLsn != 0)
             {
                 NTFSLogRecord record = ReadLogRecord(dirtyPageTableLsn);
                 if (record.RedoOperation != NTFSLogOperation.DirtyPageTableDump)
                 {
-                    string message = String.Format("Current restart record DirtyPageTableLsn points to a record with RedoOperation {0}", record.RedoOperation);
+                    string message = String.Format("Restart record DirtyPageTableLsn points to a record with RedoOperation {0}", record.RedoOperation);
                     throw new InvalidDataException(message);
                 }
 
@@ -95,16 +116,15 @@ namespace DiskAccessLibrary.FileSystems.NTFS
             }
         }
 
-        public List<TransactionEntry> ReadCurrentTransactionTable()
+        public List<TransactionEntry> ReadTransactionTable(NTFSRestartRecord restartRecord)
         {
-            NTFSRestartRecord restartRecord = ReadRestartRecord();
             ulong transactionTableLsn = restartRecord.TransactionTableLsn;
             if (transactionTableLsn != 0)
             {
                 NTFSLogRecord record = ReadLogRecord(transactionTableLsn);
                 if (record.RedoOperation != NTFSLogOperation.TransactionTableDump)
                 {
-                    string message = String.Format("Current restart record TransactionTableLsn points to a record with RedoOperation {0}", record.RedoOperation);
+                    string message = String.Format("Restart record TransactionTableLsn points to a record with RedoOperation {0}", record.RedoOperation);
                     throw new InvalidDataException(message);
                 }
 
