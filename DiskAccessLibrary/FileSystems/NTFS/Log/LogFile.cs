@@ -6,6 +6,7 @@
  */
 using System;
 using System.Collections.Generic;
+using System.IO;
 using Utilities;
 
 namespace DiskAccessLibrary.FileSystems.NTFS
@@ -100,6 +101,10 @@ namespace DiskAccessLibrary.FileSystems.NTFS
             LogRecordPage page = ReadPage(pageOffsetInFile);
             int dataOffset = m_restartPage.LogRestartArea.LogPageDataOffset;
             LogRecord record = page.ReadRecord(recordOffsetInPage, dataOffset);
+            if (record.ThisLsn != lsn)
+            {
+                throw new InvalidDataException("LogRecord Lsn does not match expected value");
+            }
             if (record.IsMultiPageRecord)
             {
                 int recordLength = (int)(LogRecord.HeaderLength + record.ClientDataLength);
