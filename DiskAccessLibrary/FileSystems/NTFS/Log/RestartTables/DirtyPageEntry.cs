@@ -24,11 +24,11 @@ namespace DiskAccessLibrary.FileSystems.NTFS
         private uint m_majorVersion;
 
         // uint AllocatedOrNextFree;
-        public uint TargetAttribute;
+        public uint TargetAttributeOffset;
         public uint LengthOfTransfer;
         // uint LcnsToFollow;
         public uint Reserved; // v0.0 only
-        public ulong VCN;
+        public long VCN; // Stored as ulong but can be represented using long
         public ulong OldestLsn;
         public List<long> LCNsForPage = new List<long>();
 
@@ -42,14 +42,14 @@ namespace DiskAccessLibrary.FileSystems.NTFS
             m_majorVersion = majorVersion;
 
             AllocatedOrNextFree = LittleEndianReader.ReadUInt32(buffer, ref offset);
-            TargetAttribute = LittleEndianReader.ReadUInt32(buffer, ref offset);
+            TargetAttributeOffset = LittleEndianReader.ReadUInt32(buffer, ref offset);
             LengthOfTransfer = LittleEndianReader.ReadUInt32(buffer, ref offset);
             uint lcnsToFollow = LittleEndianReader.ReadUInt32(buffer, ref offset);
             if (majorVersion == 0)
             {
                 Reserved = LittleEndianReader.ReadUInt32(buffer, ref offset);
             }
-            VCN = LittleEndianReader.ReadUInt64(buffer, ref offset);
+            VCN = (long)LittleEndianReader.ReadUInt64(buffer, ref offset);
             OldestLsn = LittleEndianReader.ReadUInt64(buffer, ref offset);
             for (int index = 0; index < lcnsToFollow; index++)
             {
@@ -61,14 +61,14 @@ namespace DiskAccessLibrary.FileSystems.NTFS
         public override void WriteBytes(byte[] buffer, int offset)
         {
             LittleEndianWriter.WriteUInt32(buffer, ref offset, AllocatedOrNextFree);
-            LittleEndianWriter.WriteUInt32(buffer, ref offset, TargetAttribute);
+            LittleEndianWriter.WriteUInt32(buffer, ref offset, TargetAttributeOffset);
             LittleEndianWriter.WriteUInt32(buffer, ref offset, LengthOfTransfer);
             LittleEndianWriter.WriteUInt32(buffer, ref offset, (uint)LCNsForPage.Count);
             if (m_majorVersion == 0)
             {
                 LittleEndianWriter.WriteUInt32(buffer, ref offset, Reserved);
             }
-            LittleEndianWriter.WriteUInt64(buffer, ref offset, VCN);
+            LittleEndianWriter.WriteUInt64(buffer, ref offset, (ulong)VCN);
             LittleEndianWriter.WriteUInt64(buffer, ref offset, OldestLsn);
             for (int index = 0; index < LCNsForPage.Count; index++)
             {
@@ -89,6 +89,21 @@ namespace DiskAccessLibrary.FileSystems.NTFS
                     return FixedLengthV1 + LCNsForPage.Count * 8;
                 }
             }
+        }
+
+        public static DirtyPageEntry FindEntry(List<DirtyPageEntry> dirtyPageTable, uint targetAttributeOffset, long targetVCN)
+        {
+            foreach (DirtyPageEntry entry in dirtyPageTable)
+            {
+                long startVCN = entry.VCN;
+                long endVCN = entry.VCN + entry.LCNsForPage.Count - 1;
+                if (targetAttributeOffset == entry.TargetAttributeOffset &&
+                    targetVCN >= startVCN && targetVCN <= endVCN)
+                {
+                    return entry;
+                }
+            }
+            return null;
         }
     }
 }
