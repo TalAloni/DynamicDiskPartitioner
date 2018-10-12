@@ -10,7 +10,7 @@ using Utilities;
 
 namespace DiskAccessLibrary.FileSystems.NTFS
 {
-    public class LogFile : NTFSFile
+    public partial class LogFile : NTFSFile
     {
         private LogRestartPage m_restartPage;
         private LogRecordPage m_firstTailPage;
@@ -191,6 +191,31 @@ namespace DiskAccessLibrary.FileSystems.NTFS
             }
 
             return (int)((lsn << 3) & (m_restartPage.LogPageSize - 1));
+        }
+
+        private ulong CalculateNextLsn(ulong lsn, int recordLength)
+        {
+            int recordOffsetInPage = LsnToRecordOffsetInPage(lsn);
+            int bytesToSkip = recordLength;
+            int nextRecordOffsetInPage = recordOffsetInPage + recordLength;
+            if (nextRecordOffsetInPage >= m_restartPage.LogPageSize)
+            {
+                int recordBytesInFirstPage = (int)m_restartPage.LogPageSize - recordOffsetInPage;
+                int bytesRemaining = recordLength - recordBytesInFirstPage;
+                int bytesAvailableInPage = (int)m_restartPage.LogPageSize - (int)m_restartPage.LogRestartArea.LogPageDataOffset;
+                int middlePageCount = bytesRemaining / bytesAvailableInPage;
+                int recordBytesInLastPage = bytesRemaining % bytesAvailableInPage;
+                bytesToSkip = recordBytesInFirstPage + middlePageCount * (int)m_restartPage.LogPageSize + m_restartPage.LogRestartArea.LogPageDataOffset + recordBytesInLastPage;
+                nextRecordOffsetInPage = (recordOffsetInPage + bytesToSkip) % (int)m_restartPage.LogPageSize;
+            }
+
+            int bytesRemainingInPage = (int)m_restartPage.LogPageSize - nextRecordOffsetInPage;
+            if (bytesRemainingInPage < m_restartPage.LogRestartArea.RecordHeaderLength)
+            {
+                bytesToSkip += bytesRemainingInPage + m_restartPage.LogRestartArea.LogPageDataOffset;
+            }
+
+            return lsn + ((uint)bytesToSkip >> 3);
         }
     }
 }
