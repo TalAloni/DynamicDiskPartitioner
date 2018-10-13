@@ -17,6 +17,11 @@ namespace DiskAccessLibrary.FileSystems.NTFS
             do
             {
                 ulong nextLsn = CalculateNextLsn(record.ThisLsn, record.Length);
+                if (!IsLsnInFile(nextLsn, clientIndex))
+                {
+                    return null;
+                }
+
                 try
                 {
                     record = ReadRecord(nextLsn);
@@ -49,6 +54,17 @@ namespace DiskAccessLibrary.FileSystems.NTFS
             }
             while (record != null);
             return result;
+        }
+
+        public bool IsLsnInFile(ulong lsn, int clientIndex)
+        {
+            if (m_restartPage == null)
+            {
+                m_restartPage = ReadRestartPage();
+            }
+
+            return (lsn >= m_restartPage.LogRestartArea.LogClientArray[clientIndex].OldestLsn &&
+                    lsn <= m_restartPage.LogRestartArea.CurrentLsn);
         }
     }
 }
