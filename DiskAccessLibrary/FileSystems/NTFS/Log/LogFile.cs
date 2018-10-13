@@ -105,6 +105,10 @@ namespace DiskAccessLibrary.FileSystems.NTFS
             {
                 throw new InvalidDataException("LogRecord Lsn does not match expected value");
             }
+            if (record.Length < LogRecord.HeaderLength)
+            {
+                throw new InvalidDataException("LogRecord length is invalid");
+            }
             if (record.IsMultiPageRecord)
             {
                 int recordLength = (int)(LogRecord.HeaderLength + record.ClientDataLength);
