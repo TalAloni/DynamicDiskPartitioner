@@ -117,6 +117,7 @@
     <Compile Include="FileSystems\NTFS\Log\NTFSLogClient.cs" />
     <Compile Include="FileSystems\NTFS\Log\NTFSLogRecord.cs" />
     <Compile Include="FileSystems\NTFS\Log\NTFSRestartRecord.cs" />
+    <Compile Include="FileSystems\NTFS\Log\RestartTables\AttributeNameEntry.cs" />
     <Compile Include="FileSystems\NTFS\Log\RestartTables\DirtyPageEntry.cs" />
     <Compile Include="FileSystems\NTFS\Log\RestartTables\OpenAttributeEntry.cs" />
     <Compile Include="FileSystems\NTFS\Log\RestartTables\RestartTableEntry.cs" />

@@ -34,6 +34,12 @@ namespace DiskAccessLibrary.FileSystems.NTFS
             return ReadRestartRecord(clientRestartLsn);
         }
 
+        public List<AttributeNameEntry> ReadCurrentAttributeNamesTable()
+        {
+            NTFSRestartRecord restartRecord = ReadCurrentRestartRecord();
+            return ReadAttributeNamesTable(restartRecord);
+        }
+
         public List<OpenAttributeEntry> ReadCurrentOpenAttributeTable()
         {
             NTFSRestartRecord restartRecord = ReadCurrentRestartRecord();
@@ -63,6 +69,31 @@ namespace DiskAccessLibrary.FileSystems.NTFS
             {
                 string message = String.Format("Log restart area points to a record with RecordType {0}", record.RecordType);
                 throw new InvalidDataException(message);
+            }
+        }
+
+        public List<AttributeNameEntry> ReadAttributeNamesTable(NTFSRestartRecord restartRecord)
+        {
+            ulong attributeNamesLsn = restartRecord.AttributeNamesLsn;
+            if (attributeNamesLsn != 0)
+            {
+                NTFSLogRecord record = ReadLogRecord(attributeNamesLsn);
+                if (record.RedoOperation != NTFSLogOperation.AttributeNamesDump)
+                {
+                    string message = String.Format("Restart record AttributeNamesLsn points to a record with RedoOperation {0}", record.RedoOperation);
+                    throw new InvalidDataException(message);
+                }
+
+                if (restartRecord.AttributeNamesLength != record.RedoData.Length)
+                {
+                    throw new InvalidDataException("Open attribute table length does not match restart record");
+                }
+
+                return AttributeNameEntry.ReadTable(record.RedoData);
+            }
+            else
+            {
+                return null;
             }
         }
 
