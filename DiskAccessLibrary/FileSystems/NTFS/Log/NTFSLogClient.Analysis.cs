@@ -29,14 +29,39 @@ namespace DiskAccessLibrary.FileSystems.NTFS
             return m_logFile.FindNextRecords(restartRecord.StartOfCheckpointLsn, m_clientIndex);
         }
 
-        public List<LogRecord> FindRecordsToRedo()
+        public List<NTFSLogRecord> FindRecordsToRedo()
         {
             NTFSRestartRecord restartRecord = ReadCurrentRestartRecord();
             List<DirtyPageEntry> dirtyPageTable = ReadDirtyPageTable(restartRecord);
             ulong redoLsn = FindRedoLsn(dirtyPageTable);
             LogRecord firstRecord = m_logFile.ReadRecord(redoLsn);
-            List<LogRecord> result = m_logFile.FindNextRecords(redoLsn, m_clientIndex);
-            result.Insert(0, firstRecord);
+            List<LogRecord> records = m_logFile.FindNextRecords(redoLsn, m_clientIndex);
+            records.Insert(0, firstRecord);
+
+            List<NTFSLogRecord> result = new List<NTFSLogRecord>();
+            foreach (LogRecord record in records)
+            {
+                if (record.RecordType == LogRecordType.ClientRecord)
+                {
+                    NTFSLogRecord clientRecord = new NTFSLogRecord(record.Data);
+                    switch (clientRecord.RedoOperation)
+                    {
+                        case NTFSLogOperation.Noop:
+                        case NTFSLogOperation.OpenAttributeTableDump:
+                        case NTFSLogOperation.AttributeNamesDump:
+                        case NTFSLogOperation.DirtyPageTableDump:
+                        case NTFSLogOperation.TransactionTableDump:
+                            {
+                                continue;
+                            }
+                        default:
+                            {
+                                result.Add(clientRecord);
+                                break;
+                            }
+                    }
+                }
+            }
             return result;
         }
 
