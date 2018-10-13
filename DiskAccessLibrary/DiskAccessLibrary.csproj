@@ -133,6 +133,7 @@
     <Compile Include="FileSystems\NTFS\Structures\AttributeListEntry.cs" />
     <Compile Include="FileSystems\NTFS\Structures\DataRun.cs" />
     <Compile Include="FileSystems\NTFS\Structures\DataRunSequence.cs" />
+    <Compile Include="FileSystems\NTFS\Structures\DuplicatedInformation.cs" />
     <Compile Include="FileSystems\NTFS\Structures\FileNameRecord.cs" />
     <Compile Include="FileSystems\NTFS\Structures\MftSegmentReference.cs" />
     <Compile Include="FileSystems\NTFS\Structures\MultiSectorHeader.cs" />
