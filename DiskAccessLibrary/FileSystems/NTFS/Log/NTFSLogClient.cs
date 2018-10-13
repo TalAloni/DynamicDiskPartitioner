@@ -18,9 +18,9 @@ namespace DiskAccessLibrary.FileSystems.NTFS
         private LogFile m_logFile;
         private int m_clientIndex;
 
-        public NTFSLogClient(NTFSVolume volume)
+        public NTFSLogClient(LogFile logFile)
         {
-            m_logFile = new LogFile(volume);
+            m_logFile = logFile;
             m_clientIndex = m_logFile.FindClientIndex(ClientName);
             if (m_clientIndex == -1)
             {
