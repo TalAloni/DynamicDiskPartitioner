@@ -79,7 +79,7 @@ namespace DiskAccessLibrary.FileSystems.NTFS
                 m_restartPage = ReadRestartPage();
             }
 
-            if (m_restartPage.LogRestartArea.IsInUse)
+            if (!m_restartPage.LogRestartArea.IsInUse)
             {
                 // If the log file is not in use than it must be clean.
                 return true;
