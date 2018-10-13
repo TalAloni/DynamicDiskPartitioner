@@ -35,7 +35,7 @@ namespace DiskAccessLibrary.FileSystems.NTFS
         private uint m_majorVersion;
 
         // uint AllocatedOrNextFree;
-        public uint PointerToAttributeNameOrScb;
+        public uint AttributeOffset; // v0.0: Self reference - Offset of the attribute in the open attribute table
         public MftSegmentReference FileReference;
         public ulong LsnOfOpenRecord;
         public bool DirtyPagesSeen;
@@ -63,7 +63,7 @@ namespace DiskAccessLibrary.FileSystems.NTFS
             AllocatedOrNextFree = LittleEndianConverter.ToUInt32(buffer, offset + 0x00);
             if (majorVersion == 0)
             {
-                PointerToAttributeNameOrScb = LittleEndianConverter.ToUInt32(buffer, offset + 0x04);
+                AttributeOffset = LittleEndianConverter.ToUInt32(buffer, offset + 0x04);
             }
             FileReference = new MftSegmentReference(buffer, offset + fileReferenceOffset);
             if (m_majorVersion > 0)
@@ -104,7 +104,7 @@ namespace DiskAccessLibrary.FileSystems.NTFS
             LittleEndianWriter.WriteUInt32(buffer, offset + 0x00, AllocatedOrNextFree);
             if (m_majorVersion == 0)
             {
-                LittleEndianWriter.WriteUInt32(buffer, offset + 0x04, PointerToAttributeNameOrScb);
+                LittleEndianWriter.WriteUInt32(buffer, offset + 0x04, AttributeOffset);
             }
             FileReference.WriteBytes(buffer, offset + fileReferenceOffset);
             LittleEndianWriter.WriteUInt64(buffer, offset + lsnOfOpenRecordOffset, LsnOfOpenRecord);
