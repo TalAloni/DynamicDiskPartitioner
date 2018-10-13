@@ -14,11 +14,13 @@ namespace DiskAccessLibrary.FileSystems.NTFS
     public partial class LogFile : NTFSFile
     {
         private LogRestartPage m_restartPage;
-        private LogRecordPage m_firstTailPage;
-        private LogRecordPage m_secondTailPage;
 
         public LogFile(NTFSVolume volume) : base(volume, MasterFileTable.LogSegmentReference)
         {
+            if (!IsLogClean())
+            {
+                RepairLogFile();
+            }
         }
 
         private LogRestartPage ReadRestartPage()
@@ -61,6 +63,13 @@ namespace DiskAccessLibrary.FileSystems.NTFS
             }
 
             return m_restartPage.LogRestartArea.LogClientArray[clientIndex];
+        }
+
+        private void WriteRestartPage(LogRestartPage restartPage)
+        {
+            byte[] pageBytes = restartPage.GetBytes((int)restartPage.SystemPageSize, true);
+            WriteData(0, pageBytes);
+            WriteData(restartPage.SystemPageSize, pageBytes);
         }
 
         public bool IsLogClean()
@@ -129,37 +138,80 @@ namespace DiskAccessLibrary.FileSystems.NTFS
             return record;
         }
 
-        private LogRecordPage ReadPage(ulong pageOffset)
+        /// <summary>
+        /// This method will repair the log file by copying the tail copies back to their correct location.
+        /// If necessary, the restart area will be updated to reflect CurrentLsn and LastLsnDataLength.
+        /// </summary>
+        private void RepairLogFile()
         {
-            if (m_firstTailPage == null || m_secondTailPage == null)
+            if (m_restartPage == null)
             {
-                m_firstTailPage = ReadPageFromFile(m_restartPage.SystemPageSize * 2);
-                m_secondTailPage = ReadPageFromFile(m_restartPage.SystemPageSize * 2 + m_restartPage.LogPageSize);
+                m_restartPage = ReadRestartPage();
             }
 
+            LogRecordPage firstTailPage = null;
+            LogRecordPage secondTailPage = null;
+            try
+            {
+                firstTailPage = ReadPageFromFile(m_restartPage.SystemPageSize * 2);
+            }
+            catch (InvalidDataException)
+            {
+            }
+
+            try
+            {
+                secondTailPage = ReadPageFromFile(m_restartPage.SystemPageSize * 2 + m_restartPage.LogPageSize);
+            }
+            catch (InvalidDataException)
+            {
+            }
+
+            // Find the most recent tail copy
             LogRecordPage tailPage = null;
-            if (pageOffset == m_firstTailPage.LastLsnOrFileOffset)
+            if (firstTailPage != null)
             {
-                tailPage = m_firstTailPage;
+                tailPage = firstTailPage;
             }
 
-            if (pageOffset == m_secondTailPage.LastLsnOrFileOffset)
+            if (tailPage == null || (secondTailPage != null && secondTailPage.LastEndLsn > firstTailPage.LastEndLsn))
             {
-                if (tailPage == null || m_secondTailPage.LastEndLsn >= m_firstTailPage.LastEndLsn)
+                tailPage = secondTailPage;
+            }
+
+            if (tailPage != null)
+            {
+                LogRecordPage page = null;
+                try
                 {
-                    tailPage = m_secondTailPage;
+                    page = ReadPageFromFile(tailPage.LastLsnOrFileOffset);
+                }
+                catch (InvalidDataException)
+                {
+                }
+
+                if (page == null || tailPage.LastEndLsn > page.LastLsnOrFileOffset)
+                {
+                    ulong pageOffsetInFile = tailPage.LastLsnOrFileOffset;
+                    tailPage.LastLsnOrFileOffset = tailPage.LastEndLsn;
+                    WritePage(pageOffsetInFile, tailPage);
+
+                    if (tailPage.LastEndLsn > m_restartPage.LogRestartArea.CurrentLsn)
+                    {
+                        m_restartPage.LogRestartArea.CurrentLsn = tailPage.LastEndLsn;
+                        int recordOffsetInPage = LsnToRecordOffsetInPage(tailPage.LastEndLsn);
+                        LogRecord record = tailPage.ReadRecord(recordOffsetInPage, m_restartPage.LogRestartArea.LogPageDataOffset);
+                        m_restartPage.LogRestartArea.LastLsnDataLength = (uint)record.Length;
+                        WriteRestartPage(m_restartPage);
+                    }
                 }
             }
+        }
 
-            LogRecordPage page = ReadPageFromFile(pageOffset);
-            if (tailPage != null && tailPage.LastEndLsn >= page.LastLsnOrFileOffset)
-            {
-                return tailPage;
-            }
-            else
-            {
-                return page;
-            }
+        // Placeholder method that will implement caching in the future
+        private LogRecordPage ReadPage(ulong pageOffset)
+        {
+            return ReadPageFromFile(pageOffset);
         }
 
         private LogRecordPage ReadPageFromFile(ulong pageOffset)
