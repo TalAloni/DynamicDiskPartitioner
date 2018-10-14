@@ -13,8 +13,6 @@ namespace DiskAccessLibrary.FileSystems.NTFS
 {
     /// <summary>
     /// DIRTY_PAGE_ENTRY
-    /// This record structure is compatible with NTFSRestartRecord v0.0
-    /// This structure is NOT compatible with NTFSRestartRecord v1.0
     /// </summary>
     public class DirtyPageEntry : RestartTableEntry
     {
