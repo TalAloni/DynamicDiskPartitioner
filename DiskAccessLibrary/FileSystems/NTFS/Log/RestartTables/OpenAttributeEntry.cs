@@ -13,9 +13,15 @@ namespace DiskAccessLibrary.FileSystems.NTFS
 {
     /// <summary>
     /// OPEN_ATTRIBUTE_ENTRY
-    /// This record structure is compatible with NTFSRestartRecord v0.0
-    /// This structure is NOT compatible with NTFSRestartRecord v1.0
+    /// Note: v0.0 is used in both NTFS v1.2 and NTFS 3.0+, however, some of the fields have been repurposed or made obsolete.
     /// </summary>
+    /// <remarks>
+    /// NTFS v1.2:
+    /// Offset 0x04: PointerToAttributeName (UInt32)
+    /// Offset 0x18: DirtyPagesSeen (BOOLEAN)
+    /// Offset 0x19: AttributeNamePresent (BOOLEAN)
+    /// Offset 0x20: AttributeName (UNICODE_STRING, 8 bytes)
+    /// </remarks>
     public class OpenAttributeEntry : RestartTableEntry
     {
         public const int LengthV0 = 0x2C;
@@ -23,26 +29,28 @@ namespace DiskAccessLibrary.FileSystems.NTFS
 
         private const int FileReferenceOffsetV0 = 0x08;
         private const int LsnOfOpenRecordOffsetV0 = 0x10;
-        private const int AttributeNamePresentOffsetV0 = 0x19;
+        private const int DirtyPagesSeenOffsetV0 = 0x18;
         private const int AttributeTypeCodeOffsetV0 = 0x1C;
         private const int BytesPerIndexBufferOffsetV0 = 0x28;
         private const int BytesPerIndexBufferOffsetV1 = 0x04;
         private const int AttributeTypeCodeOffsetV1 = 0x08;
+        private const int DirtyPagesSeenOffsetV1 = 0x0C;
         private const int FileReferenceOffsetV1 = 0x10;
-        private const int AttributeNamePresentOffsetV1 = 0x14;
         private const int LsnOfOpenRecordOffsetV1 = 0x18;
         
         private uint m_majorVersion;
 
         // uint AllocatedOrNextFree;
-        public uint AttributeOffset; // v0.0: Self reference - Offset of the attribute in the open attribute table
+        /// <summary>Self-reference (Offset of the attribute in the open attribute table)</summary>
+        public uint AttributeOffset; // Used only by v0.0 on NTFS v3.0+.
         public MftSegmentReference FileReference;
         public ulong LsnOfOpenRecord;
-        public bool DirtyPagesSeen;
-        public bool AttributeNamePresent;
+        /// <summary>Indicates that a DirtyPageEntry is referring to this entry</summary>
+        public bool DirtyPagesSeen;       // Used by (v0.0 on) NTFS v1.2 and by v1.0 (on NTFS v3.0+), NOT used by v0.0 on NTFS v3.0+.
+        public bool AttributeNamePresent; // NTFS v1.2 only
         // 2 reserved bytes
         public AttributeType AttributeTypeCode;
-        public string AttributeName; // UNICODE_STRING
+        public ulong PointerToAttributeName;
         public uint BytesPerIndexBuffer;
 
         public OpenAttributeEntry(uint majorVersion)
@@ -56,7 +64,7 @@ namespace DiskAccessLibrary.FileSystems.NTFS
 
             int fileReferenceOffset = (m_majorVersion == 0) ? FileReferenceOffsetV0 : FileReferenceOffsetV1;
             int lsnOfOpenRecordOffset = (m_majorVersion == 0) ? LsnOfOpenRecordOffsetV0 : LsnOfOpenRecordOffsetV1;
-            int attributeNamePresentOffset = (m_majorVersion == 0) ? AttributeNamePresentOffsetV0 : AttributeNamePresentOffsetV1;
+            int dirtyPagesSeenOffset = (m_majorVersion == 0) ? DirtyPagesSeenOffsetV0 : DirtyPagesSeenOffsetV1;
             int attributeTypeCodeOffset = (m_majorVersion == 0) ? AttributeTypeCodeOffsetV0 : AttributeTypeCodeOffsetV1;
             int bytesPerIndexBufferOffset = (m_majorVersion == 0) ? BytesPerIndexBufferOffsetV0 : BytesPerIndexBufferOffsetV1;
 
@@ -66,26 +74,15 @@ namespace DiskAccessLibrary.FileSystems.NTFS
                 AttributeOffset = LittleEndianConverter.ToUInt32(buffer, offset + 0x04);
             }
             FileReference = new MftSegmentReference(buffer, offset + fileReferenceOffset);
-            if (m_majorVersion > 0)
-            {
-                // v1.0 doubles down on the assumption that SegmentNumber is implemented as UInt32, and uses one of the upper two bytes for AttributeNamePresent.
-                FileReference.SegmentNumber &= 0xFFFFFFFF;
-            }
             LsnOfOpenRecord = LittleEndianConverter.ToUInt64(buffer, offset + lsnOfOpenRecordOffset);
+            DirtyPagesSeen = Convert.ToBoolean(ByteReader.ReadByte(buffer, offset + dirtyPagesSeenOffset));
             if (m_majorVersion == 0)
             {
-                DirtyPagesSeen = Convert.ToBoolean(ByteReader.ReadByte(buffer, offset + 0x18));
+                // This field exists in NTFS v1.2, will be false in NTFS v3.0+
+                AttributeNamePresent = Convert.ToBoolean(ByteReader.ReadByte(buffer, offset + 0x19));
             }
-            AttributeNamePresent = Convert.ToBoolean(ByteReader.ReadByte(buffer, offset + attributeNamePresentOffset));
             AttributeTypeCode = (AttributeType)LittleEndianConverter.ToUInt32(buffer, offset + attributeTypeCodeOffset);
-            if (AttributeNamePresent)
-            {
-                // IIUC located at 0x20 at both v0.0 and v1.0
-                ushort length = LittleEndianConverter.ToUInt16(buffer, offset + 0x20);
-                ushort maximumLength = LittleEndianConverter.ToUInt16(buffer, offset + 0x22);
-                uint pointerToString = LittleEndianConverter.ToUInt32(buffer, offset + 0x24);
-                throw new NotImplementedException();
-            }
+            PointerToAttributeName = LittleEndianConverter.ToUInt64(buffer, offset + 0x20);
 
             if (AttributeTypeCode == AttributeType.IndexAllocation)
             {
@@ -97,7 +94,7 @@ namespace DiskAccessLibrary.FileSystems.NTFS
         {
             int fileReferenceOffset = (m_majorVersion == 0) ? FileReferenceOffsetV0 : FileReferenceOffsetV1;
             int lsnOfOpenRecordOffset = (m_majorVersion == 0) ? LsnOfOpenRecordOffsetV0 : LsnOfOpenRecordOffsetV1;
-            int attributeNamePresentOffset = (m_majorVersion == 0) ? AttributeNamePresentOffsetV0 : AttributeNamePresentOffsetV1;
+            int dirtyPagesSeenOffset = (m_majorVersion == 0) ? DirtyPagesSeenOffsetV0 : DirtyPagesSeenOffsetV1;
             int attributeTypeCodeOffset = (m_majorVersion == 0) ? AttributeTypeCodeOffsetV0 : AttributeTypeCodeOffsetV1;
             int bytesPerIndexBufferOffset = (m_majorVersion == 0) ? BytesPerIndexBufferOffsetV0 : BytesPerIndexBufferOffsetV1;
             
@@ -108,16 +105,14 @@ namespace DiskAccessLibrary.FileSystems.NTFS
             }
             FileReference.WriteBytes(buffer, offset + fileReferenceOffset);
             LittleEndianWriter.WriteUInt64(buffer, offset + lsnOfOpenRecordOffset, LsnOfOpenRecord);
+            ByteWriter.WriteByte(buffer, offset + dirtyPagesSeenOffset, Convert.ToByte(DirtyPagesSeen));
             if (m_majorVersion == 0)
             {
-                ByteWriter.WriteByte(buffer, offset + 0x18, Convert.ToByte(DirtyPagesSeen));
+                // This field exists in NTFS v1.2, should be set to be false in NTFS v3.0+
+                ByteWriter.WriteByte(buffer, offset + 0x19, Convert.ToByte(AttributeNamePresent));
             }
-            ByteWriter.WriteByte(buffer, offset + attributeNamePresentOffset, Convert.ToByte(AttributeNamePresent));
             LittleEndianWriter.WriteUInt32(buffer, offset + attributeTypeCodeOffset, (uint)AttributeTypeCode);
-            if (AttributeNamePresent)
-            {
-                throw new NotImplementedException();
-            }
+            LittleEndianWriter.WriteUInt64(buffer, offset + 0x20, PointerToAttributeName);
 
             if (AttributeTypeCode == AttributeType.IndexAllocation)
             {
