@@ -124,12 +124,12 @@ namespace DiskAccessLibrary.FileSystems.NTFS
                 int length = FixedLength + LCNsForPage.Count * 8;
                 if (UndoData == RedoData)
                 {
-                    length += UndoData.Length;
+                    length += RedoData.Length;
                 }
                 else
                 {
-                    length += (int)Math.Ceiling((double)UndoData.Length / 8) * 8;
-                    length += RedoData.Length;
+                    length += (int)Math.Ceiling((double)RedoData.Length / 8) * 8;
+                    length += UndoData.Length;
                 }
                 return length;
             }
