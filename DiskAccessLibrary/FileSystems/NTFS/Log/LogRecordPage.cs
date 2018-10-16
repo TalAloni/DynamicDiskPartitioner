@@ -18,6 +18,7 @@ namespace DiskAccessLibrary.FileSystems.NTFS
     public class LogRecordPage
     {
         private const string ValidSignature = "RCRD";
+        public const uint UninitializedPageSignature = 0xFFFFFFFF;
         private const int UpdateSequenceArrayOffset = 0x28;
 
         /* Start of LFS_RECORD_PAGE_HEADER */

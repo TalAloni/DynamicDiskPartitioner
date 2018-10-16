@@ -222,6 +222,11 @@ namespace DiskAccessLibrary.FileSystems.NTFS
             }
 
             byte[] pageBytes = ReadData(pageOffset, (int)m_restartPage.LogPageSize);
+            uint pageSignature = LittleEndianConverter.ToUInt32(pageBytes, 0);
+            if (pageSignature == LogRecordPage.UninitializedPageSignature)
+            {
+                return null;
+            }
             MultiSectorHelper.RevertUsaProtection(pageBytes, 0);
             return new LogRecordPage(pageBytes, m_restartPage.LogRestartArea.LogPageDataOffset);
         }
