@@ -34,11 +34,11 @@ namespace DiskAccessLibrary.FileSystems.NTFS
         PrepareTransaction = 0x0019,
         CommitTransaction = 0x001A,
         ForgetTransaction = 0x001B,
-        OpenNonresidentAttribute = 0x001C,
-        OpenAttributeTableDump = 0x001D,
-        AttributeNamesDump = 0x001E,
-        DirtyPageTableDump = 0x001F,
-        TransactionTableDump = 0x0020,
+        OpenNonresidentAttribute = 0x001C,             // OPEN_ATTRIBUTE_ENTRY + ATTRIBUTE_NAME_ENTRY
+        OpenAttributeTableDump = 0x001D,               // OPEN_ATTRIBUTE_ENTRY restart table
+        AttributeNamesDump = 0x001E,                   // ATTRIBUTE_NAME_ENTRY array
+        DirtyPageTableDump = 0x001F,                   // DIRTY_PAGE_ENTRY restart table
+        TransactionTableDump = 0x0020,                 // TRANSACTION_ENTRY restart table
         UpdateRecordDataInRoot = 0x0021,               // (value)
         UpdateRecordDataInAllocationBuffer = 0x0022,   // (value)
     }
