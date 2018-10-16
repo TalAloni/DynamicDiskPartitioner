@@ -120,6 +120,13 @@ namespace DiskAccessLibrary.FileSystems.NTFS
             }
         }
 
+        public byte[] GetBytes()
+        {
+            byte[] buffer = new byte[this.Length];
+            WriteBytes(buffer, 0);
+            return buffer;
+        }
+
         public override int Length
         {
             get
