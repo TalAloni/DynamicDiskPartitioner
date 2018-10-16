@@ -22,7 +22,7 @@ namespace DiskAccessLibrary.FileSystems.NTFS
         // ushort RedoLength;
         // ushort UndoOffset; // Offset MUST be aligned to 8 byte boundary
         // ushort UndoLength;
-        public ushort TargetAttributeOffset; // Offset of the attribute in the open attribute table, 0 for the MFT itself
+        public ushort TargetAttributeOffset; // Offset of the attribute in the open attribute table, 0 is a valid value for for operations that do not require TargetAttribute (see IsTargetAttributeRequired() method)
         // ushort LCNsToFollow;
         public ushort RecordOffset;
         public ushort AttributeOffset;
@@ -132,6 +132,27 @@ namespace DiskAccessLibrary.FileSystems.NTFS
                     length += RedoData.Length;
                 }
                 return length;
+            }
+        }
+
+        public static bool IsTargetAttributeRequired(NTFSLogOperation operation)
+        {
+            switch (operation)
+            {
+                case NTFSLogOperation.Noop:
+                case NTFSLogOperation.CompensationLogRecord:
+                case NTFSLogOperation.DeleteDirtyClusters:
+                case NTFSLogOperation.EndTopLevelAction:
+                case NTFSLogOperation.PrepareTransaction:
+                case NTFSLogOperation.CommitTransaction:
+                case NTFSLogOperation.ForgetTransaction:
+                case NTFSLogOperation.OpenAttributeTableDump:
+                case NTFSLogOperation.AttributeNamesDump:
+                case NTFSLogOperation.DirtyPageTableDump:
+                case NTFSLogOperation.TransactionTableDump:
+                    return false;
+                default:
+                    return true;
             }
         }
     }
