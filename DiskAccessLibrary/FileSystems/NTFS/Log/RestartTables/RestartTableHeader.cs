@@ -38,5 +38,15 @@ namespace DiskAccessLibrary.FileSystems.NTFS
             FirstFree = LittleEndianConverter.ToUInt32(buffer, offset + 0x10);
             LastFree = LittleEndianConverter.ToUInt32(buffer, offset + 0x14);
         }
+
+        public void WriteBytes(byte[] buffer, int offset)
+        {
+            LittleEndianWriter.WriteUInt16(buffer, offset + 0x00, EntrySize);
+            LittleEndianWriter.WriteUInt16(buffer, offset + 0x02, NumberEntries);
+            LittleEndianWriter.WriteUInt16(buffer, offset + 0x04, NumberAllocated);
+            LittleEndianWriter.WriteUInt32(buffer, offset + 0x0C, FreeGoal);
+            LittleEndianWriter.WriteUInt32(buffer, offset + 0x10, FirstFree);
+            LittleEndianWriter.WriteUInt32(buffer, offset + 0x14, LastFree);
+        }
     }
 }

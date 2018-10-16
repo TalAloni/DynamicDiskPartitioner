@@ -65,6 +65,7 @@ namespace DiskAccessLibrary.FileSystems.NTFS
             header.FreeGoal = UInt32.MaxValue;
             header.FirstFree = 0;
             header.LastFree = 0;
+            header.WriteBytes(tableBytes, 0);
             for (int index = 0; index < entries.Count; index++)
             {
                 entries[index].AllocatedOrNextFree = RestartTableEntry.RestartEntryAllocated;
