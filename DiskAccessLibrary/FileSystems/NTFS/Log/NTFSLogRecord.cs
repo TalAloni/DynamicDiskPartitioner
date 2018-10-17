@@ -12,7 +12,7 @@ namespace DiskAccessLibrary.FileSystems.NTFS
 {
     public class NTFSLogRecord
     {
-        private const int FixedLength = 32;
+        private const int FixedLength = 40; // 32 bytes + 8 bytes reserved for the first LCN in LCNsForPage array. This is the minimum header length that the NTFS v4.x/v5.x driver will accept.
         public const int BytesPerLogBlock = 512;
 
         /* Start of NTFS_LOG_RECORD_HEADER */
@@ -60,8 +60,6 @@ namespace DiskAccessLibrary.FileSystems.NTFS
                 long lcn = (long)LittleEndianConverter.ToUInt64(recordBytes, 0x20 + index * 8);
                 LCNsForPage.Add(lcn);
             }
-            /*int dataOffset = 0x20 + lcnsToFollow * 8;
-            int dataLength = recordBytes.Length - dataOffset;*/
             RedoData = ByteReader.ReadBytes(recordBytes, redoOffset, redoLength);
             if (undoOffset == redoOffset && undoLength == redoLength)
             {
@@ -80,7 +78,8 @@ namespace DiskAccessLibrary.FileSystems.NTFS
 
         public byte[] GetBytes()
         {
-            int redoDataOffset = 0x20 + LCNsForPage.Count * 8;
+            // The NTFS_LOG_RECORD_HEADER structure definition reserves 8 bytes for the first LCN
+            int redoDataOffset = FixedLength + ((LCNsForPage.Count >= 1) ? (LCNsForPage.Count - 1) * 8 : 0);
             int undoDataOffset;
             if (UndoData == RedoData)
             {
@@ -121,7 +120,8 @@ namespace DiskAccessLibrary.FileSystems.NTFS
         {
             get
             {
-                int length = FixedLength + LCNsForPage.Count * 8;
+                // The NTFS_LOG_RECORD_HEADER structure definition reserves 8 bytes for the first LCN
+                int length = FixedLength + ((LCNsForPage.Count >= 1) ? (LCNsForPage.Count - 1) * 8 : 0);
                 if (UndoData == RedoData)
                 {
                     length += RedoData.Length;
