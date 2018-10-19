@@ -20,6 +20,7 @@ namespace DiskAccessLibrary.FileSystems.NTFS
         private uint m_majorVersion; // For write purposes only
         private uint m_minorVersion; // For write purposes only
         private ulong m_lastClientLsn = 0;
+        private ulong m_lastLsnToUndo = 0;
         private KeyValuePairList<MftSegmentReference, AttributeRecord> m_openAttributes = new KeyValuePairList<MftSegmentReference, AttributeRecord>();
 
         public NTFSLogClient(LogFile logFile)
@@ -215,6 +216,7 @@ namespace DiskAccessLibrary.FileSystems.NTFS
             {
                 byte[] openAttributeTableBytes = GetOpenAttributeTableBytes();
                 m_lastClientLsn = 0;
+                m_lastLsnToUndo = 0;
                 LogRecord openAttributeTableRecord = WriteLogRecord(null, null, NTFSLogOperation.OpenAttributeTableDump, openAttributeTableBytes, NTFSLogOperation.Noop, new byte[0], 0, RestartTableHeader.Length);
                 restartRecord.OpenAttributeTableLsn = openAttributeTableRecord.ThisLsn;
                 restartRecord.OpenAttributeTableLength = (uint)openAttributeTableBytes.Length;
@@ -224,6 +226,7 @@ namespace DiskAccessLibrary.FileSystems.NTFS
             byte[] clientData = restartRecord.GetBytes(majorNTFSVersion);
             LogRecord result = m_logFile.WriteRecord(m_clientIndex, LogRecordType.ClientRestart, 0, 0, 0, clientData);
             m_lastClientLsn = result.ThisLsn;
+            m_lastLsnToUndo = 0;
             LogClientRecord clientRecord = m_logFile.GetClientRecord(m_clientIndex);
             clientRecord.OldestLsn = startOfCheckpointLsn;
             clientRecord.ClientRestartLsn = result.ThisLsn;
@@ -299,8 +302,9 @@ namespace DiskAccessLibrary.FileSystems.NTFS
         {
             LogClientRecord clientRecord = m_logFile.GetClientRecord(m_clientIndex);
             byte[] clientData = ntfsLogRecord.GetBytes();
-            LogRecord result = m_logFile.WriteRecord(m_clientIndex, LogRecordType.ClientRecord, m_lastClientLsn, 0, transactionID, clientData);
+            LogRecord result = m_logFile.WriteRecord(m_clientIndex, LogRecordType.ClientRecord, m_lastClientLsn, m_lastLsnToUndo, transactionID, clientData);
             m_lastClientLsn = result.ThisLsn;
+            m_lastLsnToUndo = result.ThisLsn;
             return result;
         }
 
