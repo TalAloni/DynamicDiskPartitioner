@@ -109,7 +109,7 @@ namespace DiskAccessLibrary.FileSystems.NTFS
             int recordOffsetInPage = LsnToRecordOffsetInPage(lsn);
             LogRecordPage page = ReadPage(pageOffsetInFile);
             int dataOffset = m_restartPage.LogRestartArea.LogPageDataOffset;
-            LogRecord record = page.ReadRecord(recordOffsetInPage, dataOffset);
+            LogRecord record = page.ReadRecord(recordOffsetInPage);
             if (record.ThisLsn != lsn)
             {
                 throw new InvalidDataException("LogRecord Lsn does not match expected value");
@@ -131,7 +131,7 @@ namespace DiskAccessLibrary.FileSystems.NTFS
                     }
                     page = ReadPage(pageOffsetInFile);
                     int bytesToRead = Math.Min((int)m_restartPage.LogPageSize - dataOffset, bytesRemaining);
-                    record.Data = ByteUtils.Concatenate(record.Data, page.ReadBytes(dataOffset, bytesToRead, dataOffset));
+                    record.Data = ByteUtils.Concatenate(record.Data, page.ReadBytes(dataOffset, bytesToRead));
                     bytesRemaining -= bytesToRead;
                 }
             }
@@ -200,7 +200,7 @@ namespace DiskAccessLibrary.FileSystems.NTFS
                     {
                         m_restartPage.LogRestartArea.CurrentLsn = tailPage.LastEndLsn;
                         int recordOffsetInPage = LsnToRecordOffsetInPage(tailPage.LastEndLsn);
-                        LogRecord record = tailPage.ReadRecord(recordOffsetInPage, m_restartPage.LogRestartArea.LogPageDataOffset);
+                        LogRecord record = tailPage.ReadRecord(recordOffsetInPage);
                         m_restartPage.LogRestartArea.LastLsnDataLength = (uint)record.Length;
                         WriteRestartPage(m_restartPage);
                     }
@@ -238,7 +238,7 @@ namespace DiskAccessLibrary.FileSystems.NTFS
                 m_restartPage = ReadRestartPage();
             }
 
-            byte[] pageBytes = page.GetBytes((int)m_restartPage.LogPageSize, m_restartPage.LogRestartArea.LogPageDataOffset, true);
+            byte[] pageBytes = page.GetBytes((int)m_restartPage.LogPageSize, true);
             WriteData(pageOffset, pageBytes);
         }
 

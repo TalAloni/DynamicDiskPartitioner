@@ -38,9 +38,12 @@ namespace DiskAccessLibrary.FileSystems.NTFS
         /* End of LFS_RECORD_PAGE_HEADER */
         public byte[] Data;
 
-        public LogRecordPage()
+        private int m_dataOffset;
+
+        public LogRecordPage(int pageLength, int dataOffset)
         {
-            Data = new byte[0];
+            Data = new byte[pageLength - dataOffset];
+            m_dataOffset = dataOffset;
         }
 
         public LogRecordPage(byte[] pageBytes, int dataOffset)
@@ -58,9 +61,11 @@ namespace DiskAccessLibrary.FileSystems.NTFS
             LastEndLsn = LittleEndianConverter.ToUInt64(pageBytes, 0x20);
             UpdateSequenceNumber = LittleEndianConverter.ToUInt16(pageBytes, multiSectorHeader.UpdateSequenceArrayOffset);
             Data = ByteReader.ReadBytes(pageBytes, dataOffset, pageBytes.Length - dataOffset);
+
+            m_dataOffset = dataOffset;
         }
 
-        public byte[] GetBytes(int bytesPerLogPage, int dataOffset, bool applyUsaProtection)
+        public byte[] GetBytes(int bytesPerLogPage, bool applyUsaProtection)
         {
             int strideCount = bytesPerLogPage / MultiSectorHelper.BytesPerStride;
             ushort updateSequenceArraySize = (ushort)(1 + strideCount);
@@ -75,7 +80,7 @@ namespace DiskAccessLibrary.FileSystems.NTFS
             LittleEndianWriter.WriteUInt16(buffer, 0x18, NextRecordOffset);
             LittleEndianWriter.WriteUInt64(buffer, 0x20, LastEndLsn);
             LittleEndianWriter.WriteUInt16(buffer, UpdateSequenceArrayOffset, UpdateSequenceNumber);
-            ByteWriter.WriteBytes(buffer, dataOffset, Data);
+            ByteWriter.WriteBytes(buffer, m_dataOffset, Data);
 
             if (applyUsaProtection)
             {
@@ -84,14 +89,24 @@ namespace DiskAccessLibrary.FileSystems.NTFS
             return buffer;
         }
 
-        public LogRecord ReadRecord(int recordOffset, int dataOffset)
+        public LogRecord ReadRecord(int recordOffset)
         {
-            return new LogRecord(Data, recordOffset - dataOffset);
+            return new LogRecord(Data, recordOffset - m_dataOffset);
         }
 
-        public byte[] ReadBytes(int recordOffset, int recordLength, int dataOffset)
+        public byte[] ReadBytes(int recordOffset, int bytesToRead)
         {
-            return ByteReader.ReadBytes(Data, recordOffset - dataOffset, recordLength);
+            return ByteReader.ReadBytes(Data, recordOffset - m_dataOffset, bytesToRead);
+        }
+
+        public void WriteBytes(int recordOffset, byte[] recordBytes)
+        {
+            WriteBytes(recordOffset, recordBytes, recordBytes.Length);
+        }
+
+        public void WriteBytes(int recordOffset, byte[] recordBytes, int bytesToWrite)
+        {
+            ByteWriter.WriteBytes(Data, recordOffset - m_dataOffset, recordBytes, bytesToWrite);
         }
 
         public bool HasRecordEnd
