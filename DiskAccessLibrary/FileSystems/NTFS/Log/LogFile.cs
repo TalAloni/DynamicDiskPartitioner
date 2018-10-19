@@ -14,6 +14,8 @@ namespace DiskAccessLibrary.FileSystems.NTFS
     public partial class LogFile : NTFSFile
     {
         private LogRestartPage m_restartPage;
+        private bool m_isFirstTailPageTurn;
+        private ushort m_nextUpdateSequenceNumber = (ushort)new Random().Next(UInt16.MaxValue);
 
         public LogFile(NTFSVolume volume) : base(volume, MasterFileTable.LogSegmentReference)
         {
@@ -63,6 +65,21 @@ namespace DiskAccessLibrary.FileSystems.NTFS
             }
 
             return m_restartPage.LogRestartArea.LogClientArray[clientIndex];
+        }
+
+        /// <remarks>
+        /// This method should only be called after properly setting the values in a client restart record
+        /// </remarks>
+        public void WriteRestartPage(bool isClean)
+        {
+            if (m_restartPage == null)
+            {
+                m_restartPage = ReadRestartPage();
+            }
+
+            m_restartPage.LogRestartArea.IsClean = isClean;
+            m_restartPage.LogRestartArea.RevisionNumber++;
+            WriteRestartPage(m_restartPage);
         }
 
         private void WriteRestartPage(LogRestartPage restartPage)
@@ -136,6 +153,134 @@ namespace DiskAccessLibrary.FileSystems.NTFS
                 }
             }
             return record;
+        }
+
+        public LogRecord WriteRecord(int clientIndex, LogRecordType recordType, ulong clientPreviousLsn, ulong clientUndoNextLsn, uint transactionId, byte[] clientData)
+        {
+            if (m_restartPage == null)
+            {
+                m_restartPage = ReadRestartPage();
+            }
+
+            if (m_restartPage.LogRestartArea.IsClean)
+            {
+                // We should clear the CleanDismount flag before making changes to the log file
+                WriteRestartPage(false);
+            }
+
+            ushort clientSeqNumber = m_restartPage.LogRestartArea.LogClientArray[clientIndex].SeqNumber;
+
+            LogRecord record = new LogRecord();
+            record.ClientSeqNumber = clientSeqNumber;
+            record.ClientIndex = (ushort)clientIndex;
+            record.RecordType = recordType;
+            record.ClientPreviousLsn = clientPreviousLsn;
+            record.ClientUndoNextLsn = clientUndoNextLsn;
+            record.TransactionId = transactionId;
+            record.ClientDataLength = (uint)clientData.Length;
+            record.Data = clientData;
+            record.ThisLsn = GetNextLsn();
+            WriteRecord(record);
+
+            // Update CurrentLsn / LastLsnDataLength
+            m_restartPage.LogRestartArea.CurrentLsn = record.ThisLsn;
+            m_restartPage.LogRestartArea.LastLsnDataLength = (uint)record.Data.Length;
+            if (record.IsMultiPageRecord)
+            {
+                // We can optimize by only writing the restart page if we already had one transfer after the last flushed LSN.
+                WriteRestartPage(false);
+            }
+            return record;
+        }
+
+        private void WriteRecord(LogRecord record)
+        {
+            ulong pageOffsetInFile = LsnToPageOffsetInFile(record.ThisLsn);
+            int recordOffsetInPage = LsnToRecordOffsetInPage(record.ThisLsn);
+            bool initializeNewPage = (recordOffsetInPage == m_restartPage.LogRestartArea.LogPageDataOffset);
+            LogRecordPage page;
+            if (initializeNewPage) // We write the record at the beginning of a new page, we must initialize the page
+            {
+                // When the NTFS v5.1 driver restarts a dirty log file, it does not expect to find more than one transfer after the last flushed LSN.
+                // If more than one transfer is encountered, it is treated as a fatal error and the driver will report STATUS_DISK_CORRUPT_ERROR.
+                // Updating the CurrentLsn / LastLsnDataLength in the restart area will make the NTFS driver see the new page as the only transfer after the flushed LCN.
+                WriteRestartPage(false);
+
+                page = new LogRecordPage((int)m_restartPage.LogPageSize, m_restartPage.LogRestartArea.LogPageDataOffset);
+                page.LastLsnOrFileOffset = 0;
+                page.LastEndLsn = 0;
+                page.NextRecordOffset = m_restartPage.LogRestartArea.LogPageDataOffset;
+                page.UpdateSequenceNumber = m_nextUpdateSequenceNumber; // There is no rule governing the value of the USN
+                m_nextUpdateSequenceNumber++;
+            }
+            else
+            {
+                page = ReadPage(pageOffsetInFile);
+            }
+            int bytesAvailableInFirstPage = (int)m_restartPage.LogPageSize - recordOffsetInPage;
+            int bytesToWrite = Math.Min(record.Length, bytesAvailableInFirstPage);
+            int bytesRemaining = record.Length - bytesToWrite;
+            record.IsMultiPageRecord = (bytesRemaining > 0);
+            byte[] recordBytes = record.GetBytes();
+            page.WriteBytes(recordOffsetInPage, recordBytes, bytesToWrite);
+            int bytesAvailableInPage = (int)m_restartPage.LogPageSize - (int)m_restartPage.LogRestartArea.LogPageDataOffset;
+            int pageCount = 1 + (int)Math.Ceiling((double)bytesRemaining / bytesAvailableInPage);
+            page.PageCount = (ushort)pageCount;
+            page.PagePosition = 1;
+            if (!record.IsMultiPageRecord && (recordOffsetInPage + bytesToWrite > page.NextRecordOffset))
+            {
+                page.NextRecordOffset = (ushort)(recordOffsetInPage + bytesToWrite);
+            }
+
+            ulong firstTailPageOffset = m_restartPage.SystemPageSize * 2;
+            ulong secondTailPageOffset = m_restartPage.SystemPageSize * 2 + m_restartPage.LogPageSize;
+            ulong tailPageOffset = m_isFirstTailPageTurn ? firstTailPageOffset : secondTailPageOffset;
+            m_isFirstTailPageTurn = !m_isFirstTailPageTurn;
+            if (record.ThisLsn > page.LastLsnOrFileOffset)
+            {
+                page.LastLsnOrFileOffset = record.ThisLsn;
+            }
+
+            if (!record.IsMultiPageRecord && record.ThisLsn > page.LastEndLsn)
+            {
+                page.LastEndLsn = record.ThisLsn;
+                page.HasRecordEnd = true;
+            }
+            // Write tail copy
+            ulong lastPageLsn = page.LastLsnOrFileOffset;
+            page.LastLsnOrFileOffset = pageOffsetInFile;
+            WritePage(tailPageOffset, page);
+            page.LastLsnOrFileOffset = lastPageLsn;
+            // Write page
+            WritePage(pageOffsetInFile, page);
+
+            int pagePosition = 2;
+            while (bytesRemaining > 0)
+            {
+                pageOffsetInFile += m_restartPage.LogPageSize;
+                if (pageOffsetInFile == m_restartPage.LogRestartArea.FileSize)
+                {
+                    pageOffsetInFile = m_restartPage.SystemPageSize * 2 + m_restartPage.LogPageSize * 2;
+                }
+
+                bytesToWrite = Math.Min(bytesRemaining, bytesAvailableInPage);
+                LogRecordPage nextPage = new LogRecordPage((int)m_restartPage.LogPageSize, m_restartPage.LogRestartArea.LogPageDataOffset);
+                Array.Copy(recordBytes, recordBytes.Length - bytesRemaining, nextPage.Data, 0, bytesToWrite);
+                bytesRemaining -= bytesToWrite;
+
+                nextPage.LastLsnOrFileOffset = record.ThisLsn;
+                if (bytesRemaining == 0)
+                {
+                    nextPage.LastEndLsn = record.ThisLsn;
+                    nextPage.Flags |= LogRecordPageFlags.RecordEnd;
+                }
+                nextPage.PageCount = (ushort)pageCount;
+                nextPage.PagePosition = (ushort)pagePosition;
+                nextPage.UpdateSequenceNumber = m_nextUpdateSequenceNumber; // There is no rule governing the value of the USN
+                m_nextUpdateSequenceNumber++;
+                WritePage(pageOffsetInFile, nextPage);
+                pagePosition++;
+            }
         }
 
         /// <summary>
@@ -259,6 +404,18 @@ namespace DiskAccessLibrary.FileSystems.NTFS
             }
 
             return (int)((lsn << 3) & (m_restartPage.LogPageSize - 1));
+        }
+
+        private ulong GetNextLsn()
+        {
+            if (m_restartPage == null)
+            {
+                m_restartPage = ReadRestartPage();
+            }
+
+            ulong currentLsn = m_restartPage.LogRestartArea.CurrentLsn;
+            int currentLsnRecordLength = (int)(m_restartPage.LogRestartArea.RecordHeaderLength + m_restartPage.LogRestartArea.LastLsnDataLength);
+            return CalculateNextLsn(currentLsn, currentLsnRecordLength);
         }
 
         private ulong CalculateNextLsn(ulong lsn, int recordLength)
