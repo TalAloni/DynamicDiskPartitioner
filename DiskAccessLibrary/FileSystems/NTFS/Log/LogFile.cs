@@ -142,6 +142,7 @@ namespace DiskAccessLibrary.FileSystems.NTFS
         /// This method will repair the log file by copying the tail copies back to their correct location.
         /// If necessary, the restart area will be updated to reflect CurrentLsn and LastLsnDataLength.
         /// </summary>
+        /// <remarks>This method will only repair the log file, further actions are needed to bring the volume back to a consistent state.</remarks>
         private void RepairLogFile()
         {
             if (m_restartPage == null)
@@ -149,6 +150,7 @@ namespace DiskAccessLibrary.FileSystems.NTFS
                 m_restartPage = ReadRestartPage();
             }
 
+            // Note: this implementation is not as exhaustive as it should be.
             LogRecordPage firstTailPage = null;
             LogRecordPage secondTailPage = null;
             try
@@ -201,7 +203,7 @@ namespace DiskAccessLibrary.FileSystems.NTFS
                         m_restartPage.LogRestartArea.CurrentLsn = tailPage.LastEndLsn;
                         int recordOffsetInPage = LsnToRecordOffsetInPage(tailPage.LastEndLsn);
                         LogRecord record = tailPage.ReadRecord(recordOffsetInPage);
-                        m_restartPage.LogRestartArea.LastLsnDataLength = (uint)record.Length;
+                        m_restartPage.LogRestartArea.LastLsnDataLength = (uint)record.Data.Length;
                         WriteRestartPage(m_restartPage);
                     }
                 }
