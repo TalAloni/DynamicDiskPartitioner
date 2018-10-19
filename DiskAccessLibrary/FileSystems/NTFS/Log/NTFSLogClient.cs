@@ -208,6 +208,7 @@ namespace DiskAccessLibrary.FileSystems.NTFS
             NTFSRestartRecord restartRecord = new NTFSRestartRecord(m_majorVersion, m_minorVersion);
             restartRecord.StartOfCheckpointLsn = m_lastClientLsn;
             restartRecord.PreviousRestartRecordLsn = previousRestartRecordLsn;
+            ulong previousLsnToUndo = 0;
             if (isClean)
             {
                 m_openAttributes.Clear(); // FIXME: we should find a more appropriate way to clear the open attribute table
@@ -216,6 +217,7 @@ namespace DiskAccessLibrary.FileSystems.NTFS
             {
                 byte[] openAttributeTableBytes = GetOpenAttributeTableBytes();
                 m_lastClientLsn = 0;
+                previousLsnToUndo = m_lastLsnToUndo;
                 m_lastLsnToUndo = 0;
                 LogRecord openAttributeTableRecord = WriteLogRecord(null, null, NTFSLogOperation.OpenAttributeTableDump, openAttributeTableBytes, NTFSLogOperation.Noop, new byte[0], 0, RestartTableHeader.Length);
                 restartRecord.OpenAttributeTableLsn = openAttributeTableRecord.ThisLsn;
@@ -226,7 +228,7 @@ namespace DiskAccessLibrary.FileSystems.NTFS
             byte[] clientData = restartRecord.GetBytes(majorNTFSVersion);
             LogRecord result = m_logFile.WriteRecord(m_clientIndex, LogRecordType.ClientRestart, 0, 0, 0, clientData);
             m_lastClientLsn = result.ThisLsn;
-            m_lastLsnToUndo = 0;
+            m_lastLsnToUndo = previousLsnToUndo;
             LogClientRecord clientRecord = m_logFile.GetClientRecord(m_clientIndex);
             if (isClean)
             {
