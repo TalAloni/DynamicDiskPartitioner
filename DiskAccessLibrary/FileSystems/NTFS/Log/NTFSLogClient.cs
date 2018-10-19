@@ -17,6 +17,10 @@ namespace DiskAccessLibrary.FileSystems.NTFS
 
         private LogFile m_logFile;
         private int m_clientIndex;
+        private uint m_majorVersion; // For write purposes only
+        private uint m_minorVersion; // For write purposes only
+        private ulong m_lastClientLsn = 0;
+        private KeyValuePairList<MftSegmentReference, AttributeRecord> m_openAttributes = new KeyValuePairList<MftSegmentReference, AttributeRecord>();
 
         public NTFSLogClient(LogFile logFile)
         {
@@ -26,6 +30,11 @@ namespace DiskAccessLibrary.FileSystems.NTFS
             {
                 throw new InvalidDataException("NTFS Client was not found");
             }
+            ulong lastClientRestartLsn = m_logFile.GetClientRecord(m_clientIndex).ClientRestartLsn;
+            m_lastClientLsn = lastClientRestartLsn;
+            NTFSRestartRecord currentRestartRecord = ReadRestartRecord(lastClientRestartLsn);
+            m_majorVersion = currentRestartRecord.MajorVersion;
+            m_minorVersion = currentRestartRecord.MinorVersion;
         }
 
         public NTFSRestartRecord ReadCurrentRestartRecord()
@@ -182,6 +191,168 @@ namespace DiskAccessLibrary.FileSystems.NTFS
             else
             {
                 return null;
+            }
+        }
+
+        public void WriteRestartRecord(ushort majorNTFSVersion, bool isClean)
+        {
+            NTFSRestartRecord previousRestartRecord = ReadCurrentRestartRecord();
+            MftSegmentReference usnJournal = previousRestartRecord.UsnJournal;
+            ulong previousRestartRecordLsn = previousRestartRecord.PreviousRestartRecordLsn;
+            LogRecord restartRecord = WriteRestartRecord(m_lastClientLsn, previousRestartRecordLsn, usnJournal, majorNTFSVersion, isClean);
+        }
+
+        private LogRecord WriteRestartRecord(ulong startOfCheckpointLsn, ulong previousRestartRecordLsn, MftSegmentReference usnJournal, ushort majorNTFSVersion, bool isClean)
+        {
+            NTFSRestartRecord restartRecord = new NTFSRestartRecord(m_majorVersion, m_minorVersion);
+            restartRecord.StartOfCheckpointLsn = startOfCheckpointLsn;
+            restartRecord.PreviousRestartRecordLsn = previousRestartRecordLsn;
+            if (isClean)
+            {
+                m_openAttributes.Clear(); // FIXME: we should find a more appropriate way to clear the open attribute table
+            }
+            else if (m_openAttributes.Count > 0)
+            {
+                byte[] openAttributeTableBytes = GetOpenAttributeTableBytes();
+                m_lastClientLsn = 0;
+                LogRecord openAttributeTableRecord = WriteLogRecord(null, null, NTFSLogOperation.OpenAttributeTableDump, openAttributeTableBytes, NTFSLogOperation.Noop, new byte[0], 0, RestartTableHeader.Length);
+                restartRecord.OpenAttributeTableLsn = openAttributeTableRecord.ThisLsn;
+                restartRecord.OpenAttributeTableLength = (uint)openAttributeTableBytes.Length;
+            }
+            restartRecord.BytesPerCluster = (uint)Volume.BytesPerCluster;
+            restartRecord.UsnJournal = usnJournal;
+            byte[] clientData = restartRecord.GetBytes(majorNTFSVersion);
+            LogRecord result = m_logFile.WriteRecord(m_clientIndex, LogRecordType.ClientRestart, 0, 0, 0, clientData);
+            m_lastClientLsn = result.ThisLsn;
+            LogClientRecord clientRecord = m_logFile.GetClientRecord(m_clientIndex);
+            clientRecord.OldestLsn = startOfCheckpointLsn;
+            clientRecord.ClientRestartLsn = result.ThisLsn;
+            m_logFile.WriteRestartPage(isClean);
+            return result;
+        }
+
+        public LogRecord WriteForgetTransactionRecord(uint transactionID)
+        {
+            NTFSLogRecord ntfsLogRecord = new NTFSLogRecord();
+            ntfsLogRecord.RedoOperation = NTFSLogOperation.ForgetTransaction;
+            ntfsLogRecord.UndoOperation = NTFSLogOperation.CompensationLogRecord;
+            return WriteLogRecord(ntfsLogRecord, transactionID);
+        }
+
+        public LogRecord WriteLogRecord(MftSegmentReference fileReference, AttributeRecord attributeRecord, NTFSLogOperation redoOperation, byte[] redoData, NTFSLogOperation undoOperation, byte[] undoData, ulong streamOffset, uint transactionID)
+        {
+            int openAttributeOffset = 0;
+            if (fileReference != null)
+            {
+                int openAttributeIndex = IndexOfOpenAttribute(fileReference, attributeRecord.AttributeType);
+                if (openAttributeIndex == -1)
+                {
+                    openAttributeIndex = AddToOpenAttributeTable(fileReference, attributeRecord);
+                    openAttributeOffset = OpenAttributeIndexToOffset(openAttributeIndex);
+                    OpenAttributeEntry entry = new OpenAttributeEntry(m_majorVersion);
+                    entry.AllocatedOrNextFree = RestartTableEntry.RestartEntryAllocated;
+                    entry.AttributeOffset = (uint)(RestartTableHeader.Length + openAttributeIndex * 0x28); //(uint)OpenAttributeIndexToOffset(index);
+                    entry.FileReference = fileReference;
+                    entry.LsnOfOpenRecord = m_lastClientLsn;
+                    entry.AttributeTypeCode = attributeRecord.AttributeType;
+                    byte[] openData = entry.GetBytes();
+                    if (attributeRecord.Name != String.Empty)
+                    {
+                        throw new NotImplementedException();
+                    }
+                    LogRecord openAttributeRecord = WriteLogRecord(openAttributeOffset, NTFSLogOperation.OpenNonresidentAttribute, openData, NTFSLogOperation.Noop, new byte[0], 0, 0, new List<long>(), transactionID);
+                }
+                else
+                {
+                    openAttributeOffset = OpenAttributeIndexToOffset(openAttributeIndex);
+                }
+            }
+
+            List<long> lcnList = new List<long>();
+            if (attributeRecord is NonResidentAttributeRecord)
+            {
+                long targetVCN = (long)(streamOffset / (uint)Volume.BytesPerCluster);
+                long lcn = ((NonResidentAttributeRecord)attributeRecord).DataRunSequence.GetDataClusterLCN(targetVCN);
+                lcnList.Add(lcn);
+            }
+
+            return WriteLogRecord(openAttributeOffset, redoOperation, redoData, undoOperation, undoData, 0, streamOffset, lcnList, transactionID);
+        }
+
+        private LogRecord WriteLogRecord(int openAttributeOffset, NTFSLogOperation redoOperation, byte[] redoData, NTFSLogOperation undoOperation, byte[] undoData, int attributeOffset, ulong streamOffset, List<long> lcnList, uint transactionID)
+        {
+            NTFSLogRecord ntfsLogRecord = new NTFSLogRecord();
+            ntfsLogRecord.TargetAttributeOffset = (ushort)openAttributeOffset;
+            ntfsLogRecord.RedoOperation = redoOperation;
+            ntfsLogRecord.RedoData = redoData;
+            ntfsLogRecord.UndoOperation = undoOperation;
+            ntfsLogRecord.UndoData = undoData;
+            ntfsLogRecord.TargetVCN = (long)(streamOffset / (uint)Volume.BytesPerCluster);
+            ntfsLogRecord.LCNsForPage.AddRange(lcnList);
+            int offsetInCluster = (int)(streamOffset % (uint)Volume.BytesPerCluster);
+            ntfsLogRecord.AttributeOffset = (ushort)attributeOffset;
+            ntfsLogRecord.ClusterBlockOffset = (ushort)(offsetInCluster / NTFSLogRecord.BytesPerLogBlock);
+            return WriteLogRecord(ntfsLogRecord, transactionID);
+        }
+
+        private LogRecord WriteLogRecord(NTFSLogRecord ntfsLogRecord, uint transactionID)
+        {
+            LogClientRecord clientRecord = m_logFile.GetClientRecord(m_clientIndex);
+            byte[] clientData = ntfsLogRecord.GetBytes();
+            LogRecord result = m_logFile.WriteRecord(m_clientIndex, LogRecordType.ClientRecord, m_lastClientLsn, 0, transactionID, clientData);
+            m_lastClientLsn = result.ThisLsn;
+            return result;
+        }
+
+        /// <returns>Index in open attribute table</returns>
+        private int AddToOpenAttributeTable(MftSegmentReference fileReference, AttributeRecord attributeRecord)
+        {
+            int openAttributeIndex = m_openAttributes.Count;
+            m_openAttributes.Add(fileReference, attributeRecord);
+            return openAttributeIndex;
+        }
+
+        private byte[] GetOpenAttributeTableBytes()
+        {
+            List<OpenAttributeEntry> openAttributeTable = new List<OpenAttributeEntry>();
+            for (int index = 0; index < m_openAttributes.Count; index++)
+            {
+                KeyValuePair<MftSegmentReference, AttributeRecord> openAttribute = m_openAttributes[index];
+                OpenAttributeEntry entry = new OpenAttributeEntry(m_majorVersion);
+                entry.AllocatedOrNextFree = RestartTableEntry.RestartEntryAllocated;
+                entry.AttributeOffset = (uint)(RestartTableHeader.Length + index * 0x28); //(uint)OpenAttributeIndexToOffset(index);
+                entry.FileReference = openAttribute.Key;
+                entry.LsnOfOpenRecord = 0; // FIXME
+                entry.AttributeTypeCode = openAttribute.Value.AttributeType;
+                openAttributeTable.Add(entry);
+            }
+            return RestartTableHelper.GetTableBytes<OpenAttributeEntry>(openAttributeTable);
+        }
+
+        private int OpenAttributeIndexToOffset(int openAttributeIndex)
+        {
+            int entryLength = (m_majorVersion == 0) ? OpenAttributeEntry.LengthV0 : OpenAttributeEntry.LengthV1;
+            return RestartTableHeader.Length + openAttributeIndex * entryLength;
+        }
+
+        private int IndexOfOpenAttribute(MftSegmentReference fileReference, AttributeType attributeType)
+        {
+            for (int index = 0; index < m_openAttributes.Count; index++)
+            {
+                // FIXME: Take attribute name into account as well
+                if (m_openAttributes[index].Key == fileReference && m_openAttributes[index].Value.AttributeType == attributeType)
+                {
+                    return index;
+                }
+            }
+            return -1;
+        }
+
+        public NTFSVolume Volume
+        {
+            get
+            {
+                return m_logFile.Volume;
             }
         }
     }
