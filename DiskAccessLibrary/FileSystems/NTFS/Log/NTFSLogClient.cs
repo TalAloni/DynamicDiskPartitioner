@@ -200,13 +200,13 @@ namespace DiskAccessLibrary.FileSystems.NTFS
             NTFSRestartRecord previousRestartRecord = ReadCurrentRestartRecord();
             MftSegmentReference usnJournal = previousRestartRecord.UsnJournal;
             ulong previousRestartRecordLsn = previousRestartRecord.PreviousRestartRecordLsn;
-            LogRecord restartRecord = WriteRestartRecord(m_lastClientLsn, previousRestartRecordLsn, usnJournal, majorNTFSVersion, isClean);
+            LogRecord restartRecord = WriteRestartRecord(previousRestartRecordLsn, usnJournal, majorNTFSVersion, isClean);
         }
 
-        private LogRecord WriteRestartRecord(ulong startOfCheckpointLsn, ulong previousRestartRecordLsn, MftSegmentReference usnJournal, ushort majorNTFSVersion, bool isClean)
+        private LogRecord WriteRestartRecord(ulong previousRestartRecordLsn, MftSegmentReference usnJournal, ushort majorNTFSVersion, bool isClean)
         {
             NTFSRestartRecord restartRecord = new NTFSRestartRecord(m_majorVersion, m_minorVersion);
-            restartRecord.StartOfCheckpointLsn = startOfCheckpointLsn;
+            restartRecord.StartOfCheckpointLsn = m_lastClientLsn;
             restartRecord.PreviousRestartRecordLsn = previousRestartRecordLsn;
             if (isClean)
             {
@@ -228,7 +228,10 @@ namespace DiskAccessLibrary.FileSystems.NTFS
             m_lastClientLsn = result.ThisLsn;
             m_lastLsnToUndo = 0;
             LogClientRecord clientRecord = m_logFile.GetClientRecord(m_clientIndex);
-            clientRecord.OldestLsn = startOfCheckpointLsn;
+            if (isClean)
+            {
+                clientRecord.OldestLsn = restartRecord.StartOfCheckpointLsn;
+            }
             clientRecord.ClientRestartLsn = result.ThisLsn;
             m_logFile.WriteRestartPage(isClean);
             return result;
