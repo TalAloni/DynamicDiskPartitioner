@@ -410,6 +410,14 @@ namespace DiskAccessLibrary.FileSystems.NTFS
             }
         }
 
+        public bool IsReadOnly
+        {
+            get
+            {
+                return m_volume.IsReadOnly;
+            }
+        }
+
         public long NumberOfFreeClusters
         {
             get
