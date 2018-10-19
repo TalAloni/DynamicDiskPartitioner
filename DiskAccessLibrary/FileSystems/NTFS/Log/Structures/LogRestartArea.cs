@@ -93,7 +93,7 @@ namespace DiskAccessLibrary.FileSystems.NTFS
 
         /// <summary>
         /// Windows 2000 and earlier will close the log file by setting the
-        /// ClientInUseList to NoClient when the volume is shutdown cleanly.
+        /// ClientInUseList to NoClient when the volume is dismounted cleanly.
         /// </summary>
         public bool IsInUse
         {
@@ -104,7 +104,7 @@ namespace DiskAccessLibrary.FileSystems.NTFS
         }
 
         /// <summary>
-        /// Windows XP and later will set the clean bit when the volume is shutdown cleanly.
+        /// Windows XP and later will set the clean bit when the volume is dismounted cleanly.
         /// </summary>
         public bool IsClean
         {
