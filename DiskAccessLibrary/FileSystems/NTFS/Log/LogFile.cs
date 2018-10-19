@@ -21,7 +21,7 @@ namespace DiskAccessLibrary.FileSystems.NTFS
         {
             if (!IsLogClean())
             {
-                RepairLogFile();
+                throw new NotSupportedException("The volume was not dismounted cleanly, the Windows NTFS driver must be used to bring the volume back to a consistent state");
             }
         }
 
