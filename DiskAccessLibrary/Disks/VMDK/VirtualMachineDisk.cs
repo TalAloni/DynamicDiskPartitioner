@@ -29,7 +29,15 @@ namespace DiskAccessLibrary
         /// <exception cref="System.IO.InvalidDataException"></exception>
         /// <exception cref="System.NotImplementedException"></exception>
         /// <exception cref="System.UnauthorizedAccessException"></exception>
-        public VirtualMachineDisk(string descriptorPath) : base(descriptorPath)
+        public VirtualMachineDisk(string descriptorPath) : this(descriptorPath, false)
+        {
+        }
+
+        /// <exception cref="System.IO.IOException"></exception>
+        /// <exception cref="System.IO.InvalidDataException"></exception>
+        /// <exception cref="System.NotImplementedException"></exception>
+        /// <exception cref="System.UnauthorizedAccessException"></exception>
+        public VirtualMachineDisk(string descriptorPath, bool isReadOnly) : base(descriptorPath)
         {
             m_descriptorPath = descriptorPath;
 
@@ -92,7 +100,8 @@ namespace DiskAccessLibrary
             {
                 VirtualMachineDiskExtentEntry entry = m_descriptor.ExtentEntries[0];
                 string directory = System.IO.Path.GetDirectoryName(descriptorPath);
-                DiskImage extent = new RawDiskImage(directory + @"\" + entry.FileName, BytesPerDiskSector);
+                string extentPath = directory + @"\" + entry.FileName;
+                DiskImage extent = new RawDiskImage(extentPath, BytesPerDiskSector, isReadOnly);
                 m_extent = extent;
             }
         }
@@ -144,14 +153,6 @@ namespace DiskAccessLibrary
             get
             {
                 return base.IsReadOnly;
-            }
-            set
-            {
-                base.IsReadOnly = value;
-                if (m_descriptor.DiskType == VirtualMachineDiskType.MonolithicFlat)
-                {
-                    m_extent.IsReadOnly = value;
-                }
             }
         }
 
