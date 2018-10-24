@@ -147,7 +147,7 @@ namespace DiskAccessLibrary.FileSystems.NTFS
             if (result.SequenceNumber != reference.SequenceNumber)
             {
                 // The file record segment has been modified, and an older version has been requested
-                return null;
+                throw new InvalidDataException("MftSegmentReference SequenceNumber does not match FileRecordSegment");
             }
             return result;
         }
@@ -181,7 +181,7 @@ namespace DiskAccessLibrary.FileSystems.NTFS
                 if (result.BaseSequenceNumber != fileFeference.SequenceNumber)
                 {
                     // The file record segment has been freed and reallocated, and an obsolete version is being requested
-                    return null;
+                    throw new InvalidDataException("MftSegmentReference SequenceNumber does not match BaseFileRecordSegment");
                 }
             }
             return result;
