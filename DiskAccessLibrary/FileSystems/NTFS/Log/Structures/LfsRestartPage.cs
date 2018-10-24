@@ -15,7 +15,7 @@ namespace DiskAccessLibrary.FileSystems.NTFS
     /// Windows NT 3.51 sets the version to 1.0
     /// Windows NT 4.0 and later set the version to 1.1
     /// </remarks>
-    public class LogRestartPage
+    public class LfsRestartPage
     {
         private const string ValidSignature = "RSTR";
         private const int UpdateSequenceArrayOffset = 0x1E;
@@ -31,16 +31,16 @@ namespace DiskAccessLibrary.FileSystems.NTFS
         public ushort UpdateSequenceNumber; // a.k.a. USN
         // byte[] UpdateSequenceReplacementData
         /* End of LFS_RESTART_PAGE_HEADER */
-        public LogRestartArea LogRestartArea;
+        public LfsRestartArea LogRestartArea;
 
-        public LogRestartPage()
+        public LfsRestartPage()
         {
-            LogRestartArea = new LogRestartArea();
+            LogRestartArea = new LfsRestartArea();
             MinorVersion = 1;
             MajorVersion = 1;
         }
 
-        public LogRestartPage(byte[] buffer, int offset)
+        public LfsRestartPage(byte[] buffer, int offset)
         {
             MultiSectorHeader multiSectorHeader = new MultiSectorHeader(buffer, offset + 0x00);
             if (multiSectorHeader.Signature != ValidSignature)
@@ -54,7 +54,7 @@ namespace DiskAccessLibrary.FileSystems.NTFS
             MinorVersion = LittleEndianConverter.ToInt16(buffer, offset + 0x1A);
             MajorVersion = LittleEndianConverter.ToInt16(buffer, offset + 0x1C);
             UpdateSequenceNumber = LittleEndianConverter.ToUInt16(buffer, offset + multiSectorHeader.UpdateSequenceArrayOffset);
-            LogRestartArea = new LogRestartArea(buffer, offset + restartOffset);
+            LogRestartArea = new LfsRestartArea(buffer, offset + restartOffset);
         }
 
         public byte[] GetBytes(int bytesPerSystemPage, bool applyUsaProtection)

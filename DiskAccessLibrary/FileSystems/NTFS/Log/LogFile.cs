@@ -13,7 +13,7 @@ namespace DiskAccessLibrary.FileSystems.NTFS
 {
     public partial class LogFile : NTFSFile
     {
-        private LogRestartPage m_restartPage;
+        private LfsRestartPage m_restartPage;
         private bool m_isFirstTailPageTurn;
         private ushort m_nextUpdateSequenceNumber = (ushort)new Random().Next(UInt16.MaxValue);
 
@@ -25,10 +25,10 @@ namespace DiskAccessLibrary.FileSystems.NTFS
             }
         }
 
-        private LogRestartPage ReadRestartPage()
+        private LfsRestartPage ReadRestartPage()
         {
             byte[] pageBytes = ReadData(0, Volume.BytesPerSector);
-            uint systemPageSize = LogRestartPage.GetSystemPageSize(pageBytes, 0);
+            uint systemPageSize = LfsRestartPage.GetSystemPageSize(pageBytes, 0);
             int bytesToRead = (int)systemPageSize - pageBytes.Length;
             if (bytesToRead > 0)
             {
@@ -36,7 +36,7 @@ namespace DiskAccessLibrary.FileSystems.NTFS
                 pageBytes = ByteUtils.Concatenate(pageBytes, temp);
             }
             MultiSectorHelper.RevertUsaProtection(pageBytes, 0);
-            m_restartPage = new LogRestartPage(pageBytes, 0);
+            m_restartPage = new LfsRestartPage(pageBytes, 0);
             return m_restartPage;
         }
 
@@ -57,7 +57,7 @@ namespace DiskAccessLibrary.FileSystems.NTFS
             return -1;
         }
 
-        public LogClientRecord GetClientRecord(int clientIndex)
+        public LfsClientRecord GetClientRecord(int clientIndex)
         {
             if (m_restartPage == null)
             {
@@ -82,7 +82,7 @@ namespace DiskAccessLibrary.FileSystems.NTFS
             WriteRestartPage(m_restartPage);
         }
 
-        private void WriteRestartPage(LogRestartPage restartPage)
+        private void WriteRestartPage(LfsRestartPage restartPage)
         {
             byte[] pageBytes = restartPage.GetBytes((int)restartPage.SystemPageSize, true);
             WriteData(0, pageBytes);
@@ -115,7 +115,7 @@ namespace DiskAccessLibrary.FileSystems.NTFS
             }
         }
 
-        public LogRecord ReadRecord(ulong lsn)
+        public LfsRecord ReadRecord(ulong lsn)
         {
             if (m_restartPage == null)
             {
@@ -124,21 +124,21 @@ namespace DiskAccessLibrary.FileSystems.NTFS
 
             ulong pageOffsetInFile = LsnToPageOffsetInFile(lsn);
             int recordOffsetInPage = LsnToRecordOffsetInPage(lsn);
-            LogRecordPage page = ReadPage(pageOffsetInFile);
+            LfsRecordPage page = ReadPage(pageOffsetInFile);
             int dataOffset = m_restartPage.LogRestartArea.LogPageDataOffset;
-            LogRecord record = page.ReadRecord(recordOffsetInPage);
+            LfsRecord record = page.ReadRecord(recordOffsetInPage);
             if (record.ThisLsn != lsn)
             {
                 throw new InvalidDataException("LogRecord Lsn does not match expected value");
             }
-            if (record.Length < LogRecord.HeaderLength)
+            if (record.Length < LfsRecord.HeaderLength)
             {
                 throw new InvalidDataException("LogRecord length is invalid");
             }
             if (record.IsMultiPageRecord)
             {
-                int recordLength = (int)(LogRecord.HeaderLength + record.ClientDataLength);
-                int bytesRemaining = recordLength - (LogRecord.HeaderLength + record.Data.Length);
+                int recordLength = (int)(LfsRecord.HeaderLength + record.ClientDataLength);
+                int bytesRemaining = recordLength - (LfsRecord.HeaderLength + record.Data.Length);
                 while (bytesRemaining > 0)
                 {
                     pageOffsetInFile += m_restartPage.LogPageSize;
@@ -155,7 +155,7 @@ namespace DiskAccessLibrary.FileSystems.NTFS
             return record;
         }
 
-        public LogRecord WriteRecord(int clientIndex, LogRecordType recordType, ulong clientPreviousLsn, ulong clientUndoNextLsn, uint transactionId, byte[] clientData)
+        public LfsRecord WriteRecord(int clientIndex, LogRecordType recordType, ulong clientPreviousLsn, ulong clientUndoNextLsn, uint transactionId, byte[] clientData)
         {
             if (m_restartPage == null)
             {
@@ -170,7 +170,7 @@ namespace DiskAccessLibrary.FileSystems.NTFS
 
             ushort clientSeqNumber = m_restartPage.LogRestartArea.LogClientArray[clientIndex].SeqNumber;
 
-            LogRecord record = new LogRecord();
+            LfsRecord record = new LfsRecord();
             record.ClientSeqNumber = clientSeqNumber;
             record.ClientIndex = (ushort)clientIndex;
             record.RecordType = recordType;
@@ -193,12 +193,12 @@ namespace DiskAccessLibrary.FileSystems.NTFS
             return record;
         }
 
-        private void WriteRecord(LogRecord record)
+        private void WriteRecord(LfsRecord record)
         {
             ulong pageOffsetInFile = LsnToPageOffsetInFile(record.ThisLsn);
             int recordOffsetInPage = LsnToRecordOffsetInPage(record.ThisLsn);
             bool initializeNewPage = (recordOffsetInPage == m_restartPage.LogRestartArea.LogPageDataOffset);
-            LogRecordPage page;
+            LfsRecordPage page;
             if (initializeNewPage) // We write the record at the beginning of a new page, we must initialize the page
             {
                 // When the NTFS v5.1 driver restarts a dirty log file, it does not expect to find more than one transfer after the last flushed LSN.
@@ -206,7 +206,7 @@ namespace DiskAccessLibrary.FileSystems.NTFS
                 // Updating the CurrentLsn / LastLsnDataLength in the restart area will make the NTFS driver see the new page as the only transfer after the flushed LCN.
                 WriteRestartPage(false);
 
-                page = new LogRecordPage((int)m_restartPage.LogPageSize, m_restartPage.LogRestartArea.LogPageDataOffset);
+                page = new LfsRecordPage((int)m_restartPage.LogPageSize, m_restartPage.LogRestartArea.LogPageDataOffset);
                 page.LastLsnOrFileOffset = 0;
                 page.LastEndLsn = 0;
                 page.NextRecordOffset = m_restartPage.LogRestartArea.LogPageDataOffset;
@@ -264,7 +264,7 @@ namespace DiskAccessLibrary.FileSystems.NTFS
                 }
 
                 bytesToWrite = Math.Min(bytesRemaining, bytesAvailableInPage);
-                LogRecordPage nextPage = new LogRecordPage((int)m_restartPage.LogPageSize, m_restartPage.LogRestartArea.LogPageDataOffset);
+                LfsRecordPage nextPage = new LfsRecordPage((int)m_restartPage.LogPageSize, m_restartPage.LogRestartArea.LogPageDataOffset);
                 Array.Copy(recordBytes, recordBytes.Length - bytesRemaining, nextPage.Data, 0, bytesToWrite);
                 bytesRemaining -= bytesToWrite;
 
@@ -296,8 +296,8 @@ namespace DiskAccessLibrary.FileSystems.NTFS
             }
 
             // Note: this implementation is not as exhaustive as it should be.
-            LogRecordPage firstTailPage = null;
-            LogRecordPage secondTailPage = null;
+            LfsRecordPage firstTailPage = null;
+            LfsRecordPage secondTailPage = null;
             try
             {
                 firstTailPage = ReadPageFromFile(m_restartPage.SystemPageSize * 2);
@@ -315,7 +315,7 @@ namespace DiskAccessLibrary.FileSystems.NTFS
             }
 
             // Find the most recent tail copy
-            LogRecordPage tailPage = null;
+            LfsRecordPage tailPage = null;
             if (firstTailPage != null)
             {
                 tailPage = firstTailPage;
@@ -328,7 +328,7 @@ namespace DiskAccessLibrary.FileSystems.NTFS
 
             if (tailPage != null)
             {
-                LogRecordPage page = null;
+                LfsRecordPage page = null;
                 try
                 {
                     page = ReadPageFromFile(tailPage.LastLsnOrFileOffset);
@@ -347,7 +347,7 @@ namespace DiskAccessLibrary.FileSystems.NTFS
                     {
                         m_restartPage.LogRestartArea.CurrentLsn = tailPage.LastEndLsn;
                         int recordOffsetInPage = LsnToRecordOffsetInPage(tailPage.LastEndLsn);
-                        LogRecord record = tailPage.ReadRecord(recordOffsetInPage);
+                        LfsRecord record = tailPage.ReadRecord(recordOffsetInPage);
                         m_restartPage.LogRestartArea.LastLsnDataLength = (uint)record.Data.Length;
                         WriteRestartPage(m_restartPage);
                     }
@@ -356,12 +356,12 @@ namespace DiskAccessLibrary.FileSystems.NTFS
         }
 
         // Placeholder method that will implement caching in the future
-        private LogRecordPage ReadPage(ulong pageOffset)
+        private LfsRecordPage ReadPage(ulong pageOffset)
         {
             return ReadPageFromFile(pageOffset);
         }
 
-        private LogRecordPage ReadPageFromFile(ulong pageOffset)
+        private LfsRecordPage ReadPageFromFile(ulong pageOffset)
         {
             if (m_restartPage == null)
             {
@@ -370,15 +370,15 @@ namespace DiskAccessLibrary.FileSystems.NTFS
 
             byte[] pageBytes = ReadData(pageOffset, (int)m_restartPage.LogPageSize);
             uint pageSignature = LittleEndianConverter.ToUInt32(pageBytes, 0);
-            if (pageSignature == LogRecordPage.UninitializedPageSignature)
+            if (pageSignature == LfsRecordPage.UninitializedPageSignature)
             {
                 return null;
             }
             MultiSectorHelper.RevertUsaProtection(pageBytes, 0);
-            return new LogRecordPage(pageBytes, m_restartPage.LogRestartArea.LogPageDataOffset);
+            return new LfsRecordPage(pageBytes, m_restartPage.LogRestartArea.LogPageDataOffset);
         }
 
-        private void WritePage(ulong pageOffset, LogRecordPage page)
+        private void WritePage(ulong pageOffset, LfsRecordPage page)
         {
             if (m_restartPage == null)
             {

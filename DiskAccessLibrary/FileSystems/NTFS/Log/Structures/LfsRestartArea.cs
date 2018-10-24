@@ -13,7 +13,7 @@ namespace DiskAccessLibrary.FileSystems.NTFS
     /// <summary>
     /// LFS_RESTART_AREA
     /// </summary>
-    public class LogRestartArea
+    public class LfsRestartArea
     {
         public const int FixedLengthNTFS12 = 0x30; // Note: Windows NT 4.0 uses 0x30, Windows NT 3.51 uses 0x28
         public const int FixedLengthNTFS31 = 0x40;
@@ -32,14 +32,14 @@ namespace DiskAccessLibrary.FileSystems.NTFS
         public ushort RecordHeaderLength;
         public ushort LogPageDataOffset;
         public uint RevisionNumber; // This value is incremented by 1 every time the LogRestartArea is being written (initial value is chosen at random)
-        public List<LogClientRecord> LogClientArray = new List<LogClientRecord>();
+        public List<LfsClientRecord> LogClientArray = new List<LfsClientRecord>();
 
-        public LogRestartArea()
+        public LfsRestartArea()
         {
-            RecordHeaderLength = LogRecord.HeaderLength;
+            RecordHeaderLength = LfsRecord.HeaderLength;
         }
 
-        public LogRestartArea(byte[] buffer, int offset)
+        public LfsRestartArea(byte[] buffer, int offset)
         {
             CurrentLsn = LittleEndianConverter.ToUInt64(buffer, offset + 0x00);
             ushort logClients = LittleEndianConverter.ToUInt16(buffer, offset + 0x08);
@@ -60,7 +60,7 @@ namespace DiskAccessLibrary.FileSystems.NTFS
             int position = offset + clientArrayOffset;
             for (int index = 0; index < logClients; index++)
             {
-                LogClientRecord clientRecord = new LogClientRecord(buffer, position);
+                LfsClientRecord clientRecord = new LfsClientRecord(buffer, position);
                 LogClientArray.Add(clientRecord);
                 position += clientRecord.Length;
             }
@@ -84,7 +84,7 @@ namespace DiskAccessLibrary.FileSystems.NTFS
             LittleEndianWriter.WriteUInt16(buffer, offset + 0x26, LogPageDataOffset);
             LittleEndianWriter.WriteUInt32(buffer, offset + 0x28, RevisionNumber);
             int position = offset + clientArrayOffset;
-            foreach (LogClientRecord clientRecord in LogClientArray)
+            foreach (LfsClientRecord clientRecord in LogClientArray)
             {
                 clientRecord.WriteBytes(buffer, position);
                 position += clientRecord.Length;
@@ -130,7 +130,7 @@ namespace DiskAccessLibrary.FileSystems.NTFS
             get
             {
                 int length = FixedLengthNTFS31;
-                foreach (LogClientRecord clientRecord in LogClientArray)
+                foreach (LfsClientRecord clientRecord in LogClientArray)
                 {
                     length += clientRecord.Length;
                 }

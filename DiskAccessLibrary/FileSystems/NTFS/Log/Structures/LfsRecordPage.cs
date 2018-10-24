@@ -15,7 +15,7 @@ namespace DiskAccessLibrary.FileSystems.NTFS
     /// This record should be read according to the version number specified in LogRestartPage.
     /// v1.0 use the LFS_UNPACKED_RECORD_PAGE structure, which is not being used in later versions.
     /// </remarks>
-    public class LogRecordPage
+    public class LfsRecordPage
     {
         private const string ValidSignature = "RCRD";
         public const uint UninitializedPageSignature = 0xFFFFFFFF;
@@ -40,13 +40,13 @@ namespace DiskAccessLibrary.FileSystems.NTFS
 
         private int m_dataOffset;
 
-        public LogRecordPage(int pageLength, int dataOffset)
+        public LfsRecordPage(int pageLength, int dataOffset)
         {
             Data = new byte[pageLength - dataOffset];
             m_dataOffset = dataOffset;
         }
 
-        public LogRecordPage(byte[] pageBytes, int dataOffset)
+        public LfsRecordPage(byte[] pageBytes, int dataOffset)
         {
             MultiSectorHeader multiSectorHeader = new MultiSectorHeader(pageBytes, 0x00);
             if (multiSectorHeader.Signature != ValidSignature)
@@ -89,9 +89,9 @@ namespace DiskAccessLibrary.FileSystems.NTFS
             return buffer;
         }
 
-        public LogRecord ReadRecord(int recordOffset)
+        public LfsRecord ReadRecord(int recordOffset)
         {
-            return new LogRecord(Data, recordOffset - m_dataOffset);
+            return new LfsRecord(Data, recordOffset - m_dataOffset);
         }
 
         public byte[] ReadBytes(int recordOffset, int bytesToRead)

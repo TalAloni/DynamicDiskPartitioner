@@ -12,7 +12,7 @@ namespace DiskAccessLibrary.FileSystems.NTFS
 {
     public partial class LogFile
     {
-        public LogRecord FindNextRecord(LogRecord record, int clientIndex)
+        public LfsRecord FindNextRecord(LfsRecord record, int clientIndex)
         {
             do
             {
@@ -40,10 +40,10 @@ namespace DiskAccessLibrary.FileSystems.NTFS
             while (true);
         }
 
-        public List<LogRecord> FindNextRecords(ulong lsn, int clientIndex)
+        public List<LfsRecord> FindNextRecords(ulong lsn, int clientIndex)
         {
-            LogRecord record = ReadRecord(lsn);
-            List<LogRecord> result = new List<LogRecord>();
+            LfsRecord record = ReadRecord(lsn);
+            List<LfsRecord> result = new List<LfsRecord>();
             do
             {
                 record = FindNextRecord(record, clientIndex);

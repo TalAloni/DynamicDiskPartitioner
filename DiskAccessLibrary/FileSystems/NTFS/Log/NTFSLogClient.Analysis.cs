@@ -13,18 +13,18 @@ namespace DiskAccessLibrary.FileSystems.NTFS
 {
     public partial class NTFSLogClient
     {
-        public LogRecord FindNextRecord(LogRecord record)
+        public LfsRecord FindNextRecord(LfsRecord record)
         {
             return m_logFile.FindNextRecord(record, m_clientIndex);
         }
 
-        public List<LogRecord> FindRecordsFollowingCurrentCheckpoint()
+        public List<LfsRecord> FindRecordsFollowingCurrentCheckpoint()
         {
             NTFSRestartRecord restartRecord = ReadCurrentRestartRecord();
             return FindRecordsFollowingCheckpoint(restartRecord);
         }
 
-        public List<LogRecord> FindRecordsFollowingCheckpoint(NTFSRestartRecord restartRecord)
+        public List<LfsRecord> FindRecordsFollowingCheckpoint(NTFSRestartRecord restartRecord)
         {
             return m_logFile.FindNextRecords(restartRecord.StartOfCheckpointLsn, m_clientIndex);
         }
@@ -34,12 +34,12 @@ namespace DiskAccessLibrary.FileSystems.NTFS
             NTFSRestartRecord restartRecord = ReadCurrentRestartRecord();
             List<DirtyPageEntry> dirtyPageTable = ReadDirtyPageTable(restartRecord);
             ulong redoLsn = FindRedoLsn(dirtyPageTable);
-            LogRecord firstRecord = m_logFile.ReadRecord(redoLsn);
-            List<LogRecord> records = m_logFile.FindNextRecords(redoLsn, m_clientIndex);
+            LfsRecord firstRecord = m_logFile.ReadRecord(redoLsn);
+            List<LfsRecord> records = m_logFile.FindNextRecords(redoLsn, m_clientIndex);
             records.Insert(0, firstRecord);
 
             List<NTFSLogRecord> result = new List<NTFSLogRecord>();
-            foreach (LogRecord record in records)
+            foreach (LfsRecord record in records)
             {
                 if (record.RecordType == LogRecordType.ClientRecord)
                 {
@@ -73,7 +73,7 @@ namespace DiskAccessLibrary.FileSystems.NTFS
         /// </summary>
         private ulong FindRedoLsn(List<DirtyPageEntry> dirtyPageTable)
         {
-            List<LogRecord> records = FindRecordsFollowingCurrentCheckpoint();
+            List<LfsRecord> records = FindRecordsFollowingCurrentCheckpoint();
             ulong redoLsn = records[0].ThisLsn;
 
             if (dirtyPageTable != null)

@@ -10,7 +10,7 @@ using Utilities;
 
 namespace DiskAccessLibrary.FileSystems.NTFS
 {
-    public class LogRecord
+    public class LfsRecord
     {
         public const int HeaderLength = 0x30; // Including padding to 8 byte boundary
 
@@ -28,12 +28,12 @@ namespace DiskAccessLibrary.FileSystems.NTFS
         /* End of LFS_RECORD_HEADER */
         public byte[] Data;
 
-        public LogRecord()
+        public LfsRecord()
         {
             Data = new byte[0];
         }
 
-        public LogRecord(byte[] buffer, int offset)
+        public LfsRecord(byte[] buffer, int offset)
         {
             ThisLsn = LittleEndianConverter.ToUInt64(buffer, offset + 0x00);
             ClientPreviousLsn = LittleEndianConverter.ToUInt64(buffer, offset + 0x08);
