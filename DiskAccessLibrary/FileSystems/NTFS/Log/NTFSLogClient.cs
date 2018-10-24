@@ -301,7 +301,8 @@ namespace DiskAccessLibrary.FileSystems.NTFS
                     openAttributeOffset = OpenAttributeIndexToOffset(openAttributeIndex);
                     OpenAttributeEntry entry = new OpenAttributeEntry(m_majorVersion);
                     entry.AllocatedOrNextFree = RestartTableEntry.RestartEntryAllocated;
-                    entry.AttributeOffset = (uint)(RestartTableHeader.Length + openAttributeIndex * 0x28); //(uint)OpenAttributeIndexToOffset(index);
+                    // Note: NTFS v5.1 driver calulates AttributeOffset using entry length of 0x28, the reason is unclear but we're immitating this.
+                    entry.AttributeOffset = (uint)(RestartTableHeader.Length + openAttributeIndex * OpenAttributeEntry.LengthV1);
                     entry.FileReference = fileReference;
                     entry.LsnOfOpenRecord = m_lastClientLsn;
                     entry.AttributeTypeCode = attributeRecord.AttributeType;
@@ -377,7 +378,8 @@ namespace DiskAccessLibrary.FileSystems.NTFS
                 OpenAttribute openAttribute = m_openAttributes[index];
                 OpenAttributeEntry entry = new OpenAttributeEntry(m_majorVersion);
                 entry.AllocatedOrNextFree = RestartTableEntry.RestartEntryAllocated;
-                entry.AttributeOffset = (uint)(RestartTableHeader.Length + index * 0x28); //(uint)OpenAttributeIndexToOffset(index);
+                // Note: NTFS v5.1 driver calulates AttributeOffset using entry length of 0x28, the reason is unclear but we're immitating this.
+                entry.AttributeOffset = (uint)(RestartTableHeader.Length + index * OpenAttributeEntry.LengthV1);
                 entry.FileReference = openAttribute.FileReference;
                 entry.LsnOfOpenRecord = 0; // FIXME
                 entry.AttributeTypeCode = openAttribute.AttributeType;
