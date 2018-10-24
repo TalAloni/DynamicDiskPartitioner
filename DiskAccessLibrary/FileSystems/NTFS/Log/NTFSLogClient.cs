@@ -13,6 +13,16 @@ namespace DiskAccessLibrary.FileSystems.NTFS
 {
     public partial class NTFSLogClient
     {
+        private class Transaction
+        {
+            public ulong LastLsnToUndo;
+            public ulong OldestLsn;
+
+            public Transaction()
+            {
+            }
+        }
+
         private const string ClientName = "NTFS";
 
         private LogFile m_logFile;
@@ -20,8 +30,8 @@ namespace DiskAccessLibrary.FileSystems.NTFS
         private uint m_majorVersion; // For write purposes only
         private uint m_minorVersion; // For write purposes only
         private ulong m_lastClientLsn = 0;
-        private ulong m_lastLsnToUndo = 0;
         private KeyValuePairList<MftSegmentReference, AttributeRecord> m_openAttributes = new KeyValuePairList<MftSegmentReference, AttributeRecord>();
+        private List<Transaction> m_transactions = new List<Transaction>();
 
         public NTFSLogClient(LogFile logFile)
         {
@@ -208,18 +218,20 @@ namespace DiskAccessLibrary.FileSystems.NTFS
             NTFSRestartRecord restartRecord = new NTFSRestartRecord(m_majorVersion, m_minorVersion);
             restartRecord.StartOfCheckpointLsn = m_lastClientLsn;
             restartRecord.PreviousRestartRecordLsn = previousRestartRecordLsn;
-            ulong previousLsnToUndo = 0;
             if (isClean)
             {
+                if (m_transactions.Count > 0)
+                {
+                    throw new InvalidOperationException("All TransactionIDs must be deallocated before writing a clean restart record");
+                }
                 m_openAttributes.Clear(); // FIXME: we should find a more appropriate way to clear the open attribute table
             }
             else if (m_openAttributes.Count > 0)
             {
                 byte[] openAttributeTableBytes = GetOpenAttributeTableBytes();
                 m_lastClientLsn = 0;
-                previousLsnToUndo = m_lastLsnToUndo;
-                m_lastLsnToUndo = 0;
-                LogRecord openAttributeTableRecord = WriteLogRecord(null, null, NTFSLogOperation.OpenAttributeTableDump, openAttributeTableBytes, NTFSLogOperation.Noop, new byte[0], 0, RestartTableHeader.Length);
+                uint transactionID = RestartTableHeader.Length; // This record must have a valid transactionID
+                LogRecord openAttributeTableRecord = WriteLogRecord(null, null, NTFSLogOperation.OpenAttributeTableDump, openAttributeTableBytes, NTFSLogOperation.Noop, new byte[0], 0, transactionID);
                 restartRecord.OpenAttributeTableLsn = openAttributeTableRecord.ThisLsn;
                 restartRecord.OpenAttributeTableLength = (uint)openAttributeTableBytes.Length;
             }
@@ -228,23 +240,39 @@ namespace DiskAccessLibrary.FileSystems.NTFS
             byte[] clientData = restartRecord.GetBytes(majorNTFSVersion);
             LogRecord result = m_logFile.WriteRecord(m_clientIndex, LogRecordType.ClientRestart, 0, 0, 0, clientData);
             m_lastClientLsn = result.ThisLsn;
-            m_lastLsnToUndo = previousLsnToUndo;
             LogClientRecord clientRecord = m_logFile.GetClientRecord(m_clientIndex);
             if (isClean)
             {
                 clientRecord.OldestLsn = restartRecord.StartOfCheckpointLsn;
+            }
+            else
+            {
+                ulong oldestLsn = restartRecord.StartOfCheckpointLsn;
+                foreach (Transaction transaction in m_transactions)
+                {
+                    if (transaction.OldestLsn != 0 && transaction.OldestLsn < oldestLsn)
+                    {
+                        oldestLsn = transaction.OldestLsn;
+                    }
+                }
+                clientRecord.OldestLsn = oldestLsn;
             }
             clientRecord.ClientRestartLsn = result.ThisLsn;
             m_logFile.WriteRestartPage(isClean);
             return result;
         }
 
+        /// <summary>
+        /// Write ForgetTransaction record and deallocate the transactionID.
+        /// </summary>
         public LogRecord WriteForgetTransactionRecord(uint transactionID)
         {
             NTFSLogRecord ntfsLogRecord = new NTFSLogRecord();
             ntfsLogRecord.RedoOperation = NTFSLogOperation.ForgetTransaction;
             ntfsLogRecord.UndoOperation = NTFSLogOperation.CompensationLogRecord;
-            return WriteLogRecord(ntfsLogRecord, transactionID);
+            LogRecord result = WriteLogRecord(ntfsLogRecord, transactionID);
+            DeallocateTransactionID(transactionID);
+            return result;
         }
 
         public LogRecord WriteLogRecord(MftSegmentReference fileReference, AttributeRecord attributeRecord, NTFSLogOperation redoOperation, byte[] redoData, NTFSLogOperation undoOperation, byte[] undoData, ulong streamOffset, uint transactionID)
@@ -307,9 +335,15 @@ namespace DiskAccessLibrary.FileSystems.NTFS
         {
             LogClientRecord clientRecord = m_logFile.GetClientRecord(m_clientIndex);
             byte[] clientData = ntfsLogRecord.GetBytes();
-            LogRecord result = m_logFile.WriteRecord(m_clientIndex, LogRecordType.ClientRecord, m_lastClientLsn, m_lastLsnToUndo, transactionID, clientData);
+            int transactionIndex = TransactionOffsetToIndex(transactionID);
+            ulong lastLsnToUndo = m_transactions[transactionIndex].LastLsnToUndo;
+            LogRecord result = m_logFile.WriteRecord(m_clientIndex, LogRecordType.ClientRecord, m_lastClientLsn, lastLsnToUndo, transactionID, clientData);
             m_lastClientLsn = result.ThisLsn;
-            m_lastLsnToUndo = result.ThisLsn;
+            m_transactions[transactionIndex].LastLsnToUndo = result.ThisLsn;
+            if (m_transactions[transactionIndex].OldestLsn == 0)
+            {
+                m_transactions[transactionIndex].OldestLsn = result.ThisLsn;
+            }
             return result;
         }
 
@@ -355,6 +389,38 @@ namespace DiskAccessLibrary.FileSystems.NTFS
                 }
             }
             return -1;
+        }
+
+        public uint AllocateTransactionID()
+        {
+            int transactionIndex = m_transactions.Count;
+            m_transactions.Add(new Transaction());
+            return TransactionIndexToOffset(transactionIndex);
+        }
+
+        private void DeallocateTransactionID(uint transactionID)
+        {
+            int transactionIndex = TransactionOffsetToIndex(transactionID);
+            // A more recent transaction (with a bigger transaction index) might still be active,
+            // so we set the transaction to null and trim the list when possible.
+            m_transactions[transactionIndex] = null;
+            for (int index = m_transactions.Count - 1; index >= 0; index--)
+            {
+                if (m_transactions[index] == null)
+                {
+                    m_transactions.RemoveAt(index);
+                }
+            }
+        }
+
+        private uint TransactionIndexToOffset(int transactionIndex)
+        {
+            return RestartTableHeader.Length + (uint)transactionIndex * TransactionEntry.EntryLength;
+        }
+
+        private int TransactionOffsetToIndex(uint transactionOffset)
+        {
+            return (int)((transactionOffset - RestartTableHeader.Length) / TransactionEntry.EntryLength);
         }
 
         public NTFSVolume Volume
