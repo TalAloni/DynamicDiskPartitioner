@@ -18,12 +18,14 @@ namespace DiskAccessLibrary.FileSystems.NTFS
             public MftSegmentReference FileReference;
             public AttributeType AttributeType;
             public string AttributeName;
+            public ulong LsnOfOpenRecord;
 
-            public OpenAttribute(MftSegmentReference fileReference, AttributeType attributeType, string attributeName)
+            public OpenAttribute(MftSegmentReference fileReference, AttributeType attributeType, string attributeName, ulong lsnOfOpenRecord)
             {
                 FileReference = fileReference;
                 AttributeType = attributeType;
                 AttributeName = attributeName;
+                LsnOfOpenRecord = lsnOfOpenRecord;
             }
         }
 
@@ -297,7 +299,7 @@ namespace DiskAccessLibrary.FileSystems.NTFS
                 int openAttributeIndex = IndexOfOpenAttribute(fileReference, attributeRecord.AttributeType, attributeRecord.Name);
                 if (openAttributeIndex == -1)
                 {
-                    openAttributeIndex = AddToOpenAttributeTable(fileReference, attributeRecord.AttributeType, attributeRecord.Name);
+                    openAttributeIndex = AddToOpenAttributeTable(fileReference, attributeRecord.AttributeType, attributeRecord.Name, m_lastClientLsn);
                     openAttributeOffset = OpenAttributeIndexToOffset(openAttributeIndex);
                     OpenAttributeEntry entry = new OpenAttributeEntry(m_majorVersion);
                     entry.AllocatedOrNextFree = RestartTableEntry.RestartEntryAllocated;
@@ -363,10 +365,10 @@ namespace DiskAccessLibrary.FileSystems.NTFS
         }
 
         /// <returns>Index in open attribute table</returns>
-        private int AddToOpenAttributeTable(MftSegmentReference fileReference, AttributeType attributeType, string attributeName)
+        private int AddToOpenAttributeTable(MftSegmentReference fileReference, AttributeType attributeType, string attributeName, ulong lsnOfOpenRecord)
         {
             int openAttributeIndex = m_openAttributes.Count;
-            m_openAttributes.Add(new OpenAttribute(fileReference, attributeType, attributeName));
+            m_openAttributes.Add(new OpenAttribute(fileReference, attributeType, attributeName, lsnOfOpenRecord));
             return openAttributeIndex;
         }
 
@@ -381,7 +383,7 @@ namespace DiskAccessLibrary.FileSystems.NTFS
                 // Note: NTFS v5.1 driver calulates AttributeOffset using entry length of 0x28, the reason is unclear but we're immitating this.
                 entry.AttributeOffset = (uint)(RestartTableHeader.Length + index * OpenAttributeEntry.LengthV1);
                 entry.FileReference = openAttribute.FileReference;
-                entry.LsnOfOpenRecord = 0; // FIXME
+                entry.LsnOfOpenRecord = openAttribute.LsnOfOpenRecord;
                 entry.AttributeTypeCode = openAttribute.AttributeType;
                 if (openAttribute.AttributeName != String.Empty)
                 {
