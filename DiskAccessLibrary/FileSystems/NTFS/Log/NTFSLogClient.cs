@@ -81,7 +81,7 @@ namespace DiskAccessLibrary.FileSystems.NTFS
         public NTFSRestartRecord ReadRestartRecord(ulong clientRestartLsn)
         {
             LfsRecord record = m_logFile.ReadRecord(clientRestartLsn);
-            if (record.RecordType == LogRecordType.ClientRestart)
+            if (record.RecordType == LfsRecordType.ClientRestart)
             {
                 return new NTFSRestartRecord(record.Data);
             }
@@ -195,7 +195,7 @@ namespace DiskAccessLibrary.FileSystems.NTFS
         public NTFSLogRecord ReadLogRecord(ulong lsn)
         {
             LfsRecord record = m_logFile.ReadRecord(lsn);
-            if (record.RecordType == LogRecordType.ClientRecord)
+            if (record.RecordType == LfsRecordType.ClientRecord)
             {
                 return new NTFSLogRecord(record.Data);
             }
@@ -238,7 +238,7 @@ namespace DiskAccessLibrary.FileSystems.NTFS
             restartRecord.BytesPerCluster = (uint)Volume.BytesPerCluster;
             restartRecord.UsnJournal = usnJournal;
             byte[] clientData = restartRecord.GetBytes(majorNTFSVersion);
-            LfsRecord result = m_logFile.WriteRecord(m_clientIndex, LogRecordType.ClientRestart, 0, 0, 0, clientData);
+            LfsRecord result = m_logFile.WriteRecord(m_clientIndex, LfsRecordType.ClientRestart, 0, 0, 0, clientData);
             m_lastClientLsn = result.ThisLsn;
             LfsClientRecord clientRecord = m_logFile.GetClientRecord(m_clientIndex);
             if (isClean)
@@ -337,7 +337,7 @@ namespace DiskAccessLibrary.FileSystems.NTFS
             byte[] clientData = ntfsLogRecord.GetBytes();
             int transactionIndex = TransactionOffsetToIndex(transactionID);
             ulong lastLsnToUndo = m_transactions[transactionIndex].LastLsnToUndo;
-            LfsRecord result = m_logFile.WriteRecord(m_clientIndex, LogRecordType.ClientRecord, m_lastClientLsn, lastLsnToUndo, transactionID, clientData);
+            LfsRecord result = m_logFile.WriteRecord(m_clientIndex, LfsRecordType.ClientRecord, m_lastClientLsn, lastLsnToUndo, transactionID, clientData);
             m_lastClientLsn = result.ThisLsn;
             m_transactions[transactionIndex].LastLsnToUndo = result.ThisLsn;
             if (m_transactions[transactionIndex].OldestLsn == 0)

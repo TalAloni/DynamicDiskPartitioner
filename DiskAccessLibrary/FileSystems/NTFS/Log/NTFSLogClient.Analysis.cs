@@ -41,7 +41,7 @@ namespace DiskAccessLibrary.FileSystems.NTFS
             List<NTFSLogRecord> result = new List<NTFSLogRecord>();
             foreach (LfsRecord record in records)
             {
-                if (record.RecordType == LogRecordType.ClientRecord)
+                if (record.RecordType == LfsRecordType.ClientRecord)
                 {
                     NTFSLogRecord clientRecord = new NTFSLogRecord(record.Data);
                     switch (clientRecord.RedoOperation)

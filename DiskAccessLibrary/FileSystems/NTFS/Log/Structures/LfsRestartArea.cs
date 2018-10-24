@@ -23,7 +23,7 @@ namespace DiskAccessLibrary.FileSystems.NTFS
         // ushort LogClients;
         public ushort ClientFreeList;  // The index of the first free log client record in the array
         public ushort ClientInUseList; // The index of the first in-use log client record in the array
-        public LogRestartFlags Flags;
+        public LfsRestartFlags Flags;
         public uint SeqNumberBits;
         public ushort RestartAreaLength;
         // ushort ClientArrayOffset;
@@ -45,7 +45,7 @@ namespace DiskAccessLibrary.FileSystems.NTFS
             ushort logClients = LittleEndianConverter.ToUInt16(buffer, offset + 0x08);
             ClientFreeList = LittleEndianConverter.ToUInt16(buffer, offset + 0x0A);
             ClientInUseList = LittleEndianConverter.ToUInt16(buffer, offset + 0x0C);
-            Flags = (LogRestartFlags)LittleEndianConverter.ToUInt16(buffer, offset + 0x0E);
+            Flags = (LfsRestartFlags)LittleEndianConverter.ToUInt16(buffer, offset + 0x0E);
             SeqNumberBits = LittleEndianConverter.ToUInt32(buffer, offset + 0x10);
             RestartAreaLength = LittleEndianConverter.ToUInt16(buffer, offset + 0x14);
             ushort clientArrayOffset = LittleEndianConverter.ToUInt16(buffer, offset + 0x16);
@@ -110,17 +110,17 @@ namespace DiskAccessLibrary.FileSystems.NTFS
         {
             get
             {
-                return (Flags & LogRestartFlags.CleanDismount) != 0;
+                return (Flags & LfsRestartFlags.CleanDismount) != 0;
             }
             set
             {
                 if (value)
                 {
-                    Flags |= LogRestartFlags.CleanDismount;
+                    Flags |= LfsRestartFlags.CleanDismount;
                 }
                 else
                 {
-                    Flags &= ~LogRestartFlags.CleanDismount;
+                    Flags &= ~LfsRestartFlags.CleanDismount;
                 }
             }
         }

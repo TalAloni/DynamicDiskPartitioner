@@ -155,7 +155,7 @@ namespace DiskAccessLibrary.FileSystems.NTFS
             return record;
         }
 
-        public LfsRecord WriteRecord(int clientIndex, LogRecordType recordType, ulong clientPreviousLsn, ulong clientUndoNextLsn, uint transactionId, byte[] clientData)
+        public LfsRecord WriteRecord(int clientIndex, LfsRecordType recordType, ulong clientPreviousLsn, ulong clientUndoNextLsn, uint transactionId, byte[] clientData)
         {
             if (m_restartPage == null)
             {
@@ -272,7 +272,7 @@ namespace DiskAccessLibrary.FileSystems.NTFS
                 if (bytesRemaining == 0)
                 {
                     nextPage.LastEndLsn = record.ThisLsn;
-                    nextPage.Flags |= LogRecordPageFlags.RecordEnd;
+                    nextPage.Flags |= LfsRecordPageFlags.RecordEnd;
                 }
                 nextPage.PageCount = (ushort)pageCount;
                 nextPage.PagePosition = (ushort)pagePosition;

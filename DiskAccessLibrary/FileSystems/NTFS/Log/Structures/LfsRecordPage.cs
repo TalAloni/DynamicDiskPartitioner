@@ -24,7 +24,7 @@ namespace DiskAccessLibrary.FileSystems.NTFS
         /* Start of LFS_RECORD_PAGE_HEADER */
         // MULTI_SECTOR_HEADER
         public ulong LastLsnOrFileOffset; // Last LSN that starts on this page for regular log pages, FileOffset for tail copies (indicates the location in the file where the page should be placed)
-        public LogRecordPageFlags Flags;
+        public LfsRecordPageFlags Flags;
         public ushort PageCount; // Number of pages written as part of the IO transfer. a MultiPage record is likely to be written in two separate IO transfers (since the last page may have room for more records that will be written in a later transfer)
         public ushort PagePosition; // One-based
         /* Start of LFS_PACKED_RECORD_PAGE */
@@ -54,7 +54,7 @@ namespace DiskAccessLibrary.FileSystems.NTFS
                 throw new InvalidDataException("Invalid RCRD record signature");
             }
             LastLsnOrFileOffset = LittleEndianConverter.ToUInt64(pageBytes, 0x08);
-            Flags = (LogRecordPageFlags)LittleEndianConverter.ToUInt32(pageBytes, 0x10);
+            Flags = (LfsRecordPageFlags)LittleEndianConverter.ToUInt32(pageBytes, 0x10);
             PageCount = LittleEndianConverter.ToUInt16(pageBytes, 0x14);
             PagePosition = LittleEndianConverter.ToUInt16(pageBytes, 0x16);
             NextRecordOffset = LittleEndianConverter.ToUInt16(pageBytes, 0x18);
@@ -113,17 +113,17 @@ namespace DiskAccessLibrary.FileSystems.NTFS
         {
             get
             {
-                return (Flags & LogRecordPageFlags.RecordEnd) != 0;
+                return (Flags & LfsRecordPageFlags.RecordEnd) != 0;
             }
             set
             {
                 if (value)
                 {
-                    Flags |= LogRecordPageFlags.RecordEnd;
+                    Flags |= LfsRecordPageFlags.RecordEnd;
                 }
                 else
                 {
-                    Flags &= ~LogRecordPageFlags.RecordEnd;
+                    Flags &= ~LfsRecordPageFlags.RecordEnd;
                 }
             }
         }

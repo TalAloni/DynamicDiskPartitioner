@@ -21,9 +21,9 @@ namespace DiskAccessLibrary.FileSystems.NTFS
         public uint ClientDataLength;
         public ushort ClientSeqNumber;
         public ushort ClientIndex;
-        public LogRecordType RecordType;
+        public LfsRecordType RecordType;
         public uint TransactionId; // The offset of the transaction in the transaction table
-        public LogRecordFlags Flags;
+        public LfsRecordFlags Flags;
         // ushort AlignWord
         /* End of LFS_RECORD_HEADER */
         public byte[] Data;
@@ -41,9 +41,9 @@ namespace DiskAccessLibrary.FileSystems.NTFS
             ClientDataLength = LittleEndianConverter.ToUInt32(buffer, offset + 0x18);
             ClientSeqNumber = LittleEndianConverter.ToUInt16(buffer, offset + 0x1C);
             ClientIndex = LittleEndianConverter.ToUInt16(buffer, offset + 0x1E);
-            RecordType = (LogRecordType)LittleEndianConverter.ToUInt32(buffer, offset + 0x20);
+            RecordType = (LfsRecordType)LittleEndianConverter.ToUInt32(buffer, offset + 0x20);
             TransactionId = LittleEndianConverter.ToUInt32(buffer, offset + 0x24);
-            Flags = (LogRecordFlags)LittleEndianConverter.ToUInt16(buffer, offset + 0x28);
+            Flags = (LfsRecordFlags)LittleEndianConverter.ToUInt16(buffer, offset + 0x28);
             if (IsMultiPageRecord)
             {
                 Data = ByteReader.ReadBytes(buffer, offset + HeaderLength, buffer.Length - (offset + HeaderLength));
@@ -79,17 +79,17 @@ namespace DiskAccessLibrary.FileSystems.NTFS
         {
             get
             {
-                return (Flags & LogRecordFlags.MultiPage) != 0;
+                return (Flags & LfsRecordFlags.MultiPage) != 0;
             }
             set
             {
                 if (value)
                 {
-                    Flags |= LogRecordFlags.MultiPage;
+                    Flags |= LfsRecordFlags.MultiPage;
                 }
                 else
                 {
-                    Flags &= ~LogRecordFlags.MultiPage;
+                    Flags &= ~LfsRecordFlags.MultiPage;
                 }
             }
         }

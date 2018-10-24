@@ -100,10 +100,10 @@
     <Compile Include="FileSystems\NTFS\Index\IndexHeader.cs" />
     <Compile Include="FileSystems\NTFS\Index\IndexHelper.cs" />
     <Compile Include="FileSystems\NTFS\Index\IndexRecord.cs" />
-    <Compile Include="FileSystems\NTFS\Log\Enums\LogRecordFlags.cs" />
-    <Compile Include="FileSystems\NTFS\Log\Enums\LogRecordPageFlags.cs" />
-    <Compile Include="FileSystems\NTFS\Log\Enums\LogRecordType.cs" />
-    <Compile Include="FileSystems\NTFS\Log\Enums\LogRestartFlags.cs" />
+    <Compile Include="FileSystems\NTFS\Log\Enums\LfsRecordFlags.cs" />
+    <Compile Include="FileSystems\NTFS\Log\Enums\LfsRecordPageFlags.cs" />
+    <Compile Include="FileSystems\NTFS\Log\Enums\LfsRecordType.cs" />
+    <Compile Include="FileSystems\NTFS\Log\Enums\LfsRestartFlags.cs" />
     <Compile Include="FileSystems\NTFS\Log\Enums\NTFSLogOperation.cs" />
     <Compile Include="FileSystems\NTFS\Log\Enums\TransactionState.cs" />
     <Compile Include="FileSystems\NTFS\Log\LogFile.Analysis.cs" />
