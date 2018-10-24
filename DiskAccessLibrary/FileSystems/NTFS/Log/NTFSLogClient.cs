@@ -13,6 +13,20 @@ namespace DiskAccessLibrary.FileSystems.NTFS
 {
     public partial class NTFSLogClient
     {
+        private class OpenAttribute
+        {
+            public MftSegmentReference FileReference;
+            public AttributeType AttributeType;
+            public string AttributeName;
+
+            public OpenAttribute(MftSegmentReference fileReference, AttributeType attributeType, string attributeName)
+            {
+                FileReference = fileReference;
+                AttributeType = attributeType;
+                AttributeName = attributeName;
+            }
+        }
+
         private class Transaction
         {
             public ulong LastLsnToUndo;
@@ -30,7 +44,7 @@ namespace DiskAccessLibrary.FileSystems.NTFS
         private uint m_majorVersion; // For write purposes only
         private uint m_minorVersion; // For write purposes only
         private ulong m_lastClientLsn = 0;
-        private KeyValuePairList<MftSegmentReference, AttributeRecord> m_openAttributes = new KeyValuePairList<MftSegmentReference, AttributeRecord>();
+        private List<OpenAttribute> m_openAttributes = new List<OpenAttribute>();
         private List<Transaction> m_transactions = new List<Transaction>();
 
         public NTFSLogClient(LogFile logFile)
@@ -280,10 +294,10 @@ namespace DiskAccessLibrary.FileSystems.NTFS
             int openAttributeOffset = 0;
             if (fileReference != null)
             {
-                int openAttributeIndex = IndexOfOpenAttribute(fileReference, attributeRecord.AttributeType);
+                int openAttributeIndex = IndexOfOpenAttribute(fileReference, attributeRecord.AttributeType, attributeRecord.Name);
                 if (openAttributeIndex == -1)
                 {
-                    openAttributeIndex = AddToOpenAttributeTable(fileReference, attributeRecord);
+                    openAttributeIndex = AddToOpenAttributeTable(fileReference, attributeRecord.AttributeType, attributeRecord.Name);
                     openAttributeOffset = OpenAttributeIndexToOffset(openAttributeIndex);
                     OpenAttributeEntry entry = new OpenAttributeEntry(m_majorVersion);
                     entry.AllocatedOrNextFree = RestartTableEntry.RestartEntryAllocated;
@@ -348,10 +362,10 @@ namespace DiskAccessLibrary.FileSystems.NTFS
         }
 
         /// <returns>Index in open attribute table</returns>
-        private int AddToOpenAttributeTable(MftSegmentReference fileReference, AttributeRecord attributeRecord)
+        private int AddToOpenAttributeTable(MftSegmentReference fileReference, AttributeType attributeType, string attributeName)
         {
             int openAttributeIndex = m_openAttributes.Count;
-            m_openAttributes.Add(fileReference, attributeRecord);
+            m_openAttributes.Add(new OpenAttribute(fileReference, attributeType, attributeName));
             return openAttributeIndex;
         }
 
@@ -360,13 +374,17 @@ namespace DiskAccessLibrary.FileSystems.NTFS
             List<OpenAttributeEntry> openAttributeTable = new List<OpenAttributeEntry>();
             for (int index = 0; index < m_openAttributes.Count; index++)
             {
-                KeyValuePair<MftSegmentReference, AttributeRecord> openAttribute = m_openAttributes[index];
+                OpenAttribute openAttribute = m_openAttributes[index];
                 OpenAttributeEntry entry = new OpenAttributeEntry(m_majorVersion);
                 entry.AllocatedOrNextFree = RestartTableEntry.RestartEntryAllocated;
                 entry.AttributeOffset = (uint)(RestartTableHeader.Length + index * 0x28); //(uint)OpenAttributeIndexToOffset(index);
-                entry.FileReference = openAttribute.Key;
+                entry.FileReference = openAttribute.FileReference;
                 entry.LsnOfOpenRecord = 0; // FIXME
-                entry.AttributeTypeCode = openAttribute.Value.AttributeType;
+                entry.AttributeTypeCode = openAttribute.AttributeType;
+                if (openAttribute.AttributeName != String.Empty)
+                {
+                    throw new NotImplementedException();
+                }
                 openAttributeTable.Add(entry);
             }
             return RestartTableHelper.GetTableBytes<OpenAttributeEntry>(openAttributeTable);
@@ -378,12 +396,13 @@ namespace DiskAccessLibrary.FileSystems.NTFS
             return RestartTableHeader.Length + openAttributeIndex * entryLength;
         }
 
-        private int IndexOfOpenAttribute(MftSegmentReference fileReference, AttributeType attributeType)
+        private int IndexOfOpenAttribute(MftSegmentReference fileReference, AttributeType attributeType, string attributeName)
         {
             for (int index = 0; index < m_openAttributes.Count; index++)
             {
-                // FIXME: Take attribute name into account as well
-                if (m_openAttributes[index].Key == fileReference && m_openAttributes[index].Value.AttributeType == attributeType)
+                if (m_openAttributes[index].FileReference == fileReference &&
+                    m_openAttributes[index].AttributeType == attributeType &&
+                    String.Equals(m_openAttributes[index].AttributeName, attributeName, StringComparison.OrdinalIgnoreCase))
                 {
                     return index;
                 }
