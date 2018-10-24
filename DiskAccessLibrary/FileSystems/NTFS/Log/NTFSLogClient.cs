@@ -311,7 +311,7 @@ namespace DiskAccessLibrary.FileSystems.NTFS
                     {
                         throw new NotImplementedException();
                     }
-                    LfsRecord openAttributeRecord = WriteLogRecord(openAttributeOffset, NTFSLogOperation.OpenNonresidentAttribute, openData, NTFSLogOperation.Noop, new byte[0], 0, 0, new List<long>(), transactionID);
+                    LfsRecord openAttributeRecord = WriteLogRecord(openAttributeOffset, NTFSLogOperation.OpenNonResidentAttribute, openData, NTFSLogOperation.Noop, new byte[0], 0, 0, new List<long>(), transactionID);
                 }
                 else
                 {
