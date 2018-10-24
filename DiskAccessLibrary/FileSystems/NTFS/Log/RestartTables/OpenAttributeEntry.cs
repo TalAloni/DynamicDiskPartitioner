@@ -44,6 +44,7 @@ namespace DiskAccessLibrary.FileSystems.NTFS
         /// <summary>Self-reference (Offset of the attribute in the open attribute table)</summary>
         public uint AttributeOffset; // Used only by v0.0 on NTFS v3.0+.
         public MftSegmentReference FileReference;
+        /// <summary>This is the LSN of the client record preceding the OpenNonResidentAttribute record</summary>
         public ulong LsnOfOpenRecord;
         /// <summary>Indicates that a DirtyPageEntry is referring to this entry</summary>
         public bool DirtyPagesSeen;       // Used by (v0.0 on) NTFS v1.2 and by v1.0 (on NTFS v3.0+), NOT used by v0.0 on NTFS v3.0+.
