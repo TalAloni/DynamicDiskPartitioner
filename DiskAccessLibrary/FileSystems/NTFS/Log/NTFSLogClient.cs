@@ -350,7 +350,7 @@ namespace DiskAccessLibrary.FileSystems.NTFS
         {
             LfsClientRecord clientRecord = m_logFile.GetClientRecord(m_clientIndex);
             byte[] clientData = ntfsLogRecord.GetBytes();
-            int transactionIndex = TransactionOffsetToIndex(transactionID);
+            int transactionIndex = IndexOfTransaction(transactionID);
             ulong lastLsnToUndo = m_transactions[transactionIndex].LastLsnToUndo;
             LfsRecord result = m_logFile.WriteRecord(m_clientIndex, LfsRecordType.ClientRecord, m_lastClientLsn, lastLsnToUndo, transactionID, clientData);
             m_lastClientLsn = result.ThisLsn;
@@ -421,7 +421,7 @@ namespace DiskAccessLibrary.FileSystems.NTFS
 
         private void DeallocateTransactionID(uint transactionID)
         {
-            int transactionIndex = TransactionOffsetToIndex(transactionID);
+            int transactionIndex = IndexOfTransaction(transactionID);
             // A more recent transaction (with a bigger transaction index) might still be active,
             // so we set the transaction to null and trim the list when possible.
             m_transactions[transactionIndex] = null;
@@ -439,9 +439,9 @@ namespace DiskAccessLibrary.FileSystems.NTFS
             return RestartTableHeader.Length + (uint)transactionIndex * TransactionEntry.EntryLength;
         }
 
-        private int TransactionOffsetToIndex(uint transactionOffset)
+        private int IndexOfTransaction(uint transactionID)
         {
-            return (int)((transactionOffset - RestartTableHeader.Length) / TransactionEntry.EntryLength);
+            return (int)((transactionID - RestartTableHeader.Length) / TransactionEntry.EntryLength);
         }
 
         public NTFSVolume Volume
