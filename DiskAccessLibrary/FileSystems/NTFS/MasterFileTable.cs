@@ -173,12 +173,12 @@ namespace DiskAccessLibrary.FileSystems.NTFS
             }
         }
 
-        public FileRecord GetFileRecord(MftSegmentReference fileFeference)
+        public FileRecord GetFileRecord(MftSegmentReference fileReference)
         {
-            FileRecord result = GetFileRecord(fileFeference.SegmentNumber);
+            FileRecord result = GetFileRecord(fileReference.SegmentNumber);
             if (result != null)
             {
-                if (result.BaseSequenceNumber != fileFeference.SequenceNumber)
+                if (result.BaseSequenceNumber != fileReference.SequenceNumber)
                 {
                     // The file record segment has been freed and reallocated, and an obsolete version is being requested
                     throw new InvalidDataException("MftSegmentReference SequenceNumber does not match BaseFileRecordSegment");
