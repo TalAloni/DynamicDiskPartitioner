@@ -137,10 +137,8 @@ namespace DiskAccessLibrary.FileSystems.NTFS
                 position += attributeBytes.Length;
             }
 
-            byte[] marker = GetEndMarker();
-            ByteWriter.WriteBytes(buffer, position, marker);
-            position += marker.Length;
-            position += 4; // record (length) is aligned to 8-byte boundary
+            LittleEndianWriter.WriteUInt32(buffer, position, FileRecordEndMarker);
+            position += 8; // End marker + alignment to 8-byte boundary
 
             uint segmentLength = (uint)position;
             LittleEndianWriter.WriteUInt32(buffer, 0x18, segmentLength);
@@ -321,16 +319,6 @@ namespace DiskAccessLibrary.FileSystems.NTFS
         {
             uint type = LittleEndianConverter.ToUInt32(buffer, offset + 0x00);
             return (type == FileRecordEndMarker);
-        }
-
-        /// <summary>
-        /// Get file record end marker
-        /// </summary>
-        public static byte[] GetEndMarker()
-        {
-            byte[] buffer = new byte[4];
-            LittleEndianWriter.WriteUInt32(buffer, 0, FileRecordEndMarker);
-            return buffer;
         }
 
         public static ushort GetFirstAttributeOffset(int bytesPerFileRecordSegment, ushort minorNTFSVersion)
