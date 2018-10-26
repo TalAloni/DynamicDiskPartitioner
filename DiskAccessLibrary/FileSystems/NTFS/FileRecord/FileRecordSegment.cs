@@ -23,7 +23,7 @@ namespace DiskAccessLibrary.FileSystems.NTFS
         private const int NTFS30UpdateSequenceArrayOffset = 0x2A; // NTFS v3.0 and earlier (up to Windows 2000)
         private const int NTFS31UpdateSequenceArrayOffset = 0x30; // NTFS v3.1 and later   (XP and later)
         private const uint AttributesEndMarker = 0xFFFFFFFF;
-        private const int EndMarkerLength = 4;
+        private const int AttributesEndMarkerLength = 8; // The AttributesEndMarker is technically considered an attribute so it must be aligned to 8-byte boundary
 
         /* Start of FILE_RECORD_SEGMENT_HEADER */
         // MULTI_SECTOR_HEADER
@@ -32,7 +32,7 @@ namespace DiskAccessLibrary.FileSystems.NTFS
         public ushort ReferenceCount;
         // ushort FirstAttributeOffset;
         private FileRecordFlags m_flags;
-        // uint SegmentLength; // FirstFreeByte
+        // uint SegmentLength; // FirstFreeByte, this value must always be aligned to 8-byte boundary (since each attribute record must be aligned to 8-byte boundary).
         // uint SegmentAllocatedLength; // BytesAvailable
         private MftSegmentReference m_baseFileRecordSegment; // If this is the base file record, the value is 0
         public ushort NextAttributeInstance; // Starting from 0
@@ -139,7 +139,7 @@ namespace DiskAccessLibrary.FileSystems.NTFS
             }
 
             LittleEndianWriter.WriteUInt32(buffer, position, AttributesEndMarker);
-            position += 8; // End marker + alignment to 8-byte boundary
+            position += AttributesEndMarkerLength; // End marker + alignment to 8-byte boundary
 
             uint segmentLength = (uint)position;
             LittleEndianWriter.WriteUInt32(buffer, 0x18, segmentLength);
@@ -207,19 +207,14 @@ namespace DiskAccessLibrary.FileSystems.NTFS
             {
                 length += attribute.RecordLength;
             }
-            length += 8; // End marker + alignment to 8-byte boundary
+            length += AttributesEndMarkerLength; // End marker + alignment to 8-byte boundary
             return length;
         }
 
         public int GetNumberOfBytesFree(int bytesPerFileRecordSegment, ushort minorNTFSVersion)
         {
-            int firstAttributeOffset = FileRecordSegment.GetFirstAttributeOffset(bytesPerFileRecordSegment, minorNTFSVersion);
-            int numberOfBytesAvailable = bytesPerFileRecordSegment - firstAttributeOffset - EndMarkerLength;
-            foreach (AttributeRecord attribute in m_immediateAttributes)
-            {
-                numberOfBytesAvailable -= attribute.RecordLength;
-            }
-            return numberOfBytesAvailable;
+            int length = GetNumberOfBytesInUse(bytesPerFileRecordSegment, minorNTFSVersion);
+            return bytesPerFileRecordSegment - length;
         }
 
         /// <summary>
@@ -347,7 +342,7 @@ namespace DiskAccessLibrary.FileSystems.NTFS
         public static int GetNumberOfBytesAvailable(int bytesPerFileRecordSegment, ushort minorNTFSVersion)
         {
             int firstAttributeOffset = FileRecordSegment.GetFirstAttributeOffset(bytesPerFileRecordSegment, minorNTFSVersion);
-            return bytesPerFileRecordSegment - firstAttributeOffset - EndMarkerLength;
+            return bytesPerFileRecordSegment - firstAttributeOffset - AttributesEndMarkerLength;
         }
 
         public static bool ContainsFileRecordSegment(byte[] recordBytes)
