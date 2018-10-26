@@ -278,8 +278,9 @@ namespace DiskAccessLibrary.FileSystems.NTFS
                 }
             }
 
-            foreach (FileRecordSegment segment in fileRecord.Segments)
+            for(int segmentIndex = 1; segmentIndex < fileRecord.Segments.Count; segmentIndex++)
             {
+                FileRecordSegment segment = fileRecord.Segments[segmentIndex];
                 UpdateFileRecordSegment(segment);
             }
 
@@ -299,8 +300,8 @@ namespace DiskAccessLibrary.FileSystems.NTFS
                 AttributeRecord attributeListRecord = baseSegment.CreateAttributeListRecord(isResident);
                 AttributeList attributeList = new AttributeList(m_volume, attributeListRecord);
                 attributeList.WriteEntries(entries);
-                UpdateFileRecordSegment(baseSegment);
             }
+            UpdateFileRecordSegment(baseSegment);
         }
 
         public void UpdateFileRecordSegment(FileRecordSegment recordSegment)
