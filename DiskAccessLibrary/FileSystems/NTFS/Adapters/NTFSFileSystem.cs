@@ -310,6 +310,14 @@ namespace DiskAccessLibrary.FileSystems.NTFS
             }
         }
 
+        public override bool SupportsNamedStreams
+        {
+            get
+            {
+                return false;
+            }
+        }
+
         public static FileSystemEntry ToFileSystemEntry(string path, FileRecord record)
         {
             ulong size = record.IsDirectory ? 0 : record.DataRecord.DataLength;
