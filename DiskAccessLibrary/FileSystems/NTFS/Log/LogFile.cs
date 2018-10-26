@@ -440,6 +440,16 @@ namespace DiskAccessLibrary.FileSystems.NTFS
                 bytesToSkip += bytesRemainingInPage + m_restartPage.LogRestartArea.LogPageDataOffset;
             }
 
+            ulong pageOffsetInFile = LsnToPageOffsetInFile(lsn);
+            if (pageOffsetInFile + (uint)recordOffsetInPage + (uint)bytesToSkip >= m_restartPage.LogRestartArea.FileSize)
+            {
+                // We skip the gap of LSNs that do not map to a valid file offset
+                int fileSizeBits = m_restartPage.LogRestartArea.FileSizeBits;
+                bytesToSkip += (int)Math.Pow(2, fileSizeBits) - (int)m_restartPage.LogRestartArea.FileSize;
+                // We skip the two restart pages and the two tail pages
+                bytesToSkip += (int)m_restartPage.SystemPageSize * 2 + (int)m_restartPage.LogPageSize * 2;
+            }
+
             return lsn + ((uint)bytesToSkip >> 3);
         }
     }
