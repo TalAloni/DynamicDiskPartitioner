@@ -78,7 +78,6 @@ namespace DiskAccessLibrary.FileSystems.NTFS
             }
             else
             {
-                // I have never personally seen an MFT with an attribute list
                 AttributeList attributeList = new AttributeList(m_volume, attributeListRecord);
                 List<AttributeListEntry> entries = attributeList.ReadEntries();
                 List<MftSegmentReference> references = AttributeList.GetSegmentReferenceList(entries);
