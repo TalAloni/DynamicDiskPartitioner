@@ -19,11 +19,11 @@ namespace DiskAccessLibrary.FileSystems.NTFS
     /// </remarks>
     public class FileRecordSegment
     {
-        public const string ValidSignature = "FILE";
-        public const int EndMarkerLength = 4;
-        public const int NTFS30UpdateSequenceArrayOffset = 0x2A; // NTFS v3.0 and earlier (up to Windows 2000)
-        public const int NTFS31UpdateSequenceArrayOffset = 0x30; // NTFS v3.1 and later   (XP and later)
-        private const uint FileRecordEndMarker = 0xFFFFFFFF;
+        private const string ValidSignature = "FILE";
+        private const int NTFS30UpdateSequenceArrayOffset = 0x2A; // NTFS v3.0 and earlier (up to Windows 2000)
+        private const int NTFS31UpdateSequenceArrayOffset = 0x30; // NTFS v3.1 and later   (XP and later)
+        private const uint AttributesEndMarker = 0xFFFFFFFF;
+        private const int EndMarkerLength = 4;
 
         /* Start of FILE_RECORD_SEGMENT_HEADER */
         // MULTI_SECTOR_HEADER
@@ -138,7 +138,7 @@ namespace DiskAccessLibrary.FileSystems.NTFS
                 position += attributeBytes.Length;
             }
 
-            LittleEndianWriter.WriteUInt32(buffer, position, FileRecordEndMarker);
+            LittleEndianWriter.WriteUInt32(buffer, position, AttributesEndMarker);
             position += 8; // End marker + alignment to 8-byte boundary
 
             uint segmentLength = (uint)position;
@@ -319,7 +319,7 @@ namespace DiskAccessLibrary.FileSystems.NTFS
         public static bool IsEndMarker(byte[] buffer, int offset)
         {
             uint type = LittleEndianConverter.ToUInt32(buffer, offset + 0x00);
-            return (type == FileRecordEndMarker);
+            return (type == AttributesEndMarker);
         }
 
         public static ushort GetFirstAttributeOffset(int bytesPerFileRecordSegment, ushort minorNTFSVersion)
