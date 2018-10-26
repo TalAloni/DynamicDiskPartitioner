@@ -201,6 +201,17 @@ namespace DiskAccessLibrary.FileSystems.NTFS
             }
         }
 
+        public int GetNumberOfBytesInUse(int bytesPerFileRecordSegment, ushort minorNTFSVersion)
+        {
+            int length = GetFirstAttributeOffset(bytesPerFileRecordSegment, minorNTFSVersion);
+            foreach (AttributeRecord attribute in m_immediateAttributes)
+            {
+                length += attribute.RecordLength;
+            }
+            length += 8; // End marker + alignment to 8-byte boundary
+            return length;
+        }
+
         public int GetNumberOfBytesFree(int bytesPerFileRecordSegment, ushort minorNTFSVersion)
         {
             int firstAttributeOffset = FileRecordSegment.GetFirstAttributeOffset(bytesPerFileRecordSegment, minorNTFSVersion);
