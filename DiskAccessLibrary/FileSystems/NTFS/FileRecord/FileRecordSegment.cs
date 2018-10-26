@@ -23,6 +23,7 @@ namespace DiskAccessLibrary.FileSystems.NTFS
         public const int EndMarkerLength = 4;
         public const int NTFS30UpdateSequenceArrayOffset = 0x2A; // NTFS v3.0 and earlier (up to Windows 2000)
         public const int NTFS31UpdateSequenceArrayOffset = 0x30; // NTFS v3.1 and later   (XP and later)
+        private const uint FileRecordEndMarker = 0xFFFFFFFF;
 
         /* Start of FILE_RECORD_SEGMENT_HEADER */
         // MULTI_SECTOR_HEADER
@@ -80,7 +81,7 @@ namespace DiskAccessLibrary.FileSystems.NTFS
             while (!IsEndMarker(buffer, position))
             {
                 AttributeRecord attribute = AttributeRecord.FromBytes(buffer, position);
-                
+
                 m_immediateAttributes.Add(attribute);
                 position += (int)attribute.RecordLengthOnDisk;
                 if (position > buffer.Length)
@@ -251,7 +252,7 @@ namespace DiskAccessLibrary.FileSystems.NTFS
                 }
             }
         }
-        
+
         public List<AttributeRecord> ImmediateAttributes
         {
             get
@@ -308,7 +309,7 @@ namespace DiskAccessLibrary.FileSystems.NTFS
         public static bool IsEndMarker(byte[] buffer, int offset)
         {
             uint type = LittleEndianConverter.ToUInt32(buffer, offset + 0x00);
-            return (type == 0xFFFFFFFF);
+            return (type == FileRecordEndMarker);
         }
 
         /// <summary>
@@ -317,7 +318,7 @@ namespace DiskAccessLibrary.FileSystems.NTFS
         public static byte[] GetEndMarker()
         {
             byte[] buffer = new byte[4];
-            LittleEndianWriter.WriteUInt32(buffer, 0, 0xFFFFFFFF);
+            LittleEndianWriter.WriteUInt32(buffer, 0, FileRecordEndMarker);
             return buffer;
         }
 
