@@ -111,7 +111,8 @@ namespace DiskAccessLibrary.FileSystems.NTFS
             MultiSectorHeader multiSectorHeader = new MultiSectorHeader(ValidSignature, updateSequenceArrayOffset, updateSequenceArraySize);
             ushort firstAttributeOffset = GetFirstAttributeOffset(bytesPerFileRecordSegment, minorNTFSVersion);
 
-            byte[] buffer = new byte[bytesPerFileRecordSegment];
+            int length = applyUsaProtection ? bytesPerFileRecordSegment : GetNumberOfBytesInUse(bytesPerFileRecordSegment, minorNTFSVersion);
+            byte[] buffer = new byte[length];
             multiSectorHeader.WriteBytes(buffer, 0x00);
             LittleEndianWriter.WriteUInt64(buffer, 0x08, LogFileSequenceNumber);
             LittleEndianWriter.WriteUInt16(buffer, 0x10, m_sequenceNumber);
