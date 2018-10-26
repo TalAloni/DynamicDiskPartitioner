@@ -310,14 +310,6 @@ namespace DiskAccessLibrary.FileSystems.NTFS
             }
         }
 
-        public bool IsValidAndSupported
-        {
-            get
-            {
-                return m_volume.IsValidAndSupported;
-            }
-        }
-
         public static FileSystemEntry ToFileSystemEntry(string path, FileRecord record)
         {
             ulong size = record.IsDirectory ? 0 : record.DataRecord.DataLength;

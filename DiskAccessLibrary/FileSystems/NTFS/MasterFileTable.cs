@@ -63,57 +63,49 @@ namespace DiskAccessLibrary.FileSystems.NTFS
         private FileRecord ReadMftRecord(bool useMftMirror, bool readMftMirror)
         {
             NTFSBootRecord bootRecord = m_volume.BootRecord;
-
-            if (bootRecord != null)
+            long mftStartLCN = useMftMirror ? (long)bootRecord.MftMirrorStartLCN : (long)bootRecord.MftStartLCN;
+            long mftSegmentNumber = readMftMirror ? MftMirrorSegmentNumber : MasterFileTableSegmentNumber;
+            FileRecordSegment mftRecordSegment = ReadFileRecordSegment(mftStartLCN, mftSegmentNumber);
+            if (!mftRecordSegment.IsBaseFileRecord)
             {
-                long mftStartLCN = useMftMirror ? (long)bootRecord.MftMirrorStartLCN : (long)bootRecord.MftStartLCN;
-                long mftSegmentNumber = readMftMirror ? MftMirrorSegmentNumber : MasterFileTableSegmentNumber;
-                FileRecordSegment mftRecordSegment = ReadFileRecordSegment(mftStartLCN, mftSegmentNumber);
-                if (!mftRecordSegment.IsBaseFileRecord)
-                {
-                    throw new InvalidDataException("Invalid MFT record, not a base record");
-                }
+                throw new InvalidDataException("Invalid MFT record, not a base record");
+            }
 
-                AttributeRecord attributeListRecord = mftRecordSegment.GetImmediateAttributeRecord(AttributeType.AttributeList, String.Empty);
-                if (attributeListRecord == null)
-                {
-                    return new FileRecord(mftRecordSegment);
-                }
-                else
-                {
-                    // I have never personally seen an MFT with an attribute list
-                    AttributeList attributeList = new AttributeList(m_volume, attributeListRecord);
-                    List<AttributeListEntry> entries = attributeList.ReadEntries();
-                    List<MftSegmentReference> references = AttributeList.GetSegmentReferenceList(entries);
-                    int baseSegmentIndex = MftSegmentReference.IndexOfSegmentNumber(references, MasterFileTableSegmentNumber);
-
-                    if (baseSegmentIndex >= 0)
-                    {
-                        references.RemoveAt(baseSegmentIndex);
-                    }
-
-                    List<FileRecordSegment> recordSegments = new List<FileRecordSegment>();
-                    // we want the base record segment first
-                    recordSegments.Add(mftRecordSegment);
-
-                    foreach (MftSegmentReference reference in references)
-                    {
-                        FileRecordSegment segment = ReadFileRecordSegment(mftStartLCN, reference);
-                        if (segment != null)
-                        {
-                            recordSegments.Add(segment);
-                        }
-                        else
-                        {
-                            throw new InvalidDataException("Invalid MFT record, missing segment");
-                        }
-                    }
-                    return new FileRecord(recordSegments);
-                }
+            AttributeRecord attributeListRecord = mftRecordSegment.GetImmediateAttributeRecord(AttributeType.AttributeList, String.Empty);
+            if (attributeListRecord == null)
+            {
+                return new FileRecord(mftRecordSegment);
             }
             else
             {
-                return null;
+                // I have never personally seen an MFT with an attribute list
+                AttributeList attributeList = new AttributeList(m_volume, attributeListRecord);
+                List<AttributeListEntry> entries = attributeList.ReadEntries();
+                List<MftSegmentReference> references = AttributeList.GetSegmentReferenceList(entries);
+                int baseSegmentIndex = MftSegmentReference.IndexOfSegmentNumber(references, MasterFileTableSegmentNumber);
+
+                if (baseSegmentIndex >= 0)
+                {
+                    references.RemoveAt(baseSegmentIndex);
+                }
+
+                List<FileRecordSegment> recordSegments = new List<FileRecordSegment>();
+                // we want the base record segment first
+                recordSegments.Add(mftRecordSegment);
+
+                foreach (MftSegmentReference reference in references)
+                {
+                    FileRecordSegment segment = ReadFileRecordSegment(mftStartLCN, reference);
+                    if (segment != null)
+                    {
+                        recordSegments.Add(segment);
+                    }
+                    else
+                    {
+                        throw new InvalidDataException("Invalid MFT record, missing segment");
+                    }
+                }
+                return new FileRecord(recordSegments);
             }
         }
 

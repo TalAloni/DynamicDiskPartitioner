@@ -22,6 +22,7 @@ namespace DiskAccessLibrary.FileSystems.NTFS
         private Volume m_volume;
         private NTFSBootRecord m_bootRecord; // Partition's boot record
         private MasterFileTable m_mft;
+        private LogFile m_logFile;
         private VolumeBitmap m_bitmap;
         private VolumeInformationRecord m_volumeInformation;
         private readonly bool m_generateDosNames = false;
@@ -36,12 +37,24 @@ namespace DiskAccessLibrary.FileSystems.NTFS
 
             byte[] bootSector = m_volume.ReadSector(0);
             m_bootRecord = NTFSBootRecord.ReadRecord(bootSector);
-            if (m_bootRecord != null)
+            if (m_bootRecord == null)
             {
-                m_mft = new MasterFileTable(this, useMftMirror);
-                m_bitmap = new VolumeBitmap(this);
-                m_volumeInformation = GetVolumeInformationRecord();
+                throw new InvalidDataException("The volume does not contain a valid NTFS boot record");
             }
+            m_mft = new MasterFileTable(this, useMftMirror);
+            m_volumeInformation = GetVolumeInformationRecord();
+            if (m_volumeInformation.IsDirty)
+            {
+                throw new NotSupportedException("The volume is marked dirty, please run CHKDSK to repair the volume");
+            }
+            // Note: We could support NTFS v1.2 with minimal effort, but there isn't really any point.
+            if (!(m_volumeInformation.MajorVersion == 3 && m_volumeInformation.MinorVersion == 0) &&
+                !(m_volumeInformation.MajorVersion == 3 && m_volumeInformation.MinorVersion == 1))
+            {
+                throw new NotSupportedException(String.Format("NTFS v{0}.{1} is not supported", m_volumeInformation.MajorVersion, m_volumeInformation.MinorVersion));
+            }
+            m_logFile = new LogFile(this);
+            m_bitmap = new VolumeBitmap(this);
         }
 
         public virtual FileRecord GetFileRecord(string path)
@@ -368,22 +381,6 @@ namespace DiskAccessLibrary.FileSystems.NTFS
         internal void DeallocateClusters(long startLCN, long numberOfClusters)
         {
             m_bitmap.DeallocateClusters(startLCN, numberOfClusters);
-        }
-
-        public bool IsValid
-        {
-            get
-            {
-                return (m_bootRecord != null && m_mft.GetMftRecord() != null);
-            }
-        }
-
-        public bool IsValidAndSupported
-        {
-            get
-            {
-                return (this.IsValid && MajorVersion == 3 && MinorVersion == 1);
-            }
         }
 
         public ushort MajorVersion
