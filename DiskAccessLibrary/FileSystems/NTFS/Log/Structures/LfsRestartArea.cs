@@ -92,6 +92,23 @@ namespace DiskAccessLibrary.FileSystems.NTFS
         }
 
         /// <summary>
+        /// The number of bits chosen to represent the log file size
+        /// (must be greater than or equal to the number of bits needed)
+        /// </summary>
+        public int FileSizeBits
+        {
+            get
+            {
+                return 64 - (int)SeqNumberBits + 3;
+            }
+            set
+            {
+                // All log records are aligned to 8-byte boundary
+                SeqNumberBits = (uint)(64 - (value - 3));
+            }
+        }
+
+        /// <summary>
         /// Windows 2000 and earlier will close the log file by setting the
         /// ClientInUseList to NoClient when the volume is dismounted cleanly.
         /// </summary>
