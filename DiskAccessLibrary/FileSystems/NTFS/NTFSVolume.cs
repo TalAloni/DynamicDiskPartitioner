@@ -23,6 +23,7 @@ namespace DiskAccessLibrary.FileSystems.NTFS
         private NTFSBootRecord m_bootRecord; // Partition's boot record
         private MasterFileTable m_mft;
         private LogFile m_logFile;
+        private NTFSLogClient m_logClient;
         private VolumeBitmap m_bitmap;
         private VolumeInformationRecord m_volumeInformation;
         private readonly bool m_generateDosNames = false;
@@ -54,6 +55,7 @@ namespace DiskAccessLibrary.FileSystems.NTFS
                 throw new NotSupportedException(String.Format("NTFS v{0}.{1} is not supported", m_volumeInformation.MajorVersion, m_volumeInformation.MinorVersion));
             }
             m_logFile = new LogFile(this);
+            m_logClient = new NTFSLogClient(m_logFile);
             m_bitmap = new VolumeBitmap(this);
         }
 
@@ -492,6 +494,14 @@ namespace DiskAccessLibrary.FileSystems.NTFS
             get
             {
                 return m_mft.AttributeRecordLengthToMakeNonResident;
+            }
+        }
+
+        internal NTFSLogClient LogClient
+        {
+            get
+            {
+                return m_logClient;
             }
         }
 
