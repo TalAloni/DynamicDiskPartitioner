@@ -495,7 +495,7 @@ namespace DiskAccessLibrary.FileSystems.NTFS
             }
         }
 
-        protected internal static MftSegmentReference RootDirSegmentReference
+        public static MftSegmentReference RootDirSegmentReference
         {
             get
             {
