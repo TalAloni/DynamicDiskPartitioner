@@ -18,6 +18,7 @@ namespace DiskAccessLibrary.FileSystems.NTFS
     public class LfsRestartPage
     {
         private const string ValidSignature = "RSTR";
+        private const string ModifiedSignature = "CHKD"; // Indicates that CHKDSK was run
         private const int UpdateSequenceArrayOffset = 0x1E;
 
         /* Start of LFS_RESTART_PAGE_HEADER */
@@ -43,7 +44,7 @@ namespace DiskAccessLibrary.FileSystems.NTFS
         public LfsRestartPage(byte[] buffer, int offset)
         {
             MultiSectorHeader multiSectorHeader = new MultiSectorHeader(buffer, offset + 0x00);
-            if (multiSectorHeader.Signature != ValidSignature)
+            if (multiSectorHeader.Signature != ValidSignature && multiSectorHeader.Signature != ModifiedSignature)
             {
                 throw new InvalidDataException("Invalid RSTR record signature");
             }
