@@ -71,10 +71,10 @@ namespace DiskAccessLibrary.FileSystems.NTFS
                     bufferedVCN = currentVCN;
                 }
 
-                int bitOffsetInBitmap = (int)(index % (Volume.BytesPerCluster * 8));
-                if (IsBitClear(bufferedClusterBytes, bitOffsetInBitmap))
+                int bitOffsetInCluster = (int)(index % (Volume.BytesPerCluster * 8));
+                if (IsBitClear(bufferedClusterBytes, bitOffsetInCluster))
                 {
-                    SetBit(bufferedClusterBytes, bitOffsetInBitmap);
+                    SetBit(bufferedClusterBytes, bitOffsetInCluster);
                     WriteCluster(currentVCN, bufferedClusterBytes);
                     return index;
                 }
