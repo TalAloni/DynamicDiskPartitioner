@@ -117,6 +117,7 @@
     <Compile Include="FileSystems\NTFS\Log\RestartTables\RestartTableHeader.cs" />
     <Compile Include="FileSystems\NTFS\Log\RestartTables\RestartTableHelper.cs" />
     <Compile Include="FileSystems\NTFS\Log\RestartTables\TransactionEntry.cs" />
+    <Compile Include="FileSystems\NTFS\Log\Structures\BitmapRange.cs" />
     <Compile Include="FileSystems\NTFS\Log\Structures\LfsClientRecord.cs" />
     <Compile Include="FileSystems\NTFS\Log\Structures\LfsRecord.cs" />
     <Compile Include="FileSystems\NTFS\Log\Structures\LfsRecordPage.cs" />
