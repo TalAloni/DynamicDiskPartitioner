@@ -247,7 +247,7 @@ namespace DiskAccessLibrary.FileSystems.NTFS
                 byte[] attributeNameTableBytes;
                 byte[] openAttributeTableBytes = GetOpenAttributeTableBytes(out attributeNameTableBytes);
                 m_lastClientLsn = 0;
-                uint transactionID = RestartTableHeader.Length; // This record must have a valid transactionID
+                uint transactionID = AllocateTransactionID(); // These records must have a valid transactionID
                 LfsRecord openAttributeTableRecord = WriteLogRecord(null, null, 0, NTFSLogOperation.OpenAttributeTableDump, openAttributeTableBytes, NTFSLogOperation.Noop, new byte[0], transactionID);
                 restartRecord.OpenAttributeTableLsn = openAttributeTableRecord.ThisLsn;
                 restartRecord.OpenAttributeTableLength = (uint)openAttributeTableBytes.Length;
@@ -257,6 +257,7 @@ namespace DiskAccessLibrary.FileSystems.NTFS
                     restartRecord.AttributeNamesLsn = attributeNameTableRecord.ThisLsn;
                     restartRecord.AttributeNamesLength = (uint)attributeNameTableBytes.Length;
                 }
+                DeallocateTransactionID(transactionID);
             }
             restartRecord.BytesPerCluster = (uint)Volume.BytesPerCluster;
             restartRecord.UsnJournal = usnJournal;
