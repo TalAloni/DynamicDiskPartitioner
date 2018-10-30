@@ -244,12 +244,19 @@ namespace DiskAccessLibrary.FileSystems.NTFS
             }
             else if (m_openAttributes.Count > 0)
             {
-                byte[] openAttributeTableBytes = GetOpenAttributeTableBytes();
+                byte[] attributeNameTableBytes;
+                byte[] openAttributeTableBytes = GetOpenAttributeTableBytes(out attributeNameTableBytes);
                 m_lastClientLsn = 0;
                 uint transactionID = RestartTableHeader.Length; // This record must have a valid transactionID
                 LfsRecord openAttributeTableRecord = WriteLogRecord(null, null, 0, NTFSLogOperation.OpenAttributeTableDump, openAttributeTableBytes, NTFSLogOperation.Noop, new byte[0], transactionID);
                 restartRecord.OpenAttributeTableLsn = openAttributeTableRecord.ThisLsn;
                 restartRecord.OpenAttributeTableLength = (uint)openAttributeTableBytes.Length;
+                if (attributeNameTableBytes != null)
+                {
+                    LfsRecord attributeNameTableRecord = WriteLogRecord(null, null, 0, NTFSLogOperation.AttributeNamesDump, openAttributeTableBytes, NTFSLogOperation.Noop, new byte[0], transactionID);
+                    restartRecord.AttributeNamesLsn = attributeNameTableRecord.ThisLsn;
+                    restartRecord.AttributeNamesLength = (uint)attributeNameTableBytes.Length;
+                }
             }
             restartRecord.BytesPerCluster = (uint)Volume.BytesPerCluster;
             restartRecord.UsnJournal = usnJournal;
@@ -320,12 +327,9 @@ namespace DiskAccessLibrary.FileSystems.NTFS
                     entry.FileReference = fileReference;
                     entry.LsnOfOpenRecord = m_lastClientLsn;
                     entry.AttributeTypeCode = attributeRecord.AttributeType;
-                    byte[] openData = entry.GetBytes();
-                    if (attributeRecord.Name != String.Empty)
-                    {
-                        throw new NotImplementedException();
-                    }
-                    LfsRecord openAttributeRecord = WriteLogRecord(openAttributeOffset, 0, 0, 0, new List<long>(), NTFSLogOperation.OpenNonResidentAttribute, openData, NTFSLogOperation.Noop, new byte[0], transactionID);
+                    byte[] openAttributeBytes = entry.GetBytes();
+                    byte[] attributeNameBytes = System.Text.Encoding.Unicode.GetBytes(attributeRecord.Name);
+                    LfsRecord openAttributeRecord = WriteLogRecord(openAttributeOffset, 0, 0, 0, new List<long>(), NTFSLogOperation.OpenNonResidentAttribute, openAttributeBytes, NTFSLogOperation.Noop, attributeNameBytes, transactionID);
                 }
                 else
                 {
@@ -389,9 +393,10 @@ namespace DiskAccessLibrary.FileSystems.NTFS
             return openAttributeIndex;
         }
 
-        private byte[] GetOpenAttributeTableBytes()
+        private byte[] GetOpenAttributeTableBytes(out byte[] attributeNameTableBytes)
         {
             List<OpenAttributeEntry> openAttributeTable = new List<OpenAttributeEntry>();
+            List<AttributeNameEntry> attributeNameTable = new List<AttributeNameEntry>();
             for (int index = 0; index < m_openAttributes.Count; index++)
             {
                 OpenAttribute openAttribute = m_openAttributes[index];
@@ -402,11 +407,21 @@ namespace DiskAccessLibrary.FileSystems.NTFS
                 entry.FileReference = openAttribute.FileReference;
                 entry.LsnOfOpenRecord = openAttribute.LsnOfOpenRecord;
                 entry.AttributeTypeCode = openAttribute.AttributeType;
+                openAttributeTable.Add(entry);
                 if (openAttribute.AttributeName != String.Empty)
                 {
-                    throw new NotImplementedException();
+                    int openAttributeOffset = OpenAttributeIndexToOffset(index);
+                    AttributeNameEntry nameEntry = new AttributeNameEntry();
+                    nameEntry.OpenAttributeOffset = (ushort)openAttributeOffset;
+                    nameEntry.Name = openAttribute.AttributeName;
+                    attributeNameTable.Add(nameEntry);
                 }
-                openAttributeTable.Add(entry);
+            }
+
+            attributeNameTableBytes = null;
+            if (attributeNameTable.Count > 0)
+            {
+                attributeNameTableBytes = AttributeNameEntry.GetTableBytes(attributeNameTable);
             }
             return RestartTableHelper.GetTableBytes<OpenAttributeEntry>(openAttributeTable);
         }
