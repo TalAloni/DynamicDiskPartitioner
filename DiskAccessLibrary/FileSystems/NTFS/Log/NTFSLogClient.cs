@@ -19,6 +19,7 @@ namespace DiskAccessLibrary.FileSystems.NTFS
             public AttributeType AttributeType;
             public string AttributeName;
             public ulong LsnOfOpenRecord;
+            public List<uint> AssociatedTransactions = new List<uint>(); // List of transactions using this open attribute
 
             public OpenAttribute(MftSegmentReference fileReference, AttributeType attributeType, string attributeName, ulong lsnOfOpenRecord)
             {
@@ -240,7 +241,6 @@ namespace DiskAccessLibrary.FileSystems.NTFS
                 {
                     throw new InvalidOperationException("All TransactionIDs must be deallocated before writing a clean restart record");
                 }
-                m_openAttributes.Clear(); // FIXME: we should find a more appropriate way to clear the open attribute table
             }
             else if (m_openAttributes.Count > 0)
             {
@@ -288,6 +288,17 @@ namespace DiskAccessLibrary.FileSystems.NTFS
             ntfsLogRecord.UndoOperation = NTFSLogOperation.CompensationLogRecord;
             LfsRecord result = WriteLogRecord(ntfsLogRecord, transactionID);
             DeallocateTransactionID(transactionID);
+            // Update the open attribute table and remove any open attribute that no longer has an associated transaction
+            for(int index = 0; index < m_openAttributes.Count; index++)
+            {
+                OpenAttribute openAttribute = m_openAttributes[index];
+                openAttribute.AssociatedTransactions.Remove(transactionID);
+                if (openAttribute.AssociatedTransactions.Count == 0)
+                {
+                    m_openAttributes.RemoveAt(index);
+                    index--;
+                }
+            }
             return result;
         }
 
@@ -300,6 +311,7 @@ namespace DiskAccessLibrary.FileSystems.NTFS
                 if (openAttributeIndex == -1)
                 {
                     openAttributeIndex = AddToOpenAttributeTable(fileReference, attributeRecord.AttributeType, attributeRecord.Name, m_lastClientLsn);
+                    m_openAttributes[openAttributeIndex].AssociatedTransactions.Add(transactionID);
                     openAttributeOffset = OpenAttributeIndexToOffset(openAttributeIndex);
                     OpenAttributeEntry entry = new OpenAttributeEntry(m_majorVersion);
                     entry.AllocatedOrNextFree = RestartTableEntry.RestartEntryAllocated;
@@ -318,6 +330,10 @@ namespace DiskAccessLibrary.FileSystems.NTFS
                 else
                 {
                     openAttributeOffset = OpenAttributeIndexToOffset(openAttributeIndex);
+                    if (!m_openAttributes[openAttributeIndex].AssociatedTransactions.Contains(transactionID))
+                    {
+                        m_openAttributes[openAttributeIndex].AssociatedTransactions.Add(transactionID);
+                    }
                 }
             }
 
