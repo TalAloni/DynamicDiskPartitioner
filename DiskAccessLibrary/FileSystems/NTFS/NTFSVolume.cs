@@ -145,13 +145,16 @@ namespace DiskAccessLibrary.FileSystems.NTFS
             }
 
             List<FileNameRecord> fileNameRecords = IndexHelper.GenerateFileNameRecords(parentDirectory, fileName, isDirectory, m_generateDosNames, parentDirectoryIndex);
-            FileRecord fileRecord = m_mft.CreateFile(fileNameRecords);
+            uint transactionID = m_logClient.AllocateTransactionID();
+            FileRecord fileRecord = m_mft.CreateFile(fileNameRecords, transactionID);
 
             // Update parent directory index
             foreach (FileNameRecord fileNameRecord in fileNameRecords)
             {
                 parentDirectoryIndex.AddEntry(fileRecord.BaseSegmentReference, fileNameRecord.GetBytes());
             }
+            m_logClient.WriteForgetTransactionRecord(transactionID);
+            m_logClient.WriteRestartRecord(this.MajorVersion, true);
             m_mftLock.ReleaseWriterLock();
 
             return fileRecord;
@@ -159,8 +162,26 @@ namespace DiskAccessLibrary.FileSystems.NTFS
 
         protected internal virtual void UpdateFileRecord(FileRecord fileRecord)
         {
+            UpdateFileRecord(fileRecord, null);
+        }
+
+        protected internal virtual void UpdateFileRecord(FileRecord fileRecord, uint? transactionID)
+        {
             m_mftLock.AcquireWriterLock(Timeout.Infinite);
-            m_mft.UpdateFileRecord(fileRecord);
+            bool allocateTransactionID = !transactionID.HasValue;
+            if (allocateTransactionID)
+            {
+                transactionID = m_logClient.AllocateTransactionID();
+            }
+            m_mft.UpdateFileRecord(fileRecord, transactionID.Value);
+            if (allocateTransactionID)
+            {
+                m_logClient.WriteForgetTransactionRecord(transactionID.Value);
+                if (m_logClient.TransactionCount == 0)
+                {
+                    m_logClient.WriteRestartRecord(this.MajorVersion, true);
+                }
+            }
             m_mftLock.ReleaseWriterLock();
         }
 
@@ -192,6 +213,7 @@ namespace DiskAccessLibrary.FileSystems.NTFS
             }
 
             List<FileNameRecord> fileNameRecords = fileRecord.FileNameRecords;
+            uint transactionID = m_logClient.AllocateTransactionID();
             foreach (FileNameRecord fileNameRecord in fileNameRecords)
             {
                 oldParentDirectoryIndex.RemoveEntry(fileNameRecord.GetBytes());
@@ -213,12 +235,14 @@ namespace DiskAccessLibrary.FileSystems.NTFS
                 fileNameAttribute.IsIndexed = true;
                 fileNameAttribute.Record = fileNameRecord;
             }
-            UpdateFileRecord(fileRecord);
+            UpdateFileRecord(fileRecord, transactionID);
 
             foreach (FileNameRecord fileNameRecord in fileNameRecords)
             {
                 newParentDirectoryIndex.AddEntry(fileRecord.BaseSegmentReference, fileNameRecord.GetBytes());
             }
+            m_logClient.WriteForgetTransactionRecord(transactionID);
+            m_logClient.WriteRestartRecord(this.MajorVersion, true);
             m_mftLock.ReleaseWriterLock();
         }
 
@@ -229,6 +253,7 @@ namespace DiskAccessLibrary.FileSystems.NTFS
             m_mftLock.AcquireWriterLock(Timeout.Infinite);
             IndexData parentDirectoryIndex = new IndexData(this, parentDirectoryRecord, AttributeType.FileName);
 
+            uint transactionID = m_logClient.AllocateTransactionID();
             // Update parent directory index
             List<FileNameRecord> fileNameRecords = fileRecord.FileNameRecords;
             foreach(FileNameRecord fileNameRecord in fileNameRecords)
@@ -246,7 +271,9 @@ namespace DiskAccessLibrary.FileSystems.NTFS
                 }
             }
 
-            m_mft.DeleteFile(fileRecord);
+            m_mft.DeleteFile(fileRecord, transactionID);
+            m_logClient.WriteForgetTransactionRecord(transactionID);
+            m_logClient.WriteRestartRecord(this.MajorVersion, true);
             m_mftLock.ReleaseWriterLock();
         }
 
