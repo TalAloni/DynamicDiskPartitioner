@@ -83,10 +83,13 @@ namespace DiskAccessLibrary.FileSystems.NTFS
         public void DeallocateRecord(long recordIndex)
         {
             long currentVCN = recordIndex / (Volume.BytesPerCluster * 8);
-            int bitOffsetInBitmap = (int)(recordIndex % (Volume.BytesPerCluster * 8));
-            byte[] bitmap = ReadCluster(currentVCN);
-            ClearBit(bitmap, bitOffsetInBitmap);
-            WriteCluster(currentVCN, bitmap);
+            int bitOffsetInCluster = (int)(recordIndex % (Volume.BytesPerCluster * 8));
+            byte[] clusterBytes = ReadCluster(currentVCN);
+            if (!IsBitClear(clusterBytes, bitOffsetInCluster))
+            {
+                ClearBit(clusterBytes, bitOffsetInCluster);
+                WriteCluster(currentVCN, clusterBytes);
+            }
         }
 
         public void ExtendBitmap(long numberOfBits)
