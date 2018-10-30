@@ -28,9 +28,6 @@ namespace DiskAccessLibrary.FileSystems.NTFS
             m_numberOfUsableBits = numberOfUsableBits;
         }
 
-        /// <remarks>
-        /// .
-        /// </remarks>
         /// <returns>Record index</returns>
         public long? AllocateRecord()
         {
