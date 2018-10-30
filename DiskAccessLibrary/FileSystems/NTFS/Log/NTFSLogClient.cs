@@ -486,5 +486,16 @@ namespace DiskAccessLibrary.FileSystems.NTFS
                 return m_logFile.Volume;
             }
         }
+
+        /// <summary>
+        /// Returns the number of transactions currently active
+        /// </summary>
+        public int TransactionCount
+        {
+            get
+            {
+                return m_transactions.Count;
+            }
+        }
     }
 }
