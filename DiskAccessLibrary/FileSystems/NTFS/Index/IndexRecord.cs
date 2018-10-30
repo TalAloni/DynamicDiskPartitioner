@@ -80,13 +80,18 @@ namespace DiskAccessLibrary.FileSystems.NTFS
             return buffer;
         }
 
-        public bool DoesFit(int bytesPerIndexRecord)
+        public int GetNumberOfBytesInUse(int bytesPerIndexRecord)
         {
             int strideCount = bytesPerIndexRecord / MultiSectorHelper.BytesPerStride;
             ushort updateSequenceArraySize = (ushort)(1 + strideCount);
             int updateSequenceArrayPaddedLength = (int)Math.Ceiling((double)(updateSequenceArraySize * 2) / 8) * 8;
-            int recordLength = IndexHeaderOffset + IndexHeader.Length + updateSequenceArrayPaddedLength + IndexEntry.GetLength(IndexEntries);
-            return (recordLength <= bytesPerIndexRecord);
+            return IndexHeaderOffset + IndexHeader.Length + updateSequenceArrayPaddedLength + IndexEntry.GetLength(IndexEntries);
+        }
+
+        public bool DoesFit(int bytesPerIndexRecord)
+        {
+            int numberOfBytesInUse = GetNumberOfBytesInUse(bytesPerIndexRecord);
+            return (numberOfBytesInUse <= bytesPerIndexRecord);
         }
 
         public bool IsParentNode
