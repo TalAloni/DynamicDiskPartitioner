@@ -64,7 +64,8 @@ namespace DiskAccessLibrary.FileSystems.NTFS
             m_indexHeader.TotalLength = (uint)(IndexHeader.Length + updateSequenceArrayPaddedLength + IndexEntry.GetLength(IndexEntries));
             m_indexHeader.AllocatedLength = (uint)(bytesPerIndexRecord - IndexHeaderOffset);
 
-            byte[] buffer = new byte[bytesPerIndexRecord];
+            int length = applyUsaProtection ? bytesPerIndexRecord : GetNumberOfBytesInUse(bytesPerIndexRecord);
+            byte[] buffer = new byte[length];
             multiSectorHeader.WriteBytes(buffer, 0x00);
             LittleEndianWriter.WriteUInt64(buffer, 0x08, LogFileSequenceNumber);
             LittleEndianWriter.WriteUInt64(buffer, 0x10, (ulong)RecordVBN);
