@@ -24,6 +24,7 @@ namespace DiskAccessLibrary
         private int m_physicalDiskIndex;
         private int m_bytesPerSector;
         private long m_size;
+        private bool m_isReadOnly;
         private string m_description;
         private string m_serialNumber;
 
@@ -32,9 +33,14 @@ namespace DiskAccessLibrary
         private int m_tracksPerCylinder; // a.k.a. heads
         private int m_sectorsPerTrack;
 
-        public PhysicalDisk(int physicalDiskIndex)
+        public PhysicalDisk(int physicalDiskIndex) : this(physicalDiskIndex, false)
+        {
+        }
+
+        public PhysicalDisk(int physicalDiskIndex, bool isReadOnly)
         {
             m_physicalDiskIndex = physicalDiskIndex;
+            m_isReadOnly = isReadOnly;
             PopulateDiskInfo(); // We must do it before any read request use the disk handle
             PopulateDescription();
         }
@@ -396,6 +402,14 @@ namespace DiskAccessLibrary
             get
             {
                 return m_size;
+            }
+        }
+
+        public override bool IsReadOnly
+        {
+            get
+            {
+                return m_isReadOnly;
             }
         }
 
