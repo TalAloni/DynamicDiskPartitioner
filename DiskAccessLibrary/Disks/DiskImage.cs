@@ -38,6 +38,10 @@ namespace DiskAccessLibrary
 
         public abstract bool ExclusiveLock();
 
+#if Win32
+        public abstract bool ExclusiveLock(bool useOverlappedIO);
+#endif
+
         public abstract bool ReleaseLock();
 
         public string Path

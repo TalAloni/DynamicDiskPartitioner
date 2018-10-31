@@ -69,7 +69,7 @@ namespace DiskAccessLibrary
         }
 
 #if Win32
-        public bool ExclusiveLock(bool useOverlappedIO)
+        public override bool ExclusiveLock(bool useOverlappedIO)
         {
             if (!m_isExclusiveLock)
             {
