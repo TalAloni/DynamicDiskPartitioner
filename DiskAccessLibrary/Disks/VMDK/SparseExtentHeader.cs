@@ -1,4 +1,4 @@
-/* Copyright (C) 2014 Tal Aloni <tal.aloni.il@gmail.com>. All rights reserved.
+/* Copyright (C) 2014-2018 Tal Aloni <tal.aloni.il@gmail.com>. All rights reserved.
  * 
  * You can redistribute this program and/or modify it under the terms of
  * the GNU Lesser Public License as published by the Free Software Foundation,
@@ -31,7 +31,7 @@ namespace DiskAccessLibrary.VMDK
         public char NonEndLineChar;
         public char DoubleEndLineChar1;
         public char DoubleEndLineChar2;
-        public ushort CompressionAlgirithm;
+        public SparseExtentCompression CompressionAlgirithm;
 
         public SparseExtentHeader()
         {
@@ -55,7 +55,7 @@ namespace DiskAccessLibrary.VMDK
             NonEndLineChar = (char)ByteReader.ReadByte(buffer, 0x4A);
             DoubleEndLineChar1 = (char)ByteReader.ReadByte(buffer, 0x4B);
             DoubleEndLineChar2 = (char)ByteReader.ReadByte(buffer, 0x4C);
-            CompressionAlgirithm = (char)LittleEndianConverter.ToUInt16(buffer, 0x4D);
+            CompressionAlgirithm = (SparseExtentCompression)LittleEndianConverter.ToUInt16(buffer, 0x4D);
         }
 
         public bool IsValid

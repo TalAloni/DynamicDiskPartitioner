@@ -46,6 +46,7 @@
     <Compile Include="Disks\VHD\VirtualHardDisk.Dynamic.cs" />
     <Compile Include="Disks\VHD\VirtualHardDiskType.cs" />
     <Compile Include="Disks\VMDK\Enums\ExtentType.cs" />
+    <Compile Include="Disks\VMDK\Enums\SparseExtentCompression.cs" />
     <Compile Include="Disks\VMDK\Enums\VirtualMachineDiskType.cs" />
     <Compile Include="Disks\VMDK\SparseExtent.cs" />
     <Compile Include="Disks\VMDK\SparseExtentHeader.cs" />
