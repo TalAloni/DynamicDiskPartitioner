@@ -177,7 +177,7 @@ namespace DiskAccessLibrary
         {
             get
             {
-                return base.IsReadOnly;
+                return m_extent.IsReadOnly;
             }
         }
 
