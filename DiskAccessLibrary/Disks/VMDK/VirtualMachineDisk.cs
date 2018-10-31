@@ -157,14 +157,6 @@ namespace DiskAccessLibrary
             }
         }
 
-        public override bool IsReadOnly
-        {
-            get
-            {
-                return base.IsReadOnly;
-            }
-        }
-
         public override int BytesPerSector
         {
             get
@@ -178,6 +170,14 @@ namespace DiskAccessLibrary
             get
             {
                 return m_extent.Size;
+            }
+        }
+
+        public override bool IsReadOnly
+        {
+            get
+            {
+                return base.IsReadOnly;
             }
         }
 
