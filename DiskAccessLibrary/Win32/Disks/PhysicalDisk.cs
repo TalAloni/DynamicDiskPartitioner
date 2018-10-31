@@ -375,6 +375,14 @@ namespace DiskAccessLibrary
             }
         }
 
+        public int PhysicalDiskIndex
+        {
+            get
+            {
+                return m_physicalDiskIndex;
+            }
+        }
+
         public override int BytesPerSector
         {
             get
@@ -388,14 +396,6 @@ namespace DiskAccessLibrary
             get
             {
                 return m_size;
-            }
-        }
-
-        public int PhysicalDiskIndex
-        {
-            get
-            {
-                return m_physicalDiskIndex;
             }
         }
 
