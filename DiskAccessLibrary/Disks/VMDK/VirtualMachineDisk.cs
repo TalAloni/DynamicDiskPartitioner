@@ -45,7 +45,16 @@ namespace DiskAccessLibrary
             bool isDescriptorEmbedded = false;
             if (m_descriptor == null)
             {
-                SparseExtent sparse = new SparseExtent(m_descriptorPath);
+                SparseExtent sparse;
+                try
+                {
+                    sparse = new SparseExtent(m_descriptorPath);
+                }
+                catch (InvalidDataException)
+                {
+                    throw new InvalidDataException("Missing VMDK descriptor");
+                }
+
                 if (sparse.Descriptor != null)
                 {
                     isDescriptorEmbedded = true;
