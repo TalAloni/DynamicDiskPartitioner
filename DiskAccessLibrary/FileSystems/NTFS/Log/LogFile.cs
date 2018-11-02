@@ -232,10 +232,6 @@ namespace DiskAccessLibrary.FileSystems.NTFS
                 page.NextRecordOffset = (ushort)(recordOffsetInPage + bytesToWrite);
             }
 
-            ulong firstTailPageOffset = m_restartPage.SystemPageSize * 2;
-            ulong secondTailPageOffset = m_restartPage.SystemPageSize * 2 + m_restartPage.LogPageSize;
-            ulong tailPageOffset = m_isFirstTailPageTurn ? firstTailPageOffset : secondTailPageOffset;
-            m_isFirstTailPageTurn = !m_isFirstTailPageTurn;
             if (record.ThisLsn > page.LastLsnOrFileOffset)
             {
                 page.LastLsnOrFileOffset = record.ThisLsn;
@@ -246,12 +242,7 @@ namespace DiskAccessLibrary.FileSystems.NTFS
                 page.LastEndLsn = record.ThisLsn;
                 page.HasRecordEnd = true;
             }
-            // Write tail copy
-            ulong lastPageLsn = page.LastLsnOrFileOffset;
-            page.LastLsnOrFileOffset = pageOffsetInFile;
-            WritePage(tailPageOffset, page);
-            page.LastLsnOrFileOffset = lastPageLsn;
-            // Write page
+            WriteTailCopy(pageOffsetInFile, page);
             WritePage(pageOffsetInFile, page);
 
             int pagePosition = 2;
@@ -387,6 +378,20 @@ namespace DiskAccessLibrary.FileSystems.NTFS
 
             byte[] pageBytes = page.GetBytes((int)m_restartPage.LogPageSize, true);
             WriteData(pageOffset, pageBytes);
+        }
+
+        private void WriteTailCopy(ulong pageOffset, LfsRecordPage page)
+        {
+            ulong firstTailPageOffset = m_restartPage.SystemPageSize * 2;
+            ulong secondTailPageOffset = m_restartPage.SystemPageSize * 2 + m_restartPage.LogPageSize;
+            ulong tailPageOffset = m_isFirstTailPageTurn ? firstTailPageOffset : secondTailPageOffset;
+            m_isFirstTailPageTurn = !m_isFirstTailPageTurn;
+
+            ulong lastPageLsn = page.LastLsnOrFileOffset;
+            page.LastLsnOrFileOffset = pageOffset;
+            WritePage(tailPageOffset, page);
+            // Restore page to its original state
+            page.LastLsnOrFileOffset = lastPageLsn;
         }
 
         private ulong LsnToPageOffsetInFile(ulong lsn)
