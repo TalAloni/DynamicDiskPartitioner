@@ -263,6 +263,7 @@ namespace DiskAccessLibrary.FileSystems.NTFS
                 if (bytesRemaining == 0)
                 {
                     nextPage.LastEndLsn = record.ThisLsn;
+                    nextPage.NextRecordOffset = (ushort)(m_restartPage.LogRestartArea.LogPageDataOffset + bytesToWrite);
                     nextPage.Flags |= LfsRecordPageFlags.RecordEnd;
                 }
                 nextPage.PageCount = (ushort)pageCount;
