@@ -248,22 +248,25 @@ namespace DiskAccessLibrary.FileSystems.NTFS
                     throw new InvalidOperationException("All TransactionIDs must be deallocated before writing a clean restart record");
                 }
             }
-            else if (m_openAttributes.Count > 0)
+            else
             {
-                byte[] attributeNameTableBytes;
-                byte[] openAttributeTableBytes = GetOpenAttributeTableBytes(out attributeNameTableBytes);
-                m_lastClientLsn = 0;
-                uint transactionID = AllocateTransactionID(); // These records must have a valid transactionID
-                LfsRecord openAttributeTableRecord = WriteLogRecord(null, null, 0, NTFSLogOperation.OpenAttributeTableDump, openAttributeTableBytes, NTFSLogOperation.Noop, new byte[0], transactionID);
-                restartRecord.OpenAttributeTableLsn = openAttributeTableRecord.ThisLsn;
-                restartRecord.OpenAttributeTableLength = (uint)openAttributeTableBytes.Length;
-                if (attributeNameTableBytes != null)
+                if (m_openAttributes.Count > 0)
                 {
-                    LfsRecord attributeNameTableRecord = WriteLogRecord(null, null, 0, NTFSLogOperation.AttributeNamesDump, openAttributeTableBytes, NTFSLogOperation.Noop, new byte[0], transactionID);
-                    restartRecord.AttributeNamesLsn = attributeNameTableRecord.ThisLsn;
-                    restartRecord.AttributeNamesLength = (uint)attributeNameTableBytes.Length;
+                    byte[] attributeNameTableBytes;
+                    byte[] openAttributeTableBytes = GetOpenAttributeTableBytes(out attributeNameTableBytes);
+                    m_lastClientLsn = 0;
+                    uint transactionID = AllocateTransactionID(); // These records must have a valid transactionID
+                    LfsRecord openAttributeTableRecord = WriteLogRecord(null, null, 0, NTFSLogOperation.OpenAttributeTableDump, openAttributeTableBytes, NTFSLogOperation.Noop, new byte[0], transactionID);
+                    restartRecord.OpenAttributeTableLsn = openAttributeTableRecord.ThisLsn;
+                    restartRecord.OpenAttributeTableLength = (uint)openAttributeTableBytes.Length;
+                    if (attributeNameTableBytes != null)
+                    {
+                        LfsRecord attributeNameTableRecord = WriteLogRecord(null, null, 0, NTFSLogOperation.AttributeNamesDump, openAttributeTableBytes, NTFSLogOperation.Noop, new byte[0], transactionID);
+                        restartRecord.AttributeNamesLsn = attributeNameTableRecord.ThisLsn;
+                        restartRecord.AttributeNamesLength = (uint)attributeNameTableBytes.Length;
+                    }
+                    DeallocateTransactionID(transactionID);
                 }
-                DeallocateTransactionID(transactionID);
             }
             byte[] clientData = restartRecord.GetBytes(majorNTFSVersion);
             LfsRecord result = m_logFile.WriteRecord(m_clientIndex, LfsRecordType.ClientRestart, 0, 0, 0, clientData);
