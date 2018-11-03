@@ -250,6 +250,14 @@ namespace DiskAccessLibrary.FileSystems.NTFS
             }
             else
             {
+                foreach (Transaction transaction in m_transactions)
+                {
+                    if (transaction.OldestLsn != 0 && transaction.OldestLsn < restartRecord.StartOfCheckpointLsn)
+                    {
+                        restartRecord.StartOfCheckpointLsn = transaction.OldestLsn;
+                    }
+                }
+
                 if (m_openAttributes.Count > 0)
                 {
                     byte[] attributeNameTableBytes;
@@ -272,22 +280,7 @@ namespace DiskAccessLibrary.FileSystems.NTFS
             LfsRecord result = m_logFile.WriteRecord(m_clientIndex, LfsRecordType.ClientRestart, 0, 0, 0, clientData);
             m_lastClientLsn = result.ThisLsn;
             LfsClientRecord clientRecord = m_logFile.GetClientRecord(m_clientIndex);
-            if (isClean)
-            {
-                clientRecord.OldestLsn = restartRecord.StartOfCheckpointLsn;
-            }
-            else
-            {
-                ulong oldestLsn = restartRecord.StartOfCheckpointLsn;
-                foreach (Transaction transaction in m_transactions)
-                {
-                    if (transaction.OldestLsn != 0 && transaction.OldestLsn < oldestLsn)
-                    {
-                        oldestLsn = transaction.OldestLsn;
-                    }
-                }
-                clientRecord.OldestLsn = oldestLsn;
-            }
+            clientRecord.OldestLsn = restartRecord.StartOfCheckpointLsn;
             clientRecord.ClientRestartLsn = result.ThisLsn;
             m_logFile.WriteRestartPage(isClean);
             m_currentRestartRecord = restartRecord;
