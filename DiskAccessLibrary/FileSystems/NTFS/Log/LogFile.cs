@@ -182,11 +182,9 @@ namespace DiskAccessLibrary.FileSystems.NTFS
                 m_restartPage = ReadRestartPage();
             }
 
-            if (m_restartPage.LogRestartArea.IsClean)
-            {
-                // We should clear the CleanDismount flag before making changes to the log file
-                WriteRestartPage(false);
-            }
+            // If the CleanDismount flag is set, write a restart page with a clear CleanDismount flag.
+            // CurrentLsn is used to determine which restart page is more recent, so we are updating the restart page after writing the record.
+            bool updateRestartPage = m_restartPage.LogRestartArea.IsClean;
 
             ushort clientSeqNumber = m_restartPage.LogRestartArea.LogClientArray[clientIndex].SeqNumber;
 
@@ -205,7 +203,7 @@ namespace DiskAccessLibrary.FileSystems.NTFS
             // Update CurrentLsn / LastLsnDataLength
             m_restartPage.LogRestartArea.CurrentLsn = record.ThisLsn;
             m_restartPage.LogRestartArea.LastLsnDataLength = (uint)record.Data.Length;
-            if (record.IsMultiPageRecord)
+            if (updateRestartPage || record.IsMultiPageRecord)
             {
                 // We can optimize by only writing the restart page if we already had one transfer after the last flushed LSN.
                 WriteRestartPage(false);
