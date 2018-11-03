@@ -14,6 +14,7 @@ namespace DiskAccessLibrary.FileSystems.NTFS
     public partial class LogFile : NTFSFile
     {
         private LfsRestartPage m_restartPage;
+        private bool m_isFirstRestartPageTurn;
         private LfsRecordPage m_tailPage;
         private ulong m_tailPageOffsetInFile;
         private bool m_isTailCopyDirty;
@@ -46,6 +47,7 @@ namespace DiskAccessLibrary.FileSystems.NTFS
             if (secondRestartPage.LogRestartArea.CurrentLsn > firstRestartPage.LogRestartArea.CurrentLsn)
             {
                 m_restartPage = secondRestartPage;
+                m_isFirstRestartPageTurn = true;
             }
             else
             {
@@ -105,8 +107,10 @@ namespace DiskAccessLibrary.FileSystems.NTFS
         private void WriteRestartPage(LfsRestartPage restartPage)
         {
             byte[] pageBytes = restartPage.GetBytes((int)restartPage.SystemPageSize, true);
-            WriteData(0, pageBytes);
-            WriteData(restartPage.SystemPageSize, pageBytes);
+            // The NTFS v5.1 driver will always read both restart pages and compare the CurrentLsn to determine which is more recent (even if the CleanDismount flag is set)
+            ulong offset = m_isFirstRestartPageTurn ? 0 : restartPage.SystemPageSize;
+            WriteData(offset, pageBytes);
+            m_isFirstRestartPageTurn = !m_isFirstRestartPageTurn;
         }
 
         public bool IsLogClean()
