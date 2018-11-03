@@ -39,7 +39,18 @@ namespace DiskAccessLibrary.FileSystems.NTFS
                 firstPageBytes = ByteUtils.Concatenate(firstPageBytes, temp);
             }
             MultiSectorHelper.RevertUsaProtection(firstPageBytes, 0);
-            m_restartPage = new LfsRestartPage(firstPageBytes, 0);
+            LfsRestartPage firstRestartPage = new LfsRestartPage(firstPageBytes, 0);
+            byte[] secondPageBytes = ReadData(systemPageSize, (int)systemPageSize);
+            MultiSectorHelper.RevertUsaProtection(secondPageBytes, 0);
+            LfsRestartPage secondRestartPage = new LfsRestartPage(secondPageBytes, 0);
+            if (secondRestartPage.LogRestartArea.CurrentLsn > firstRestartPage.LogRestartArea.CurrentLsn)
+            {
+                m_restartPage = secondRestartPage;
+            }
+            else
+            {
+                m_restartPage = firstRestartPage;
+            }
             return m_restartPage;
         }
 
