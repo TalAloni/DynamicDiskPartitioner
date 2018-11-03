@@ -30,16 +30,16 @@ namespace DiskAccessLibrary.FileSystems.NTFS
 
         private LfsRestartPage ReadRestartPage()
         {
-            byte[] pageBytes = ReadData(0, Volume.BytesPerSector);
-            uint systemPageSize = LfsRestartPage.GetSystemPageSize(pageBytes, 0);
-            int bytesToRead = (int)systemPageSize - pageBytes.Length;
+            byte[] firstPageBytes = ReadData(0, Volume.BytesPerSector);
+            uint systemPageSize = LfsRestartPage.GetSystemPageSize(firstPageBytes, 0);
+            int bytesToRead = (int)systemPageSize - firstPageBytes.Length;
             if (bytesToRead > 0)
             {
-                byte[] temp = ReadData((ulong)pageBytes.Length, bytesToRead);
-                pageBytes = ByteUtils.Concatenate(pageBytes, temp);
+                byte[] temp = ReadData((ulong)firstPageBytes.Length, bytesToRead);
+                firstPageBytes = ByteUtils.Concatenate(firstPageBytes, temp);
             }
-            MultiSectorHelper.RevertUsaProtection(pageBytes, 0);
-            m_restartPage = new LfsRestartPage(pageBytes, 0);
+            MultiSectorHelper.RevertUsaProtection(firstPageBytes, 0);
+            m_restartPage = new LfsRestartPage(firstPageBytes, 0);
             return m_restartPage;
         }
 
