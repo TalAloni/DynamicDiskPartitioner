@@ -14,6 +14,9 @@ namespace DiskAccessLibrary.FileSystems.NTFS
     public partial class LogFile : NTFSFile
     {
         private LfsRestartPage m_restartPage;
+        private LfsRecordPage m_tailPage;
+        private ulong m_tailPageOffsetInFile;
+        private bool m_isTailCopyDirty;
         private bool m_isFirstTailPageTurn;
         private ushort m_nextUpdateSequenceNumber = (ushort)new Random().Next(UInt16.MaxValue);
 
@@ -75,6 +78,12 @@ namespace DiskAccessLibrary.FileSystems.NTFS
             if (m_restartPage == null)
             {
                 m_restartPage = ReadRestartPage();
+            }
+
+            if (isClean && m_isTailCopyDirty)
+            {
+                // Copy the tail page to the correct location in the log file
+                WritePage(m_tailPageOffsetInFile, m_tailPage);
             }
 
             m_restartPage.LogRestartArea.IsClean = isClean;
@@ -212,10 +221,22 @@ namespace DiskAccessLibrary.FileSystems.NTFS
                 page.NextRecordOffset = m_restartPage.LogRestartArea.LogPageDataOffset;
                 page.UpdateSequenceNumber = m_nextUpdateSequenceNumber; // There is no rule governing the value of the USN
                 m_nextUpdateSequenceNumber++;
+
+                m_tailPage = page;
+                m_tailPageOffsetInFile = pageOffsetInFile;
             }
             else
             {
-                page = ReadPage(pageOffsetInFile);
+                if (m_tailPage == null)
+                {
+                    m_tailPage = ReadPage(pageOffsetInFile);;
+                    m_tailPageOffsetInFile = pageOffsetInFile;
+                }
+                else if (m_tailPageOffsetInFile != pageOffsetInFile)
+                {
+                    throw new InvalidOperationException("LFS log records must be written sequentially");
+                }
+                page = m_tailPage;
             }
             int bytesAvailableInFirstPage = (int)m_restartPage.LogPageSize - recordOffsetInPage;
             int bytesToWrite = Math.Min(record.Length, bytesAvailableInFirstPage);
@@ -242,8 +263,32 @@ namespace DiskAccessLibrary.FileSystems.NTFS
                 page.LastEndLsn = record.ThisLsn;
                 page.HasRecordEnd = true;
             }
-            WriteTailCopy(pageOffsetInFile, page);
-            WritePage(pageOffsetInFile, page);
+            // The tail copy is used to avoid losing both the records from the previous IO transfer and the current one if the page becomes corrupted due to a power failue.
+            bool reusePage = !record.IsMultiPageRecord && (bytesAvailableInFirstPage >= m_restartPage.LogRestartArea.RecordHeaderLength);
+            if (reusePage)
+            {
+                if (m_isTailCopyDirty || initializeNewPage)
+                {
+                    WritePage(pageOffsetInFile, page);
+                    m_isTailCopyDirty = false;
+                }
+                else
+                {
+                    WriteTailCopy(pageOffsetInFile, page); ;
+                    m_isTailCopyDirty = true;
+                }
+            }
+            else
+            {
+                if (!m_isTailCopyDirty && !initializeNewPage)
+                {
+                    // We are about to overwrite a page from an older transfer that does not have a tail copy, create a tail copy
+                    WriteTailCopy(pageOffsetInFile, page);
+                }
+                WritePage(pageOffsetInFile, page);
+                m_tailPage = null;
+                m_isTailCopyDirty = false;
+            }
 
             int pagePosition = 2;
             while (bytesRemaining > 0)
@@ -265,6 +310,13 @@ namespace DiskAccessLibrary.FileSystems.NTFS
                     nextPage.LastEndLsn = record.ThisLsn;
                     nextPage.NextRecordOffset = (ushort)(m_restartPage.LogRestartArea.LogPageDataOffset + bytesToWrite);
                     nextPage.Flags |= LfsRecordPageFlags.RecordEnd;
+                    int bytesAvailableInLastPage = (int)m_restartPage.LogPageSize - ((int)m_restartPage.LogRestartArea.LogPageDataOffset + bytesToWrite);
+                    bool reuseLastPage = (bytesAvailableInLastPage >= m_restartPage.LogRestartArea.RecordHeaderLength);
+                    if (reuseLastPage)
+                    {
+                        m_tailPage = nextPage;
+                        m_tailPageOffsetInFile = pageOffsetInFile;
+                    }
                 }
                 nextPage.PageCount = (ushort)pageCount;
                 nextPage.PagePosition = (ushort)pagePosition;
@@ -350,7 +402,14 @@ namespace DiskAccessLibrary.FileSystems.NTFS
         // Placeholder method that will implement caching in the future
         private LfsRecordPage ReadPage(ulong pageOffset)
         {
-            return ReadPageFromFile(pageOffset);
+            if (m_tailPage != null && pageOffset == m_tailPageOffsetInFile)
+            {
+                return m_tailPage;
+            }
+            else
+            {
+                return ReadPageFromFile(pageOffset);
+            }
         }
 
         private LfsRecordPage ReadPageFromFile(ulong pageOffset)
@@ -388,11 +447,11 @@ namespace DiskAccessLibrary.FileSystems.NTFS
             ulong tailPageOffset = m_isFirstTailPageTurn ? firstTailPageOffset : secondTailPageOffset;
             m_isFirstTailPageTurn = !m_isFirstTailPageTurn;
 
-            ulong lastPageLsn = page.LastLsnOrFileOffset;
+            ulong lastLsn = page.LastLsnOrFileOffset;
             page.LastLsnOrFileOffset = pageOffset;
             WritePage(tailPageOffset, page);
-            // Restore page to its original state
-            page.LastLsnOrFileOffset = lastPageLsn;
+            // Restore the page to its original state
+            page.LastLsnOrFileOffset = lastLsn;
         }
 
         private ulong LsnToPageOffsetInFile(ulong lsn)
