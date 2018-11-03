@@ -202,20 +202,24 @@ namespace DiskAccessLibrary.FileSystems.NTFS
             record.ClientDataLength = (uint)clientData.Length;
             record.Data = clientData;
             record.ThisLsn = GetNextLsn();
-            WriteRecord(record);
+            bool endOfTransfer;
+            WriteRecord(record, out endOfTransfer);
 
             // Update CurrentLsn / LastLsnDataLength
             m_restartPage.LogRestartArea.CurrentLsn = record.ThisLsn;
             m_restartPage.LogRestartArea.LastLsnDataLength = (uint)record.Data.Length;
-            if (updateRestartPage || record.IsMultiPageRecord)
+            if (updateRestartPage || endOfTransfer)
             {
-                // We can optimize by only writing the restart page if we already had one transfer after the last flushed LSN.
+                // When the NTFS v5.1 driver restarts a dirty log file, it does not expect to find more than one transfer after the last flushed LSN.
+                // If more than one transfer is encountered, it is treated as a fatal error and the driver will report STATUS_DISK_CORRUPT_ERROR.
+                // Updating the CurrentLsn / LastLsnDataLength in the restart area will make the NTFS driver see the next page we write as the only transfer after the flushed LSN.
                 WriteRestartPage(false);
             }
             return record;
         }
 
-        private void WriteRecord(LfsRecord record)
+        /// <param name="endOfTransfer">True if this record is the last record in an IO transfer</param>
+        private void WriteRecord(LfsRecord record, out bool endOfTransfer)
         {
             ulong pageOffsetInFile = LsnToPageOffsetInFile(record.ThisLsn);
             int recordOffsetInPage = LsnToRecordOffsetInPage(record.ThisLsn);
@@ -223,11 +227,6 @@ namespace DiskAccessLibrary.FileSystems.NTFS
             LfsRecordPage page;
             if (initializeNewPage) // We write the record at the beginning of a new page, we must initialize the page
             {
-                // When the NTFS v5.1 driver restarts a dirty log file, it does not expect to find more than one transfer after the last flushed LSN.
-                // If more than one transfer is encountered, it is treated as a fatal error and the driver will report STATUS_DISK_CORRUPT_ERROR.
-                // Updating the CurrentLsn / LastLsnDataLength in the restart area will make the NTFS driver see the new page as the only transfer after the flushed LCN.
-                WriteRestartPage(false);
-
                 page = new LfsRecordPage((int)m_restartPage.LogPageSize, m_restartPage.LogRestartArea.LogPageDataOffset);
                 page.LastLsnOrFileOffset = 0;
                 page.LastEndLsn = 0;
@@ -338,6 +337,7 @@ namespace DiskAccessLibrary.FileSystems.NTFS
                 WritePage(pageOffsetInFile, nextPage);
                 pagePosition++;
             }
+            endOfTransfer = !reusePage;
         }
 
         /// <summary>
