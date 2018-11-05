@@ -19,6 +19,7 @@ namespace DiskAccessLibrary.FileSystems.NTFS
         private ulong m_tailPageOffsetInFile;
         private bool m_isTailCopyDirty;
         private bool m_isFirstTailPageTurn;
+        private List<LfsRecord> m_recordsPendingWrite = new List<LfsRecord>();
         private ushort m_nextUpdateSequenceNumber = (ushort)new Random().Next(UInt16.MaxValue);
 
         public LogFile(NTFSVolume volume) : base(volume, MasterFileTable.LogSegmentReference)
@@ -91,6 +92,13 @@ namespace DiskAccessLibrary.FileSystems.NTFS
             if (m_restartPage == null)
             {
                 m_restartPage = ReadRestartPage();
+            }
+
+            if (m_recordsPendingWrite.Count > 0)
+            {
+                bool endOfTransferRecorded;
+                FlushRecords(m_recordsPendingWrite, out endOfTransferRecorded);
+                m_recordsPendingWrite.Clear();
             }
 
             if (isClean && m_isTailCopyDirty)
@@ -179,7 +187,7 @@ namespace DiskAccessLibrary.FileSystems.NTFS
             return record;
         }
 
-        public LfsRecord WriteRecord(int clientIndex, LfsRecordType recordType, ulong clientPreviousLsn, ulong clientUndoNextLsn, uint transactionId, byte[] clientData)
+        public LfsRecord WriteRecord(int clientIndex, LfsRecordType recordType, ulong clientPreviousLsn, ulong clientUndoNextLsn, uint transactionId, byte[] clientData, bool flushToDisk)
         {
             if (m_restartPage == null)
             {
@@ -201,10 +209,13 @@ namespace DiskAccessLibrary.FileSystems.NTFS
             record.ClientDataLength = (uint)clientData.Length;
             record.Data = clientData;
             record.ThisLsn = GetNextLsn();
-            List<LfsRecord> recordsToFlush = new List<LfsRecord>();
-            recordsToFlush.Add(record);
-            bool endOfTransferRecorded;
-            FlushRecords(recordsToFlush, out endOfTransferRecorded);
+            m_recordsPendingWrite.Add(record);
+            bool endOfTransferRecorded = false;
+            if (flushToDisk)
+            {
+                FlushRecords(m_recordsPendingWrite, out endOfTransferRecorded);
+                m_recordsPendingWrite.Clear();
+            }
 
             // Update CurrentLsn / LastLsnDataLength
             m_restartPage.LogRestartArea.CurrentLsn = record.ThisLsn;
