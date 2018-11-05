@@ -186,9 +186,8 @@ namespace DiskAccessLibrary.FileSystems.NTFS
                 m_restartPage = ReadRestartPage();
             }
 
-            // If the CleanDismount flag is set, write a restart page with a clear CleanDismount flag.
-            // CurrentLsn is used to determine which restart page is more recent, so we are updating the restart page after writing the record.
-            bool updateRestartPage = m_restartPage.LogRestartArea.IsClean;
+            // It's perfectly valid to clear the CleanDismount flag after writing the transfer.
+            // Note that CurrentLsn is used to determine which is restart page recent so we should not update the restart page without incrementing CurrentLsn first.
 
             ushort clientSeqNumber = m_restartPage.LogRestartArea.LogClientArray[clientIndex].SeqNumber;
 
@@ -208,7 +207,10 @@ namespace DiskAccessLibrary.FileSystems.NTFS
             // Update CurrentLsn / LastLsnDataLength
             m_restartPage.LogRestartArea.CurrentLsn = record.ThisLsn;
             m_restartPage.LogRestartArea.LastLsnDataLength = (uint)record.Data.Length;
-            if (updateRestartPage || endOfTransferRecorded)
+
+            // If the client is writing a ClientRestart, the call to write a restart page (when updating the client record) is imminent, so no need to write a restart page now.
+            // Note that CurrentLsn is used to determine which is restart page recent so we should not update the restart page without incrementing CurrentLsn.
+            if (recordType != LfsRecordType.ClientRestart && endOfTransferRecorded)
             {
                 // When the NTFS v5.1 driver restarts a dirty log file, it does not expect to find more than one transfer after the last flushed LSN.
                 // If more than one transfer is encountered, it is treated as a fatal error and the driver will report STATUS_DISK_CORRUPT_ERROR.
