@@ -202,13 +202,13 @@ namespace DiskAccessLibrary.FileSystems.NTFS
             record.ClientDataLength = (uint)clientData.Length;
             record.Data = clientData;
             record.ThisLsn = GetNextLsn();
-            bool endOfTransfer;
-            WriteRecord(record, out endOfTransfer);
+            bool endOfTransferRecorded;
+            WriteRecord(record, out endOfTransferRecorded);
 
             // Update CurrentLsn / LastLsnDataLength
             m_restartPage.LogRestartArea.CurrentLsn = record.ThisLsn;
             m_restartPage.LogRestartArea.LastLsnDataLength = (uint)record.Data.Length;
-            if (updateRestartPage || endOfTransfer)
+            if (updateRestartPage || endOfTransferRecorded)
             {
                 // When the NTFS v5.1 driver restarts a dirty log file, it does not expect to find more than one transfer after the last flushed LSN.
                 // If more than one transfer is encountered, it is treated as a fatal error and the driver will report STATUS_DISK_CORRUPT_ERROR.
@@ -218,8 +218,8 @@ namespace DiskAccessLibrary.FileSystems.NTFS
             return record;
         }
 
-        /// <param name="endOfTransfer">True if this record is the last record in an IO transfer</param>
-        private void WriteRecord(LfsRecord record, out bool endOfTransfer)
+        /// <param name="endOfTransferRecorded">True if one or more pages has been filled and the next transfer will be seen as a separate IO transfer</param>
+        private void WriteRecord(LfsRecord record, out bool endOfTransferRecorded)
         {
             ulong pageOffsetInFile = LsnToPageOffsetInFile(record.ThisLsn);
             int recordOffsetInPage = LsnToRecordOffsetInPage(record.ThisLsn);
@@ -337,7 +337,7 @@ namespace DiskAccessLibrary.FileSystems.NTFS
                 WritePage(pageOffsetInFile, nextPage);
                 pagePosition++;
             }
-            endOfTransfer = !reusePage;
+            endOfTransferRecorded = !reusePage;
         }
 
         /// <summary>
