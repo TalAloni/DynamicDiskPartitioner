@@ -229,12 +229,26 @@ namespace DiskAccessLibrary.FileSystems.NTFS
 
         public FileRecord GetVolumeRecord()
         {
-            return GetFileRecord(VolumeSegmentReference);
+            try
+            {
+                return GetFileRecord(VolumeSegmentReference);
+            }
+            catch (InvalidDataException)
+            {
+                throw new InvalidDataException("Invalid $Volume file record");
+            }
         }
 
         public FileRecord GetVolumeBitmapRecord()
         {
-            return GetFileRecord(BitmapSegmentReference);
+            try
+            {
+                return GetFileRecord(BitmapSegmentReference);
+            }
+            catch (InvalidDataException)
+            {
+                throw new InvalidDataException("Invalid $Bitmap file record");
+            }
         }
 
         public void UpdateFileRecord(FileRecord fileRecord, uint transactionID)
