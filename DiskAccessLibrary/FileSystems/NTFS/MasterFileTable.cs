@@ -144,13 +144,8 @@ namespace DiskAccessLibrary.FileSystems.NTFS
         }
 
         private FileRecordSegment GetFileRecordSegment(long segmentNumber)
-        { 
-            NTFSBootRecord bootRecord = m_volume.BootRecord;
-
-            // Note: File record always start at the beginning of a sector
-            // Note: Record can span multiple clusters, or alternatively, several records can be stored in the same cluster
-            long firstSectorIndex = segmentNumber * m_volume.SectorsPerFileRecordSegment;
-            byte[] segmentBytes = m_mftFile.Data.ReadSectors(firstSectorIndex, m_volume.SectorsPerFileRecordSegment);
+        {
+            byte[] segmentBytes = GetFileRecordSegmentBytes(segmentNumber);
 
             if (FileRecordSegment.ContainsFileRecordSegment(segmentBytes))
             {
@@ -162,6 +157,25 @@ namespace DiskAccessLibrary.FileSystems.NTFS
             {
                 return null;
             }
+        }
+
+        private ushort? GetFileRecordSegmentSequenceNumber(long segmentNumber)
+        {
+            byte[] segmentBytes = GetFileRecordSegmentBytes(segmentNumber);
+            if (FileRecordSegment.ContainsFileRecordSegment(segmentBytes))
+            {
+                return FileRecordSegment.GetSequenceNumber(segmentBytes);
+            }
+            return null;
+        }
+
+        private byte[] GetFileRecordSegmentBytes(long segmentNumber)
+        {
+            NTFSBootRecord bootRecord = m_volume.BootRecord;
+            // Note: File record segments always start at the beginning of a sector.
+            // Note: File record segment can span multiple clusters, or alternatively, several segments can be stored in the same cluster.
+            long firstSectorIndex = segmentNumber * m_volume.SectorsPerFileRecordSegment;
+            return m_mftFile.Data.ReadSectors(firstSectorIndex, m_volume.SectorsPerFileRecordSegment);
         }
 
         public FileRecord GetFileRecord(MftSegmentReference fileReference)
@@ -419,9 +433,12 @@ namespace DiskAccessLibrary.FileSystems.NTFS
                 throw new DiskFullException();
             }
 
-            FileRecordSegment previousSegment = GetFileRecordSegment(segmentNumber.Value);
-            ushort sequenceNumber = (previousSegment == null) ? (ushort)1 : previousSegment.SequenceNumber;
-            return new MftSegmentReference(segmentNumber.Value, sequenceNumber);
+            ushort? sequenceNumber = GetFileRecordSegmentSequenceNumber(segmentNumber.Value);
+            if (!sequenceNumber.HasValue)
+            {
+                sequenceNumber = 1;
+            }
+            return new MftSegmentReference(segmentNumber.Value, sequenceNumber.Value);
         }
 
         private MftSegmentReference AllocateFileRecordSegment(uint transactionID)
@@ -440,9 +457,12 @@ namespace DiskAccessLibrary.FileSystems.NTFS
                 segmentNumber = bitmap.AllocateRecord(numberOfUsableBits, transactionID);
             }
 
-            FileRecordSegment previousSegment = GetFileRecordSegment(segmentNumber.Value);
-            ushort sequenceNumber = (previousSegment == null) ? (ushort)1 : previousSegment.SequenceNumber;
-            return new MftSegmentReference(segmentNumber.Value, sequenceNumber);
+            ushort? sequenceNumber = GetFileRecordSegmentSequenceNumber(segmentNumber.Value);
+            if (!sequenceNumber.HasValue)
+            {
+                sequenceNumber = 1;
+            }
+            return new MftSegmentReference(segmentNumber.Value, sequenceNumber.Value);
         }
 
         /// <summary>
