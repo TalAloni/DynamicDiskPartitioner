@@ -457,7 +457,6 @@ namespace DiskAccessLibrary.FileSystems.NTFS
             }
         }
 
-        // Placeholder method that will implement caching in the future
         private LfsRecordPage ReadPage(ulong pageOffset)
         {
             if (m_tailPage != null && pageOffset == m_tailPageOffsetInFile)
