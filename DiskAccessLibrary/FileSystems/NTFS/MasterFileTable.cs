@@ -65,7 +65,7 @@ namespace DiskAccessLibrary.FileSystems.NTFS
             NTFSBootRecord bootRecord = m_volume.BootRecord;
             long mftStartLCN = useMftMirror ? (long)bootRecord.MftMirrorStartLCN : (long)bootRecord.MftStartLCN;
             long mftSegmentNumber = readMftMirror ? MftMirrorSegmentNumber : MasterFileTableSegmentNumber;
-            FileRecordSegment mftRecordSegment = ReadFileRecordSegment(mftStartLCN, mftSegmentNumber);
+            FileRecordSegment mftRecordSegment = ReadMftRecordSegment(mftStartLCN, mftSegmentNumber);
             if (!mftRecordSegment.IsBaseFileRecord)
             {
                 throw new InvalidDataException("Invalid MFT record, not a base record");
@@ -97,7 +97,7 @@ namespace DiskAccessLibrary.FileSystems.NTFS
                     FileRecordSegment segment;
                     try
                     {
-                        segment = ReadFileRecordSegment(mftStartLCN, reference);
+                        segment = ReadMftRecordSegment(mftStartLCN, reference);
                     }
                     catch (InvalidDataException)
                     {
@@ -110,9 +110,9 @@ namespace DiskAccessLibrary.FileSystems.NTFS
             }
         }
 
-        private FileRecordSegment ReadFileRecordSegment(long mftStartLCN, MftSegmentReference reference)
+        private FileRecordSegment ReadMftRecordSegment(long mftStartLCN, MftSegmentReference reference)
         {
-            FileRecordSegment result = ReadFileRecordSegment(mftStartLCN, reference.SegmentNumber);
+            FileRecordSegment result = ReadMftRecordSegment(mftStartLCN, reference.SegmentNumber);
             if (result.SequenceNumber != reference.SequenceNumber)
             {
                 // The file record segment has been freed and reallocated, and an obsolete version is being requested
@@ -125,7 +125,7 @@ namespace DiskAccessLibrary.FileSystems.NTFS
         /// This method is used to read the record segment(s) of the MFT itself.
         /// Only after strapping the MFT we can use GetFileRecordSegment which relies on the MFT file record.
         /// </summary>
-        private FileRecordSegment ReadFileRecordSegment(long mftStartLCN, long segmentNumber)
+        private FileRecordSegment ReadMftRecordSegment(long mftStartLCN, long segmentNumber)
         {
             long sectorIndex = mftStartLCN * m_volume.SectorsPerCluster + segmentNumber * m_volume.SectorsPerFileRecordSegment;
             byte[] segmentBytes = m_volume.ReadSectors(sectorIndex, m_volume.SectorsPerFileRecordSegment);
