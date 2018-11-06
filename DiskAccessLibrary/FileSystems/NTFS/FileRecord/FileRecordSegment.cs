@@ -345,14 +345,14 @@ namespace DiskAccessLibrary.FileSystems.NTFS
             return bytesPerFileRecordSegment - firstAttributeOffset - AttributesEndMarkerLength;
         }
 
-        public static bool ContainsFileRecordSegment(byte[] recordBytes)
+        public static bool ContainsFileRecordSegment(byte[] segmentBytes)
         {
-            return ContainsFileRecordSegment(recordBytes, 0);
+            return ContainsFileRecordSegment(segmentBytes, 0);
         }
 
-        public static bool ContainsFileRecordSegment(byte[] recordBytes, int offset)
+        public static bool ContainsFileRecordSegment(byte[] segmentBytes, int offset)
         {
-            string fileSignature = ByteReader.ReadAnsiString(recordBytes, offset, 4);
+            string fileSignature = ByteReader.ReadAnsiString(segmentBytes, offset, 4);
             return (fileSignature == ValidSignature);
         }
 
