@@ -23,6 +23,10 @@ namespace DiskAccessLibrary.FileSystems.NTFS
         {
             MultiSectorHeader multiSectorHeader = new MultiSectorHeader(buffer, offset + 0x00);
             int position = offset + multiSectorHeader.UpdateSequenceArrayOffset;
+            if (position > buffer.Length - 2)
+            {
+                throw new InvalidDataException("UpdateSequenceArrayOffset is out of range");
+            }
             uint updateSequenceNumber = LittleEndianReader.ReadUInt16(buffer, ref position);
 
             // First do validation check - make sure the USN matches on all sectors)
