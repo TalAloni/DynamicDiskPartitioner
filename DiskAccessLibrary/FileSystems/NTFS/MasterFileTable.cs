@@ -94,15 +94,17 @@ namespace DiskAccessLibrary.FileSystems.NTFS
 
                 foreach (MftSegmentReference reference in references)
                 {
-                    FileRecordSegment segment = ReadFileRecordSegment(mftStartLCN, reference);
-                    if (segment != null)
+                    FileRecordSegment segment;
+                    try
                     {
-                        recordSegments.Add(segment);
+                        segment = ReadFileRecordSegment(mftStartLCN, reference);
                     }
-                    else
+                    catch (InvalidDataException)
                     {
-                        throw new InvalidDataException("Invalid MFT record, missing segment");
+                        throw new InvalidDataException("Invalid MFT record, referenced segment is invalid");
                     }
+
+                    recordSegments.Add(segment);
                 }
                 return new FileRecord(recordSegments);
             }
@@ -114,13 +116,13 @@ namespace DiskAccessLibrary.FileSystems.NTFS
             if (result.SequenceNumber != reference.SequenceNumber)
             {
                 // The file record segment has been freed and reallocated, and an obsolete version is being requested
-                return null;
+                throw new InvalidDataException("MftSegmentReference SequenceNumber does not match FileRecordSegment");
             }
             return result;
         }
 
         /// <summary>
-        /// This method is used to read the record segment of the MFT itself.
+        /// This method is used to read the record segment(s) of the MFT itself.
         /// Only after strapping the MFT we can use GetFileRecordSegment which relies on the MFT file record.
         /// </summary>
         private FileRecordSegment ReadFileRecordSegment(long mftStartLCN, long segmentNumber)
