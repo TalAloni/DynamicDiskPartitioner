@@ -359,27 +359,13 @@ namespace DiskAccessLibrary.FileSystems.NTFS
         internal VolumeNameRecord GetVolumeNameRecord()
         {
             FileRecord volumeRecord = m_mft.GetVolumeRecord();
-            if (volumeRecord != null)
-            {
-                return (VolumeNameRecord)volumeRecord.GetAttributeRecord(AttributeType.VolumeName, String.Empty);
-            }
-            else
-            {
-                throw new InvalidDataException("Invalid NTFS volume record");
-            }
+            return (VolumeNameRecord)volumeRecord.GetAttributeRecord(AttributeType.VolumeName, String.Empty);
         }
 
         internal VolumeInformationRecord GetVolumeInformationRecord()
         {
             FileRecord volumeRecord = m_mft.GetVolumeRecord();
-            if (volumeRecord != null)
-            {
-                return (VolumeInformationRecord)volumeRecord.GetAttributeRecord(AttributeType.VolumeInformation, String.Empty);
-            }
-            else
-            {
-                throw new InvalidDataException("Invalid NTFS volume record");
-            }
+            return (VolumeInformationRecord)volumeRecord.GetAttributeRecord(AttributeType.VolumeInformation, String.Empty);
         }
 
         internal AttributeDefinition GetAttributeDefinition()
