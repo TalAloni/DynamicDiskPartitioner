@@ -84,6 +84,7 @@ namespace DiskAccessLibrary.FileSystems.NTFS
 
             string[] components = path.Substring(1).Split('\\');
             MftSegmentReference directoryReference = MasterFileTable.RootDirSegmentReference;
+            m_mftLock.AcquireReaderLock(Timeout.Infinite);
             for (int index = 0; index < components.Length; index++)
             {
                 FileRecord directoryRecord = GetFileRecord(directoryReference);
@@ -91,12 +92,14 @@ namespace DiskAccessLibrary.FileSystems.NTFS
                 {
                     if (!directoryRecord.IsDirectory)
                     {
+                        m_mftLock.ReleaseReaderLock();
                         return null;
                     }
                     IndexData indexData = new IndexData(this, directoryRecord, AttributeType.FileName);
                     directoryReference = indexData.FindFileNameRecordSegmentReference(components[index]);
                     if (directoryReference == null)
                     {
+                        m_mftLock.ReleaseReaderLock();
                         return null;
                     }
                 }
@@ -104,18 +107,20 @@ namespace DiskAccessLibrary.FileSystems.NTFS
                 {
                     IndexData indexData = new IndexData(this, directoryRecord, AttributeType.FileName);
                     MftSegmentReference fileReference = indexData.FindFileNameRecordSegmentReference(components[index]);
+                    m_mftLock.ReleaseReaderLock();
                     if (fileReference == null)
                     {
                         return null;
                     }
                     FileRecord fileRecord = GetFileRecord(fileReference);
-                    if (fileRecord != null && !fileRecord.IsMetaFile)
+                    if (!fileRecord.IsMetaFile)
                     {
                         return fileRecord;
                     }
                 }
             }
 
+            m_mftLock.ReleaseReaderLock();
             return null;
         }
 
