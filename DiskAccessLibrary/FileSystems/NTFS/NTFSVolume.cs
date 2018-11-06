@@ -253,6 +253,16 @@ namespace DiskAccessLibrary.FileSystems.NTFS
             m_mftLock.AcquireWriterLock(Timeout.Infinite);
             IndexData parentDirectoryIndex = new IndexData(this, parentDirectoryRecord, AttributeType.FileName);
 
+            if (fileRecord.IsDirectory)
+            {
+                IndexData directoryIndex = new IndexData(this, fileRecord, AttributeType.FileName);
+                if (!directoryIndex.IsEmpty)
+                {
+                    m_mftLock.ReleaseWriterLock();
+                    throw new DirectoryNotEmptyException();
+                }
+            }
+
             uint transactionID = m_logClient.AllocateTransactionID();
             // Update parent directory index
             List<FileNameRecord> fileNameRecords = fileRecord.FileNameRecords;

@@ -97,14 +97,6 @@ namespace DiskAccessLibrary.FileSystems.NTFS
             FileRecord fileRecord = m_volume.GetFileRecord(path);
             if (fileRecord != null)
             {
-                if (fileRecord.IsDirectory)
-                {
-                    IndexData directoryIndex = new IndexData(m_volume, fileRecord, AttributeType.FileName);
-                    if (!directoryIndex.IsEmpty)
-                    {
-                        throw new DirectoryNotEmptyException();
-                    }
-                }
                 m_volume.DeleteFile(fileRecord);
             }
             else
