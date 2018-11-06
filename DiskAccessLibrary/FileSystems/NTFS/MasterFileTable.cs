@@ -65,10 +65,19 @@ namespace DiskAccessLibrary.FileSystems.NTFS
             NTFSBootRecord bootRecord = m_volume.BootRecord;
             long mftStartLCN = useMftMirror ? (long)bootRecord.MftMirrorStartLCN : (long)bootRecord.MftStartLCN;
             long mftSegmentNumber = readMftMirror ? MftMirrorSegmentNumber : MasterFileTableSegmentNumber;
-            FileRecordSegment mftRecordSegment = ReadMftRecordSegment(mftStartLCN, mftSegmentNumber);
+            FileRecordSegment mftRecordSegment;
+            try
+            {
+                mftRecordSegment = ReadMftRecordSegment(mftStartLCN, mftSegmentNumber);
+            }
+            catch (InvalidDataException)
+            {
+                throw new InvalidDataException("Invalid MFT base record segment");
+            }
+
             if (!mftRecordSegment.IsBaseFileRecord)
             {
-                throw new InvalidDataException("Invalid MFT record, not a base record");
+                throw new InvalidDataException("Invalid MFT file record, MFT segment number did not correspond to a base file record segment");
             }
 
             AttributeRecord attributeListRecord = mftRecordSegment.GetImmediateAttributeRecord(AttributeType.AttributeList, String.Empty);
@@ -101,7 +110,7 @@ namespace DiskAccessLibrary.FileSystems.NTFS
                     }
                     catch (InvalidDataException)
                     {
-                        throw new InvalidDataException("Invalid MFT record, referenced segment is invalid");
+                        throw new InvalidDataException("Invalid MFT file record, referenced segment is invalid");
                     }
 
                     recordSegments.Add(segment);
