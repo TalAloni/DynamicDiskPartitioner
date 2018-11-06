@@ -134,8 +134,8 @@ namespace DiskAccessLibrary.FileSystems.NTFS
             {
                 throw new DiskFullException();
             }
-            FileRecord parentDirectoryRecord = GetFileRecord(parentDirectory);
             m_mftLock.AcquireWriterLock(Timeout.Infinite);
+            FileRecord parentDirectoryRecord = GetFileRecord(parentDirectory);
             IndexData parentDirectoryIndex = new IndexData(this, parentDirectoryRecord, AttributeType.FileName);
 
             if (parentDirectoryIndex.ContainsFileName(fileName))
@@ -193,8 +193,8 @@ namespace DiskAccessLibrary.FileSystems.NTFS
                 throw new DiskFullException();
             }
 
-            FileRecord oldParentDirectoryRecord = GetFileRecord(fileRecord.ParentDirectoryReference);
             m_mftLock.AcquireWriterLock(Timeout.Infinite);
+            FileRecord oldParentDirectoryRecord = GetFileRecord(fileRecord.ParentDirectoryReference);
             IndexData oldParentDirectoryIndex = new IndexData(this, oldParentDirectoryRecord, AttributeType.FileName);
             IndexData newParentDirectoryIndex;
             if (fileRecord.ParentDirectoryReference == newParentDirectory)
@@ -248,9 +248,9 @@ namespace DiskAccessLibrary.FileSystems.NTFS
 
         public virtual void DeleteFile(FileRecord fileRecord)
         {
+            m_mftLock.AcquireWriterLock(Timeout.Infinite);
             MftSegmentReference parentDirectory = fileRecord.ParentDirectoryReference;
             FileRecord parentDirectoryRecord = GetFileRecord(parentDirectory);
-            m_mftLock.AcquireWriterLock(Timeout.Infinite);
             IndexData parentDirectoryIndex = new IndexData(this, parentDirectoryRecord, AttributeType.FileName);
 
             if (fileRecord.IsDirectory)
