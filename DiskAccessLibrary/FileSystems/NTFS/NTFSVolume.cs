@@ -390,53 +390,44 @@ namespace DiskAccessLibrary.FileSystems.NTFS
         public override string ToString()
         {
             StringBuilder builder = new StringBuilder();
-            if (m_bootRecord != null)
+            builder.AppendLine("Bytes Per Sector: " + m_bootRecord.BytesPerSector);
+            builder.AppendLine("Bytes Per Cluster: " + m_bootRecord.BytesPerCluster);
+            builder.AppendLine("Bytes Per File Record Segment: " + m_bootRecord.BytesPerFileRecordSegment);
+            builder.AppendLine("First MFT Cluster (LCN): " + m_bootRecord.MftStartLCN);
+            builder.AppendLine("First MFT Mirror Cluster (LCN): " + m_bootRecord.MftMirrorStartLCN);
+            builder.AppendLine("Volume size (bytes): " + this.Size);
+            builder.AppendLine();
+
+            VolumeInformationRecord volumeInformationRecord = GetVolumeInformationRecord();
+            builder.AppendFormat("NTFS Version: {0}.{1}\n", volumeInformationRecord.MajorVersion, volumeInformationRecord.MinorVersion);
+            builder.AppendLine();
+
+            FileRecord mftRecord = m_mft.GetMftRecord();
+            builder.AppendLine("Number of $MFT Data Runs: " + mftRecord.NonResidentDataRecord.DataRunSequence.Count);
+            builder.AppendLine("$MFT Size in Clusters: " + mftRecord.NonResidentDataRecord.DataRunSequence.DataClusterCount);
+
+            builder.Append(mftRecord.NonResidentDataRecord.DataRunSequence.ToString());
+
+            builder.AppendLine("Number of $MFT Attributes: " + mftRecord.Attributes.Count);
+            builder.AppendLine("Length of $MFT Attributes: " + mftRecord.AttributesLengthOnDisk);
+            builder.AppendLine();
+
+            FileRecord volumeBitmapRecord = m_mft.GetVolumeBitmapRecord();
+            if (volumeBitmapRecord != null)
             {
-                builder.AppendLine("Bytes Per Sector: " + m_bootRecord.BytesPerSector);
-                builder.AppendLine("Bytes Per Cluster: " + m_bootRecord.BytesPerCluster);
-                builder.AppendLine("Bytes Per File Record Segment: " + m_bootRecord.BytesPerFileRecordSegment);
-                builder.AppendLine("First MFT Cluster (LCN): " + m_bootRecord.MftStartLCN);
-                builder.AppendLine("First MFT Mirror Cluster (LCN): " + m_bootRecord.MftMirrorStartLCN);
-                builder.AppendLine("Volume size (bytes): " + this.Size);
-                builder.AppendLine();
+                builder.AppendLine("Volume Bitmap Start LCN: " + volumeBitmapRecord.NonResidentDataRecord.DataRunSequence.FirstDataRunLCN);
+                builder.AppendLine("Volume Bitmap Size in Clusters: " + volumeBitmapRecord.NonResidentDataRecord.DataRunSequence.DataClusterCount);
 
-                VolumeInformationRecord volumeInformationRecord = GetVolumeInformationRecord();
-                if (volumeInformationRecord != null)
-                {
-                    builder.AppendFormat("NTFS Version: {0}.{1}\n", volumeInformationRecord.MajorVersion, volumeInformationRecord.MinorVersion);
-                    builder.AppendLine();
-                }
-
-                FileRecord mftRecord = m_mft.GetMftRecord();
-                if (mftRecord != null)
-                {
-                    builder.AppendLine("Number of $MFT Data Runs: " + mftRecord.NonResidentDataRecord.DataRunSequence.Count);
-                    builder.AppendLine("$MFT Size in Clusters: " + mftRecord.NonResidentDataRecord.DataRunSequence.DataClusterCount);
-
-                    builder.Append(mftRecord.NonResidentDataRecord.DataRunSequence.ToString());
-
-                    builder.AppendLine("Number of $MFT Attributes: " + mftRecord.Attributes.Count);
-                    builder.AppendLine("Length of $MFT Attributes: " + mftRecord.AttributesLengthOnDisk);
-                    builder.AppendLine();
-
-                    FileRecord volumeBitmapRecord = m_mft.GetVolumeBitmapRecord();
-                    if (volumeBitmapRecord != null)
-                    {
-                        builder.AppendLine("Volume Bitmap Start LCN: " + volumeBitmapRecord.NonResidentDataRecord.DataRunSequence.FirstDataRunLCN);
-                        builder.AppendLine("Volume Bitmap Size in Clusters: " + volumeBitmapRecord.NonResidentDataRecord.DataRunSequence.DataClusterCount);
-
-                        builder.AppendLine("Number of Volume Bitmap Attributes: " + volumeBitmapRecord.Attributes.Count);
-                        builder.AppendLine("Length of Volume Bitmap Attributes: " + volumeBitmapRecord.AttributesLengthOnDisk);
-                    }
-                }
-
-                byte[] bootRecord = ReadSectors(0, 1);
-                long backupBootSectorIndex = (long)m_bootRecord.TotalSectors;
-                byte[] backupBootRecord = ReadSectors(backupBootSectorIndex, 1);
-                builder.AppendLine();
-                builder.AppendLine("Valid backup boot sector: " + ByteUtils.AreByteArraysEqual(bootRecord, backupBootRecord));
-                builder.AppendLine("Free space: " + this.FreeSpace);
+                builder.AppendLine("Number of Volume Bitmap Attributes: " + volumeBitmapRecord.Attributes.Count);
+                builder.AppendLine("Length of Volume Bitmap Attributes: " + volumeBitmapRecord.AttributesLengthOnDisk);
             }
+
+            byte[] bootRecord = ReadSectors(0, 1);
+            long backupBootSectorIndex = (long)m_bootRecord.TotalSectors;
+            byte[] backupBootRecord = ReadSectors(backupBootSectorIndex, 1);
+            builder.AppendLine();
+            builder.AppendLine("Valid backup boot sector: " + ByteUtils.AreByteArraysEqual(bootRecord, backupBootRecord));
+            builder.AppendLine("Free space: " + this.FreeSpace);
             return builder.ToString();
         }
 
