@@ -289,24 +289,25 @@ namespace DiskAccessLibrary.FileSystems.NTFS
 
         public virtual KeyValuePairList<MftSegmentReference, FileNameRecord> GetFileNameRecordsInDirectory(MftSegmentReference directoryReference)
         {
+            m_mftLock.AcquireReaderLock(Timeout.Infinite);
             FileRecord directoryRecord = GetFileRecord(directoryReference);
-            KeyValuePairList<MftSegmentReference, FileNameRecord> result = null;
-            if (directoryRecord != null && directoryRecord.IsDirectory)
+            if (!directoryRecord.IsDirectory)
             {
-                m_mftLock.AcquireReaderLock(Timeout.Infinite);
-                IndexData indexData = new IndexData(this, directoryRecord, AttributeType.FileName);
-                result = indexData.GetAllFileNameRecords();
                 m_mftLock.ReleaseReaderLock();
+                throw new ArgumentException("directoryReference belongs to a file record which is not a directory");
+            }
+            IndexData indexData = new IndexData(this, directoryRecord, AttributeType.FileName);
+            KeyValuePairList<MftSegmentReference, FileNameRecord> result = indexData.GetAllFileNameRecords();
+            m_mftLock.ReleaseReaderLock();
 
-                for (int index = 0; index < result.Count; index++)
+            for (int index = 0; index < result.Count; index++)
+            {
+                bool isMetaFile = (result[index].Key.SegmentNumber < MasterFileTable.FirstUserSegmentNumber);
+                if (result[index].Value.Flags == FileNameFlags.DOS || isMetaFile)
                 {
-                    bool isMetaFile = (result[index].Key.SegmentNumber < MasterFileTable.FirstUserSegmentNumber);
-                    if (result[index].Value.Flags == FileNameFlags.DOS || isMetaFile)
-                    {
-                        // The same FileRecord can have multiple FileNameRecord entries, each with its own namespace
-                        result.RemoveAt(index);
-                        index--;
-                    }
+                    // The same FileRecord can have multiple FileNameRecord entries, each with its own namespace
+                    result.RemoveAt(index);
+                    index--;
                 }
             }
             return result;
