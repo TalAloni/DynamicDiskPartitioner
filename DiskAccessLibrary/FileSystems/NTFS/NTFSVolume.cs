@@ -302,6 +302,18 @@ namespace DiskAccessLibrary.FileSystems.NTFS
             return result;
         }
 
+        internal void UpdateDirectoryIndex(MftSegmentReference parentDirectory, List<FileNameRecord> fileNameRecords)
+        {
+            m_mftLock.AcquireWriterLock(Timeout.Infinite);
+            FileRecord parentDirectoryRecord = GetFileRecord(parentDirectory);
+            IndexData parentDirectoryIndex = new IndexData(this, parentDirectoryRecord, AttributeType.FileName);
+            foreach (FileNameRecord fileNameRecord in fileNameRecords)
+            {
+                parentDirectoryIndex.UpdateFileNameRecord(fileNameRecord);
+            }
+            m_mftLock.ReleaseWriterLock();
+        }
+
         // logical cluster
         protected internal byte[] ReadCluster(long clusterLCN)
         {

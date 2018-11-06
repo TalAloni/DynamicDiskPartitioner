@@ -72,15 +72,8 @@ namespace DiskAccessLibrary.FileSystems.NTFS
                 fileNameRecord.FileSize = this.Data.Length;
             }
             m_volume.UpdateFileRecord(m_fileRecord);
-
             // Update directory index
-            MftSegmentReference parentDirectory = m_fileRecord.ParentDirectoryReference;
-            FileRecord parentDirectoryRecord = m_volume.GetFileRecord(parentDirectory);
-            IndexData parentDirectoryIndex = new IndexData(m_volume, parentDirectoryRecord, AttributeType.FileName);
-            foreach (FileNameRecord fileNameRecord in fileNameRecords)
-            {
-                parentDirectoryIndex.UpdateFileNameRecord(fileNameRecord);
-            }
+            m_volume.UpdateDirectoryIndex(m_fileRecord.ParentDirectoryReference, fileNameRecords);
         }
 
         public AttributeData Data
