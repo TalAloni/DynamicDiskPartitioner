@@ -160,12 +160,12 @@ namespace DiskAccessLibrary.FileSystems.NTFS
             return fileRecord;
         }
 
-        protected internal virtual void UpdateFileRecord(FileRecord fileRecord)
+        protected internal void UpdateFileRecord(FileRecord fileRecord)
         {
             UpdateFileRecord(fileRecord, null);
         }
 
-        protected internal virtual void UpdateFileRecord(FileRecord fileRecord, uint? transactionID)
+        protected internal void UpdateFileRecord(FileRecord fileRecord, uint? transactionID)
         {
             m_mftLock.AcquireWriterLock(Timeout.Infinite);
             bool allocateTransactionID = !transactionID.HasValue;
