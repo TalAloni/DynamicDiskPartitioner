@@ -356,6 +356,16 @@ namespace DiskAccessLibrary.FileSystems.NTFS
             return (fileSignature == ValidSignature);
         }
 
+        public static ushort GetSequenceNumber(byte[] segmentBytes)
+        {
+            return GetSequenceNumber(segmentBytes, 0);
+        }
+
+        public static ushort GetSequenceNumber(byte[] segmentBytes, int offset)
+        {
+            return LittleEndianConverter.ToUInt16(segmentBytes, offset + 0x10);
+        }
+
         public static bool ContainsSegmentNumber(List<FileRecordSegment> list, long segmentNumber)
         {
             foreach (FileRecordSegment segment in list)
