@@ -148,17 +148,8 @@ namespace DiskAccessLibrary.FileSystems.NTFS
         private FileRecordSegment GetFileRecordSegment(long segmentNumber)
         {
             byte[] segmentBytes = GetFileRecordSegmentBytes(segmentNumber);
-
-            if (FileRecordSegment.ContainsFileRecordSegment(segmentBytes))
-            {
-                MultiSectorHelper.RevertUsaProtection(segmentBytes, 0);
-                FileRecordSegment recordSegment = new FileRecordSegment(segmentBytes, 0, segmentNumber);
-                return recordSegment;
-            }
-            else
-            {
-                return null;
-            }
+            MultiSectorHelper.RevertUsaProtection(segmentBytes, 0);
+            return new FileRecordSegment(segmentBytes, 0, segmentNumber);
         }
 
         private ushort? GetFileRecordSegmentSequenceNumber(long segmentNumber)
@@ -182,65 +173,52 @@ namespace DiskAccessLibrary.FileSystems.NTFS
 
         public FileRecord GetFileRecord(MftSegmentReference fileReference)
         {
-            FileRecord result = GetFileRecord(fileReference.SegmentNumber);
-            if (result != null)
+            FileRecord fileRecord = GetFileRecord(fileReference.SegmentNumber);
+            if (fileRecord.BaseSequenceNumber != fileReference.SequenceNumber)
             {
-                if (result.BaseSequenceNumber != fileReference.SequenceNumber)
-                {
-                    // The file record segment has been freed and reallocated, and an obsolete version is being requested
-                    throw new InvalidDataException("MftSegmentReference SequenceNumber does not match BaseFileRecordSegment");
-                }
+                // The file record segment has been freed and reallocated, and an obsolete version is being requested
+                throw new InvalidDataException("MftSegmentReference SequenceNumber does not match BaseFileRecordSegment");
             }
-            return result;
+            return fileRecord;
         }
 
         public FileRecord GetFileRecord(long baseSegmentNumber)
         {
             FileRecordSegment baseSegment = GetFileRecordSegment(baseSegmentNumber);
-            if (baseSegment != null && baseSegment.IsBaseFileRecord)
+            if (!baseSegment.IsBaseFileRecord)
             {
-                AttributeRecord attributeListRecord = baseSegment.GetImmediateAttributeRecord(AttributeType.AttributeList, String.Empty);
-                if (attributeListRecord == null)
-                {
-                    return new FileRecord(baseSegment);
-                }
-                else
-                {
-                    // The attribute list contains entries for every attribute the record has (excluding the attribute list),
-                    // including attributes that reside within the base record segment.
-                    AttributeList attributeList = new AttributeList(m_volume, attributeListRecord);
-                    List<AttributeListEntry> entries = attributeList.ReadEntries();
-                    List<MftSegmentReference> references = AttributeList.GetSegmentReferenceList(entries);
-                    int baseSegmentIndex = MftSegmentReference.IndexOfSegmentNumber(references, baseSegmentNumber);
-                    
-                    if (baseSegmentIndex >= 0)
-                    {
-                        references.RemoveAt(baseSegmentIndex);
-                    }
+                throw new InvalidDataException("The file record segment associated with baseSegmentNumber is not a base file record segment");
+            }
 
-                    List<FileRecordSegment> recordSegments = new List<FileRecordSegment>();
-                    // we want the base record segment first
-                    recordSegments.Add(baseSegment);
-
-                    foreach (MftSegmentReference reference in references)
-                    {
-                        FileRecordSegment segment = GetFileRecordSegment(reference);
-                        if (segment != null)
-                        {
-                            recordSegments.Add(segment);
-                        }
-                        else
-                        {
-                            // record is invalid
-                            return null;
-                        }
-                    }
-                    return new FileRecord(recordSegments);
-                }
+            AttributeRecord attributeListRecord = baseSegment.GetImmediateAttributeRecord(AttributeType.AttributeList, String.Empty);
+            if (attributeListRecord == null)
+            {
+                return new FileRecord(baseSegment);
             }
             else
             {
-                return null;
+                // The attribute list contains entries for every attribute the record has (excluding the attribute list),
+                // including attributes that reside within the base record segment.
+                AttributeList attributeList = new AttributeList(m_volume, attributeListRecord);
+                List<AttributeListEntry> entries = attributeList.ReadEntries();
+                List<MftSegmentReference> references = AttributeList.GetSegmentReferenceList(entries);
+                int baseSegmentIndex = MftSegmentReference.IndexOfSegmentNumber(references, baseSegmentNumber);
+
+                if (baseSegmentIndex >= 0)
+                {
+                    references.RemoveAt(baseSegmentIndex);
+                }
+
+                List<FileRecordSegment> recordSegments = new List<FileRecordSegment>();
+                // we want the base record segment first
+                recordSegments.Add(baseSegment);
+
+                foreach (MftSegmentReference reference in references)
+                {
+                    FileRecordSegment segment = GetFileRecordSegment(reference);
+                    recordSegments.Add(segment);
+                }
+                return new FileRecord(recordSegments);
             }
         }
 
