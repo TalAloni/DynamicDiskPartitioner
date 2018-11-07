@@ -48,18 +48,8 @@ namespace DiskAccessLibrary
         {
             public UIntPtr Internal;
             public UIntPtr InternalHigh;
-            public uint OffsetLow;
-            public uint OffsetHigh;
+            public long Offset;
             public IntPtr hEvent;
-
-            public long Offset
-            {
-                set
-                {
-                    OffsetLow = (uint)value;
-                    OffsetHigh = (uint)(value >> 32);
-                }
-            }
         }
 
         private SafeFileHandle m_handle;
