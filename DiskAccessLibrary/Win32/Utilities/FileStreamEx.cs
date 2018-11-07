@@ -43,6 +43,9 @@ namespace DiskAccessLibrary
         [DllImport("kernel32.dll", SetLastError = true)]
         private static extern bool SetFileValidData(SafeFileHandle handle, long validDataLength);
 
+        [DllImport("kernel32.dll", SetLastError = true)]
+        private static extern bool GetOverlappedResult(SafeFileHandle handle, IntPtr lpOverlapped, out uint lpNumberOfBytesTransferred, bool bWait);
+
         [StructLayout(LayoutKind.Sequential, Pack = 8)]
         private struct OVERLAPPED
         {
