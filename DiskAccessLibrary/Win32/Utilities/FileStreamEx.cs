@@ -141,6 +141,7 @@ namespace DiskAccessLibrary
                 success = ReadFile(m_handle, buffer, (uint)buffer.Length, out temp, lpOverlapped);
             }
 
+            uint numberOfBytesRead = 0;
             if (!success)
             {
                 int errorCode = Marshal.GetLastWin32Error();
@@ -149,16 +150,23 @@ namespace DiskAccessLibrary
                     string message = String.Format("Failed to read from position {0} the requested number of bytes ({1}).", position, count);
                     IOExceptionHelper.ThrowIOError(errorCode, message);
                 }
-                bool completed = completionEvent.WaitOne();
+                bool completed = GetOverlappedResult(m_handle, lpOverlapped, out numberOfBytesRead, true);
             }
             completionEvent.Close();
             Marshal.FreeHGlobal(lpOverlapped);
+
+            if (numberOfBytesRead != count)
+            {
+                int errorCode = Marshal.GetLastWin32Error();
+                string message = String.Format("Failed to read from position {0} the requested number of bytes ({1}).", position, count);
+                IOExceptionHelper.ThrowIOError(errorCode, message);
+            }
 
             if (offset != 0)
             {
                 Array.Copy(buffer, 0, array, offset, buffer.Length);
             }
-            return count;
+            return (int)numberOfBytesRead;
         }
 
         /// <remarks>
@@ -185,6 +193,7 @@ namespace DiskAccessLibrary
                 success = WriteFile(m_handle, buffer, (uint)buffer.Length, out temp, lpOverlapped);
             }
 
+            uint numberOfBytesWritten = 0;
             if (!success)
             {
                 int errorCode = Marshal.GetLastWin32Error();
@@ -193,10 +202,17 @@ namespace DiskAccessLibrary
                     string message = String.Format("Failed to write to position {0} the requested number of bytes ({1}).", position, count);
                     IOExceptionHelper.ThrowIOError(errorCode, message);
                 }
-                bool completed = completionEvent.WaitOne();
+                bool completed = GetOverlappedResult(m_handle, lpOverlapped, out numberOfBytesWritten, true); 
             }
             completionEvent.Close();
             Marshal.FreeHGlobal(lpOverlapped);
+
+            if (numberOfBytesWritten != count)
+            {
+                int errorCode = Marshal.GetLastWin32Error();
+                string message = String.Format("Failed to write to position {0} the requested number of bytes ({1}).", position, count);
+                IOExceptionHelper.ThrowIOError(errorCode, message);
+            }
         }
 
         public override void Flush()
