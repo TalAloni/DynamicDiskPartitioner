@@ -142,8 +142,8 @@ namespace DiskAccessLibrary
             }
             else
             {
-                bufferHandle = GCHandle.Alloc(buffer, GCHandleType.Pinned);
                 buffer = new byte[count];
+                bufferHandle = GCHandle.Alloc(buffer, GCHandleType.Pinned);
                 success = ReadFile(m_handle, buffer, (uint)buffer.Length, out temp, lpOverlapped);
             }
 
