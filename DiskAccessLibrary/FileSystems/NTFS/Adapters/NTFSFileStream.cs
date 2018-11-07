@@ -21,6 +21,8 @@ namespace DiskAccessLibrary.FileSystems.NTFS
         private bool m_canWrite;
         private long m_position;
 
+        public event EventHandler Closed;
+
         public NTFSFileStream(NTFSFile file, FileAccess access)
         {
             m_file = file;
@@ -73,6 +75,16 @@ namespace DiskAccessLibrary.FileSystems.NTFS
             Array.Copy(buffer, offset, data, 0, count);
             m_file.WriteData((ulong)m_position, data);
             m_position += count;
+        }
+
+        public override void Close()
+        {
+            base.Close();
+            EventHandler handler = Closed;
+            if (handler != null)
+            {
+                handler(this, EventArgs.Empty);
+            }
         }
 
         public override void Flush()
