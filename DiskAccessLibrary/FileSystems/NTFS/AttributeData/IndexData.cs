@@ -316,8 +316,15 @@ namespace DiskAccessLibrary.FileSystems.NTFS
                     }
                     else
                     {
-                        path.RemoveAt(path.Count - 1);
-                        RemovePointer(path, indexInParentRecord);
+                        if (path.Count > 1)
+                        {
+                            path.RemoveAt(path.Count - 1);
+                            RemovePointer(path, indexInParentRecord);
+                        }
+                        else
+                        {
+                            RemovePointerFromRoot(indexInParentRecord);
+                        }
                         DeallocateIndexRecord(recordIndex);
                     }
                 }
