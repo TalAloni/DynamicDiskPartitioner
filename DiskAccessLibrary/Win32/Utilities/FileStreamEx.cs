@@ -151,6 +151,7 @@ namespace DiskAccessLibrary
                 }
                 bool completed = completionEvent.WaitOne();
             }
+            completionEvent.Close();
             Marshal.FreeHGlobal(lpOverlapped);
 
             if (offset != 0)
@@ -194,6 +195,7 @@ namespace DiskAccessLibrary
                 }
                 bool completed = completionEvent.WaitOne();
             }
+            completionEvent.Close();
             Marshal.FreeHGlobal(lpOverlapped);
         }
 
