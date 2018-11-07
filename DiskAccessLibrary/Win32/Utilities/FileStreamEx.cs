@@ -130,15 +130,15 @@ namespace DiskAccessLibrary
             IntPtr lpOverlapped = Marshal.AllocHGlobal(Marshal.SizeOf(overlapped));
             Marshal.StructureToPtr(overlapped, lpOverlapped, false);
             bool success;
+            byte[] buffer = null;
             if (offset == 0)
             {
                 success = ReadFile(m_handle, array, (uint)count, out temp, lpOverlapped);
             }
             else
             {
-                byte[] buffer = new byte[count];
+                buffer = new byte[count];
                 success = ReadFile(m_handle, buffer, (uint)buffer.Length, out temp, lpOverlapped);
-                Array.Copy(buffer, 0, array, offset, buffer.Length);
             }
 
             if (!success)
@@ -152,6 +152,11 @@ namespace DiskAccessLibrary
                 bool completed = completionEvent.WaitOne();
             }
             Marshal.FreeHGlobal(lpOverlapped);
+
+            if (offset != 0)
+            {
+                Array.Copy(buffer, 0, array, offset, buffer.Length);
+            }
             return count;
         }
 
