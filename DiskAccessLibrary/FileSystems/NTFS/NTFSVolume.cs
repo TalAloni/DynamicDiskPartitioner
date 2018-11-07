@@ -69,7 +69,7 @@ namespace DiskAccessLibrary.FileSystems.NTFS
         {
             if (path != String.Empty && !path.StartsWith(@"\"))
             {
-                throw new ArgumentException("Invalid path");
+                throw new InvalidPathException(String.Format("The path '{0}' is invalid", path));
             }
 
             if (path.EndsWith(@"\"))
@@ -93,13 +93,13 @@ namespace DiskAccessLibrary.FileSystems.NTFS
                     {
                         if (!directoryRecord.IsDirectory)
                         {
-                            return null;
+                            throw new InvalidPathException(String.Format("The path '{0}' is invalid", path));
                         }
                         IndexData indexData = new IndexData(this, directoryRecord, AttributeType.FileName);
                         directoryReference = indexData.FindFileNameRecordSegmentReference(components[index]);
                         if (directoryReference == null)
                         {
-                            return null;
+                            throw new DirectoryNotFoundException(String.Format("Could not find part of the path '{0}'", path));
                         }
                     }
                     else // Last component
@@ -108,7 +108,7 @@ namespace DiskAccessLibrary.FileSystems.NTFS
                         MftSegmentReference fileReference = indexData.FindFileNameRecordSegmentReference(components[index]);
                         if (fileReference == null)
                         {
-                            return null;
+                            throw new FileNotFoundException(String.Format("Could not find file '{0}'", path));
                         }
                         FileRecord fileRecord = GetFileRecord(fileReference);
                         if (!fileRecord.IsMetaFile)
@@ -118,7 +118,8 @@ namespace DiskAccessLibrary.FileSystems.NTFS
                     }
                 }
             }
-            return null;
+            // We should never get here
+            throw new InvalidPathException();
         }
 
         protected internal virtual FileRecord GetFileRecord(MftSegmentReference fileReference)
