@@ -164,7 +164,7 @@ namespace DiskAccessLibrary
 
             if (offset != 0)
             {
-                Array.Copy(buffer, 0, array, offset, buffer.Length);
+                Array.Copy(buffer, 0, array, offset, numberOfBytesRead);
             }
             return (int)numberOfBytesRead;
         }
