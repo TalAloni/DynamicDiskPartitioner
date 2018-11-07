@@ -91,18 +91,14 @@ namespace DiskAccessLibrary
                 Array.Copy(buffer, 0, array, offset, buffer.Length);
             }
 
-            if (numberOfBytesRead == count)
-            {
-                m_position += count;
-                return (int)numberOfBytesRead;
-            }
-            else
+            if (numberOfBytesRead != count)
             {
                 int errorCode = Marshal.GetLastWin32Error();
                 string message = String.Format("Failed to read from position {0} the requested number of bytes ({1}).", this.Position, count);
                 IOExceptionHelper.ThrowIOError(errorCode, message);
-                return 0; // this line will not be reached
             }
+            m_position += count;
+            return (int)numberOfBytesRead;
         }
 
         public override void Write(byte[] array, int offset, int count)
@@ -119,16 +115,13 @@ namespace DiskAccessLibrary
                 WriteFile(m_handle, buffer, (uint)count, out numberOfBytesWritten, IntPtr.Zero);
             }
 
-            if (numberOfBytesWritten == count)
-            {
-                m_position += count;
-            }
-            else
+            if (numberOfBytesWritten != count)
             {
                 int errorCode = Marshal.GetLastWin32Error();
                 string message = String.Format("Failed to write to position {0} the requested number of bytes ({1}).", this.Position, count);
                 IOExceptionHelper.ThrowIOError(errorCode, message);
             }
+            m_position += count;
         }
 
         /// <remarks>
