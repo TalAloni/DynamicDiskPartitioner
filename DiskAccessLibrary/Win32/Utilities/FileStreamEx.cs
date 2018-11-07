@@ -188,15 +188,19 @@ namespace DiskAccessLibrary
             overlapped.hEvent = completionEvent.SafeWaitHandle.DangerousGetHandle();
             IntPtr lpOverlapped = Marshal.AllocHGlobal(Marshal.SizeOf(overlapped));
             Marshal.StructureToPtr(overlapped, lpOverlapped, false);
+            // We MUST pin the buffer being passed to WriteFile until the operation is complete!
+            GCHandle bufferHandle;
             bool success;
             if (offset == 0)
             {
+                bufferHandle = GCHandle.Alloc(array, GCHandleType.Pinned);
                 success = WriteFile(m_handle, array, (uint)count, out temp, lpOverlapped);
             }
             else
             {
                 byte[] buffer = new byte[count];
                 Array.Copy(array, offset, buffer, 0, buffer.Length);
+                bufferHandle = GCHandle.Alloc(buffer, GCHandleType.Pinned);
                 success = WriteFile(m_handle, buffer, (uint)buffer.Length, out temp, lpOverlapped);
             }
 
@@ -211,6 +215,7 @@ namespace DiskAccessLibrary
                 }
                 bool completed = GetOverlappedResult(m_handle, lpOverlapped, out numberOfBytesWritten, true); 
             }
+            bufferHandle.Free();
             completionEvent.Close();
             Marshal.FreeHGlobal(lpOverlapped);
 
