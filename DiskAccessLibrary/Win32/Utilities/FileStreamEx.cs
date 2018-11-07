@@ -131,12 +131,18 @@ namespace DiskAccessLibrary
             Marshal.StructureToPtr(overlapped, lpOverlapped, false);
             bool success;
             byte[] buffer = null;
+            // We MUST pin the buffer being passed to ReadFile until the operation is complete!
+            // Otherwise it will only be pinned for the duration of the P/Invoke and the GC may move it to another
+            // memory location before the callee completes the operation and writes to the original location.
+            GCHandle bufferHandle;
             if (offset == 0)
             {
+                bufferHandle = GCHandle.Alloc(array, GCHandleType.Pinned);
                 success = ReadFile(m_handle, array, (uint)count, out temp, lpOverlapped);
             }
             else
             {
+                bufferHandle = GCHandle.Alloc(buffer, GCHandleType.Pinned);
                 buffer = new byte[count];
                 success = ReadFile(m_handle, buffer, (uint)buffer.Length, out temp, lpOverlapped);
             }
@@ -152,6 +158,7 @@ namespace DiskAccessLibrary
                 }
                 bool completed = GetOverlappedResult(m_handle, lpOverlapped, out numberOfBytesRead, true);
             }
+            bufferHandle.Free();
             completionEvent.Close();
             Marshal.FreeHGlobal(lpOverlapped);
 
