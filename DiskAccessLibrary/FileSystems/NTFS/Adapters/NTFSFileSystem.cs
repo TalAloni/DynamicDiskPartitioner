@@ -17,6 +17,7 @@ namespace DiskAccessLibrary.FileSystems.NTFS
     public class NTFSFileSystem : FileSystem, IExtendableFileSystem
     {
         private NTFSVolume m_volume;
+        private Dictionary<long, List<NTFSFileStream>> m_openStreams = new Dictionary<long, List<NTFSFileStream>>();
 
         public NTFSFileSystem(Volume volume)
         {
@@ -174,8 +175,48 @@ namespace DiskAccessLibrary.FileSystems.NTFS
                 throw new UnauthorizedAccessException();
             }
 
+            List<NTFSFileStream> openStreams;
+            lock (m_openStreams)
+            {
+                if (m_openStreams.TryGetValue(record.BaseSegmentNumber, out openStreams))
+                {
+                    if ((access & FileAccess.Write) != 0)
+                    {
+                        // Currently we only support opening a file stream for write access if no other stream is opened for that file
+                        throw new SharingViolationException();
+                    }
+                    else if ((access & FileAccess.Read) != 0)
+                    {
+                        foreach (NTFSFileStream openStream in openStreams)
+                        {
+                            if (openStream.CanWrite && ((share & FileShare.Write) == 0))
+                            {
+                                throw new SharingViolationException();
+                            }
+                        }
+                    }
+                }
+                else
+                {
+                    openStreams = new List<NTFSFileStream>();
+                    m_openStreams.Add(record.BaseSegmentNumber, openStreams);
+                }
+            }
+
             NTFSFile file = new NTFSFile(m_volume, record);
             NTFSFileStream stream = new NTFSFileStream(file, access);
+            openStreams.Add(stream);
+            stream.Closed += delegate(object sender, EventArgs e)
+            {
+                openStreams.Remove(stream);
+                if (openStreams.Count == 0)
+                {
+                    lock (m_openStreams)
+                    {
+                        m_openStreams.Remove(record.BaseSegmentNumber);
+                    }
+                }
+            };
 
             if (mode == FileMode.Truncate)
             {
