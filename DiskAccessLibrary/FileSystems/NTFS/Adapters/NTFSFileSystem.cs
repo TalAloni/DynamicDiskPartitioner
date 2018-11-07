@@ -175,7 +175,7 @@ namespace DiskAccessLibrary.FileSystems.NTFS
             }
 
             NTFSFile file = new NTFSFile(m_volume, record);
-            NTFSFileStream stream = new NTFSFileStream(file);
+            NTFSFileStream stream = new NTFSFileStream(file, access);
 
             if (mode == FileMode.Truncate)
             {
