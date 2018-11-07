@@ -238,7 +238,6 @@ namespace DiskAccessLibrary.FileSystems.NTFS
         {
             KeyValuePairList<ulong, LfsRecordPage> pagesToWrite = new KeyValuePairList<ulong, LfsRecordPage>();
             int bytesAvailableInPage = (int)m_restartPage.LogPageSize - (int)m_restartPage.LogRestartArea.LogPageDataOffset;
-            int pagePosition = 1;
             LfsRecordPage currentPage = null;
             bool overwriteTailPage = false;
 
@@ -251,11 +250,6 @@ namespace DiskAccessLibrary.FileSystems.NTFS
                 if (initializeNewPage) // We write the record at the beginning of a new page, we must initialize the page
                 {
                     currentPage = new LfsRecordPage((int)m_restartPage.LogPageSize, m_restartPage.LogRestartArea.LogPageDataOffset);
-                    if (recordIndex != 0)
-                    {
-                        pagePosition++;
-                    }
-                    currentPage.PagePosition = (ushort)pagePosition;
                     currentPage.LastLsnOrFileOffset = 0;
                     currentPage.LastEndLsn = 0;
                     currentPage.NextRecordOffset = m_restartPage.LogRestartArea.LogPageDataOffset;
@@ -318,8 +312,6 @@ namespace DiskAccessLibrary.FileSystems.NTFS
                     Array.Copy(recordBytes, recordBytes.Length - bytesRemaining, nextPage.Data, 0, bytesToWrite);
                     bytesRemaining -= bytesToWrite;
 
-                    pagePosition++;
-                    nextPage.PagePosition = (ushort)pagePosition;
                     nextPage.LastLsnOrFileOffset = record.ThisLsn;
                     if (bytesRemaining == 0)
                     {
@@ -361,6 +353,7 @@ namespace DiskAccessLibrary.FileSystems.NTFS
                 {
                     ulong pageOffsetInFile = pagesToWrite[pageIndex].Key;
                     LfsRecordPage page = pagesToWrite[pageIndex].Value;
+                    page.PagePosition = (ushort)(pageIndex + 1);
                     page.PageCount = (ushort)pagesToWrite.Count;
 
                     if (pageIndex == 0 && !m_isTailCopyDirty && overwriteTailPage)
