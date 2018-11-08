@@ -108,24 +108,23 @@ namespace DiskAccessLibrary.FileSystems.NTFS
                 {
                 }
 
-                if (mode == FileMode.CreateNew)
+                if (fileExists)
                 {
-                    if (fileExists)
+                    if (mode == FileMode.CreateNew)
                     {
                         throw new AlreadyExistsException();
                     }
+                    else if (mode == FileMode.Create)
+                    {
+                        mode = FileMode.Truncate;
+                    }
                 }
-
-                if (!fileExists)
+                else
                 {
                     string directoryPath = Path.GetDirectoryName(path);
                     string fileName = Path.GetFileName(path);
                     FileRecord directoryRecord = m_volume.GetFileRecord(directoryPath);
                     fileRecord = m_volume.CreateFile(directoryRecord.BaseSegmentReference, fileName, false);
-                }
-                else if (mode == FileMode.Create)
-                {
-                    mode = FileMode.Truncate;
                 }
             }
             else // Open, Truncate or Append
