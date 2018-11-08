@@ -92,13 +92,13 @@ namespace DiskAccessLibrary.FileSystems.NTFS
 
         public override Stream OpenFile(string path, FileMode mode, FileAccess access, FileShare share, FileOptions options)
         {
-            FileRecord record = null;
+            FileRecord fileRecord = null;
             if (mode == FileMode.CreateNew || mode == FileMode.Create || mode == FileMode.OpenOrCreate)
             {
                 bool fileExists = false;
                 try
                 {
-                    record = m_volume.GetFileRecord(path);
+                    fileRecord = m_volume.GetFileRecord(path);
                     fileExists = true;
                 }
                 catch (FileNotFoundException)
@@ -121,7 +121,7 @@ namespace DiskAccessLibrary.FileSystems.NTFS
                     string directoryPath = Path.GetDirectoryName(path);
                     string fileName = Path.GetFileName(path);
                     FileRecord directoryRecord = m_volume.GetFileRecord(directoryPath);
-                    record = m_volume.CreateFile(directoryRecord.BaseSegmentReference, fileName, false);
+                    fileRecord = m_volume.CreateFile(directoryRecord.BaseSegmentReference, fileName, false);
                 }
                 else if (mode == FileMode.Create)
                 {
@@ -130,10 +130,10 @@ namespace DiskAccessLibrary.FileSystems.NTFS
             }
             else // Open, Truncate or Append
             {
-                record = m_volume.GetFileRecord(path);
+                fileRecord = m_volume.GetFileRecord(path);
             }
 
-            if (record.IsDirectory)
+            if (fileRecord.IsDirectory)
             {
                 throw new UnauthorizedAccessException();
             }
@@ -141,7 +141,7 @@ namespace DiskAccessLibrary.FileSystems.NTFS
             List<NTFSFileStream> openStreams;
             lock (m_openStreams)
             {
-                if (m_openStreams.TryGetValue(record.BaseSegmentNumber, out openStreams))
+                if (m_openStreams.TryGetValue(fileRecord.BaseSegmentNumber, out openStreams))
                 {
                     if ((access & FileAccess.Write) != 0)
                     {
@@ -162,11 +162,11 @@ namespace DiskAccessLibrary.FileSystems.NTFS
                 else
                 {
                     openStreams = new List<NTFSFileStream>();
-                    m_openStreams.Add(record.BaseSegmentNumber, openStreams);
+                    m_openStreams.Add(fileRecord.BaseSegmentNumber, openStreams);
                 }
             }
 
-            NTFSFile file = new NTFSFile(m_volume, record);
+            NTFSFile file = new NTFSFile(m_volume, fileRecord);
             NTFSFileStream stream = new NTFSFileStream(file, access);
             openStreams.Add(stream);
             stream.Closed += delegate(object sender, EventArgs e)
@@ -176,7 +176,7 @@ namespace DiskAccessLibrary.FileSystems.NTFS
                 {
                     lock (m_openStreams)
                     {
-                        m_openStreams.Remove(record.BaseSegmentNumber);
+                        m_openStreams.Remove(fileRecord.BaseSegmentNumber);
                     }
                 }
             };
