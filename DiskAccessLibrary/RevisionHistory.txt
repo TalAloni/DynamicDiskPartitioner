@@ -159,3 +159,30 @@ Revision History:
         NTFS: NTFSVolume: Changed RootDirSegmentReference property from protected internal to public.
         NTFS: IndexHelper: Bugfix: Correctly set BlocksPerIndexRecord when BytesPerIndexRecord > BytesPerCluster.
         NTFS: NTFSVolume: Added support for multithreading.
+
+1.5.2 - FileStreamEx: Fixed ReadOverlapped / WriteOverlapped implementation.
+        NTFS: NTFSFileStream: Added support for read-only and write-only access.
+        NTFS: NTFSFileStream: Added Closed event handler.
+        NTFS: NTFSFileSystem: Keep track of opened streams and throw SharingViolationException when applicable.
+        NTFS: LogFile: Bugfix: NextRecordOffset was not set on the last page of a multipage transfer.
+        NTFS: LogFile: Keep the last page in memory to reduce disk IO.
+        NTFS: NTFSLogClient: Keep the last restart record in memory to avoid reading it from disk when calling WriteRestartRecord().
+        NTFS: NTFSLogClient: Bugfix: StartOfCheckpointLsn was not set correctly when writing a non-clean restart record.
+        NTFS: LogFile: Read both restart pages and use CurrentLsn to determine which is more recent.
+        NTFS: LogFile: WriteRecord: If CleanDismount is set, update the restart page after writing the record.
+        NTFS: LogFile: Always write restart page after completing an IO transfer.
+        NTFS: LogFile: Bugfix: A consecutive restart page was written with the same CurrentLsn when writing ClientRestart.
+        NTFS: LogFile: Replaced WriteRecord() method with FlushRecords() which supports writing multiple records at once.
+        NTFS: LogFile: WriteRecord: Added flushToDisk parameter to reduce number of IO operations.
+        NTFS: Bugfix: Directory index update was not thread-safe.
+        NTFS: Bugfix: Checking if a directory is empty before deleting it was not thread-safe.
+        NTFS: NTFSVolume: Corrected thread-safety issues when creating / moving / deleting files.
+        NTFS: MasterFileTable: GetFileRecordSegment() and GetFileRecord() will no longer return null and will throw InvalidDataException instead.
+        NTFS: NTFSVolume: GetFileRecord: Improved implementation and thread-safety.
+        NTFS: NTFSVolume: Use lock statements instead of ReaderWriterLock to synchronize MFT operations.
+        NTFS: MultiSectorHelper: Throw InvalidDataException if UpdateSequence ArrayOffset value is out of range.
+        NTFS: NTFSVolume: GetFileRecord: throw FileNotFoundException, DirectoryNotFoundException or InvalidPathException instead of returning null.
+        NTFS: IndexData: Bugfix: RemoveEntry threw ArgumentOutOfRangeException in some cases.
+        NTFS: LogFile: FlushRecords: Bugfix: PagePosition was not correctly set upon reuse.
+        NTFS: NTFSFile: Improved implementation, can now access Alternate Data Streams.
+        Added InvalidPathException implementation.        

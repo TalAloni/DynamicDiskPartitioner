@@ -119,3 +119,5 @@ Revision History:
 1.5.0 - Disk properties are now showing bytes per sector (logical).
 
 1.5.1 - Minor improvements.
+
+1.5.2 - Minor improvements.
