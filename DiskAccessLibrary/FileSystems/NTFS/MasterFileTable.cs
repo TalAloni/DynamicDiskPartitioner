@@ -40,7 +40,8 @@ namespace DiskAccessLibrary.FileSystems.NTFS
 
         private NTFSVolume m_volume;
         private FileRecord m_mftRecord;
-        private NTFSFile m_mftFile;
+        private AttributeData m_mftData;
+        private BitmapData m_mftBitmap;
 
         public MasterFileTable(NTFSVolume volume) : this(volume, false, false)
         {
@@ -56,7 +57,19 @@ namespace DiskAccessLibrary.FileSystems.NTFS
         {
             m_volume = volume;
             m_mftRecord = ReadMftRecord(useMftMirror, manageMftMirror);
-            m_mftFile = new NTFSFile(m_volume, m_mftRecord);
+            AttributeRecord dataRecord = m_mftRecord.DataRecord;
+            if (dataRecord == null)
+            {
+                throw new InvalidDataException("Invalid MFT Record, missing Data attribute");
+            }
+            AttributeRecord bitmapRecord = m_mftRecord.BitmapRecord;
+            if (bitmapRecord == null)
+            {
+                throw new InvalidDataException("Invalid MFT Record, missing Bitmap attribute");
+            }
+            m_mftData = new AttributeData(m_volume, m_mftRecord, dataRecord);
+            long numberOfUsableBits = (long)(m_mftData.Length / (uint)m_volume.BytesPerFileRecordSegment);
+            m_mftBitmap = new BitmapData(volume, m_mftRecord, bitmapRecord, numberOfUsableBits);
             AttributeRecordLengthToMakeNonResident = m_volume.BytesPerFileRecordSegment * 5 / 16; // We immitate the NTFS v5.1 driver
         }
 
@@ -177,7 +190,7 @@ namespace DiskAccessLibrary.FileSystems.NTFS
             // Note: File record segments always start at the beginning of a sector.
             // Note: File record segment can span multiple clusters, or alternatively, several segments can be stored in the same cluster.
             long firstSectorIndex = segmentNumber * m_volume.SectorsPerFileRecordSegment;
-            return m_mftFile.Data.ReadSectors(firstSectorIndex, m_volume.SectorsPerFileRecordSegment);
+            return m_mftData.ReadSectors(firstSectorIndex, m_volume.SectorsPerFileRecordSegment);
         }
 
         public FileRecord GetFileRecord(MftSegmentReference fileReference)
@@ -359,7 +372,7 @@ namespace DiskAccessLibrary.FileSystems.NTFS
             recordSegment.LogFileSequenceNumber = 0;
             byte[] recordSegmentBytes = recordSegment.GetBytes(m_volume.BytesPerFileRecordSegment, m_volume.MinorVersion, true);
 
-            m_mftFile.Data.WriteSectors(firstSectorIndex, recordSegmentBytes);
+            m_mftData.WriteSectors(firstSectorIndex, recordSegmentBytes);
         }
 
         public FileRecord CreateFile(List<FileNameRecord> fileNameRecords, uint transactionID)
@@ -425,12 +438,7 @@ namespace DiskAccessLibrary.FileSystems.NTFS
 
         private MftSegmentReference AllocateReservedFileRecordSegment()
         {
-            BitmapData bitmap = m_mftFile.Bitmap;
-            if (bitmap == null)
-            {
-                throw new InvalidDataException("Invalid MFT Record, missing Bitmap attribute");
-            }
-            long? segmentNumber = bitmap.AllocateRecord(FirstReservedSegmentNumber, FirstUserSegmentNumber - 1);
+            long? segmentNumber = m_mftBitmap.AllocateRecord(FirstReservedSegmentNumber, FirstUserSegmentNumber - 1);
             if (!segmentNumber.HasValue)
             {
                 throw new DiskFullException();
@@ -446,18 +454,13 @@ namespace DiskAccessLibrary.FileSystems.NTFS
 
         private MftSegmentReference AllocateFileRecordSegment(uint transactionID)
         {
-            BitmapData bitmap = m_mftFile.Bitmap;
-            if (bitmap == null)
-            {
-                throw new InvalidDataException("Invalid MFT Record, missing Bitmap attribute");
-            }
             long mftBitmapSearchStartIndex = MasterFileTable.FirstUserSegmentNumber;
-            long? segmentNumber = bitmap.AllocateRecord(mftBitmapSearchStartIndex, transactionID);
+            long? segmentNumber = m_mftBitmap.AllocateRecord(mftBitmapSearchStartIndex, transactionID);
             if (!segmentNumber.HasValue)
             {
-                long numberOfUsableBits = bitmap.NumberOfUsableBits;
+                long numberOfUsableBits = m_mftBitmap.NumberOfUsableBits;
                 Extend();
-                segmentNumber = bitmap.AllocateRecord(numberOfUsableBits, transactionID);
+                segmentNumber = m_mftBitmap.AllocateRecord(numberOfUsableBits, transactionID);
             }
 
             ushort? sequenceNumber = GetFileRecordSegmentSequenceNumber(segmentNumber.Value);
@@ -473,15 +476,10 @@ namespace DiskAccessLibrary.FileSystems.NTFS
         /// </summary>
         private void DeallocateFileRecordSegment(FileRecordSegment segment, uint transactionID)
         {
-            BitmapData bitmap = m_mftFile.Bitmap;
-            if (bitmap == null)
-            {
-                throw new InvalidDataException("Invalid MFT Record, missing Bitmap attribute");
-            }
             ushort nextSequenceNumber = (ushort)(segment.SequenceNumber + 1);
             FileRecordSegment segmentToWrite = new FileRecordSegment(segment.SegmentNumber, nextSequenceNumber);
             UpdateFileRecordSegment(segmentToWrite);
-            bitmap.DeallocateRecord(segment.SegmentNumber, transactionID);
+            m_mftBitmap.DeallocateRecord(segment.SegmentNumber, transactionID);
         }
 
         public void Extend()
@@ -496,24 +494,23 @@ namespace DiskAccessLibrary.FileSystems.NTFS
                 throw new DiskFullException();
             }
 
-            // We have to extend the bitmap first because one of the constructor parameters is the size of the data.
             // MFT Bitmap: ValidDataLength could be smaller than FileSize, however, we will later copy the value of ValidDataLength.
             // to the MFT mirror, we have to make sure that the copy will not become stale after writing beyond the current ValidDataLength.
-            m_mftFile.Bitmap.ExtendBitmap(ExtendGranularity, true);
+            m_mftBitmap.ExtendBitmap(ExtendGranularity, true);
 
             // MFT Data: ValidDataLength must be equal to FileSize.
-            // This will take care of the FileNameRecord and RootDirectory index as well.
+            // We are opting to skip updating the FileNameRecord and RootDirectory index.
             // Note: The NTFS v5.1 driver does not bother updating the FileNameRecord.
-            m_mftFile.WriteData(m_mftFile.Data.Length, new byte[additionalDataLength]);
+            m_mftData.WriteBytes(m_mftData.Length, new byte[additionalDataLength]);
 
             // Update the MFT mirror
             MasterFileTable mftMirror = new MasterFileTable(m_volume, false, true);
             // When the MFT has an attribute list, CHKDSK expects the mirror to contain the segment references from the MFT as-is.
             FileRecordSegment mftRecordSegmentFromMirror = mftMirror.GetFileRecordSegment(MasterFileTableSegmentNumber);
             mftRecordSegmentFromMirror.ImmediateAttributes.Clear();
-            mftRecordSegmentFromMirror.ImmediateAttributes.AddRange(m_mftFile.FileRecord.BaseSegment.ImmediateAttributes);
+            mftRecordSegmentFromMirror.ImmediateAttributes.AddRange(m_mftRecord.BaseSegment.ImmediateAttributes);
             // CHKDSK seems to expect the mirror's NextAttributeInstance to be the same as the MFT.
-            mftRecordSegmentFromMirror.NextAttributeInstance = m_mftFile.FileRecord.BaseSegment.NextAttributeInstance;
+            mftRecordSegmentFromMirror.NextAttributeInstance = m_mftRecord.BaseSegment.NextAttributeInstance;
             mftMirror.UpdateFileRecordSegment(mftRecordSegmentFromMirror);
         }
 
