@@ -331,5 +331,13 @@ namespace DiskAccessLibrary.FileSystems.NTFS
                 return m_attributeRecord;
             }
         }
+
+        public string AttributeName
+        {
+            get
+            {
+                return m_attributeRecord.Name;
+            }
+        }
     }
 }
