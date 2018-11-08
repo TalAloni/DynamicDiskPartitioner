@@ -59,6 +59,24 @@ namespace Utilities
             destinationStream.Close();
         }
 
+        public virtual bool Exists(string path)
+        {
+            try
+            {
+                GetEntry(path);
+            }
+            catch (FileNotFoundException)
+            {
+                return false;
+            }
+            catch (DirectoryNotFoundException)
+            {
+                return false;
+            }
+
+            return true;
+        }
+
         public abstract string Name
         {
             get;
