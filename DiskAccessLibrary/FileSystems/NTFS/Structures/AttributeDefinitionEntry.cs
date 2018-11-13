@@ -30,6 +30,15 @@ namespace DiskAccessLibrary.FileSystems.NTFS
         {
         }
 
+        public AttributeDefinitionEntry(string attributeName, AttributeType attributeType, AttributeDefinitionFlags flags, ulong minimumLength, ulong maximumLength)
+        {
+            AttributeName = attributeName;
+            AttributeType = attributeType;
+            Flags = flags;
+            MinimumLength = minimumLength;
+            MaximumLength = maximumLength;
+        }
+
         public AttributeDefinitionEntry(byte[] buffer, int offset)
         {
             AttributeName = ByteReader.ReadUTF16String(buffer, offset + 0x00, AttributeNameLength).TrimEnd(new char[] { '\0' });
