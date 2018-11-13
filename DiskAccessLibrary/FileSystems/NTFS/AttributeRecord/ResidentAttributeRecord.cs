@@ -108,5 +108,26 @@ namespace DiskAccessLibrary.FileSystems.NTFS
             length = (int)Math.Ceiling((double)length / 8) * 8;
             return length;
         }
+
+        public static ResidentAttributeRecord Create(AttributeType type, string name, ushort instance)
+        {
+            switch (type)
+            {
+                case AttributeType.StandardInformation:
+                    return new StandardInformationRecord(name, instance);
+                case AttributeType.FileName:
+                    return new FileNameAttributeRecord(name, instance);
+                case AttributeType.VolumeName:
+                    return new VolumeNameRecord(name, instance);
+                case AttributeType.VolumeInformation:
+                    return new VolumeInformationRecord(name, instance);
+                case AttributeType.IndexRoot:
+                    return new IndexRootRecord(name, instance);
+                case AttributeType.IndexAllocation:
+                    throw new ArgumentException("IndexAllocation attribute is always non-resident");
+                default:
+                    return new ResidentAttributeRecord(type, name, instance);
+            }
+        }
     }
 }

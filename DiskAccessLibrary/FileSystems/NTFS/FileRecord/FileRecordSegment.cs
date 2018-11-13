@@ -153,7 +153,13 @@ namespace DiskAccessLibrary.FileSystems.NTFS
 
         public AttributeRecord CreateAttributeRecord(AttributeType type, string name)
         {
-            AttributeRecord attribute = AttributeRecord.Create(type, name, NextAttributeInstance);
+            bool isResident = (type != AttributeType.IndexAllocation);
+            return CreateAttributeRecord(type, name, isResident);
+        }
+
+        internal AttributeRecord CreateAttributeRecord(AttributeType type, string name, bool isResident)
+        {
+            AttributeRecord attribute = AttributeRecord.Create(type, name, NextAttributeInstance, isResident);
             NextAttributeInstance++;
             FileRecordHelper.InsertSorted(m_immediateAttributes, attribute);
             return attribute;
@@ -161,18 +167,7 @@ namespace DiskAccessLibrary.FileSystems.NTFS
 
         public AttributeRecord CreateAttributeListRecord(bool isResident)
         {
-            AttributeRecord attribute;
-            if (isResident)
-            {
-                attribute = AttributeRecord.Create(AttributeType.AttributeList, String.Empty, NextAttributeInstance);
-            }
-            else
-            {
-                attribute = NonResidentAttributeRecord.Create(AttributeType.AttributeList, String.Empty, NextAttributeInstance);
-            }
-            NextAttributeInstance++;
-            FileRecordHelper.InsertSorted(m_immediateAttributes, attribute);
-            return attribute;
+            return CreateAttributeRecord(AttributeType.AttributeList, String.Empty, isResident);
         }
 
         public AttributeRecord GetImmediateAttributeRecord(AttributeType type, string name)

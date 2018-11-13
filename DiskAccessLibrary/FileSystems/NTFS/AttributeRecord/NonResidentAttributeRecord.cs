@@ -129,10 +129,20 @@ namespace DiskAccessLibrary.FileSystems.NTFS
             }
         }
 
-        public static new NonResidentAttributeRecord Create(AttributeType type, string name, ushort instance)
+        public static NonResidentAttributeRecord Create(AttributeType type, string name, ushort instance)
         {
             switch (type)
             {
+                case AttributeType.StandardInformation:
+                    throw new ArgumentException("StandardInformation attribute is always resident");
+                case AttributeType.FileName:
+                    throw new ArgumentException("FileName attribute is always resident");
+                case AttributeType.VolumeName:
+                    throw new ArgumentException("VolumeName attribute is always resident");
+                case AttributeType.VolumeInformation:
+                    throw new ArgumentException("VolumeInformation attribute is always resident");
+                case AttributeType.IndexRoot:
+                    throw new ArgumentException("IndexRoot attribute is always resident");
                 case AttributeType.IndexAllocation:
                     return new IndexAllocationRecord(name, instance);
                 default:

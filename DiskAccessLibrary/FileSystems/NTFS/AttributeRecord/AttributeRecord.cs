@@ -127,24 +127,15 @@ namespace DiskAccessLibrary.FileSystems.NTFS
             }
         }
 
-        public static AttributeRecord Create(AttributeType type, string name, ushort instance)
+        public static AttributeRecord Create(AttributeType type, string name, ushort instance, bool isResident)
         {
-            switch (type)
+            if (isResident)
             {
-                case AttributeType.StandardInformation:
-                    return new StandardInformationRecord(name, instance);
-                case AttributeType.FileName:
-                    return new FileNameAttributeRecord(name, instance);
-                case AttributeType.VolumeName:
-                    return new VolumeNameRecord(name, instance);
-                case AttributeType.VolumeInformation:
-                    return new VolumeInformationRecord(name, instance);
-                case AttributeType.IndexRoot:
-                    return new IndexRootRecord(name, instance);
-                case AttributeType.IndexAllocation:
-                    return new IndexAllocationRecord(name, instance);
-                default:
-                    return new ResidentAttributeRecord(type, name, instance);
+                return ResidentAttributeRecord.Create(type, name, instance);
+            }
+            else
+            {
+                return NonResidentAttributeRecord.Create(type, name, instance);
             }
         }
 
