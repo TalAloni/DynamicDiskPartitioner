@@ -138,6 +138,14 @@ namespace DiskAccessLibrary.FileSystems.NTFS
             this.Truncate(newLengthInBytes);
         }
 
+        public long NumberOfUsableBits
+        {
+            get
+            {
+                return m_numberOfUsableBits;
+            }
+        }
+
         private static bool IsBitClear(byte[] bitmap, int bitOffsetInBitmap)
         {
             int byteOffset = bitOffsetInBitmap / 8;
@@ -158,14 +166,6 @@ namespace DiskAccessLibrary.FileSystems.NTFS
             int byteOffset = bitOffsetInBitmap / 8;
             int bitOffsetInByte = bitOffsetInBitmap % 8;
             bitmap[byteOffset] &= (byte)(~(0x01 << bitOffsetInByte));
-        }
-
-        public long NumberOfUsableBits
-        {
-            get
-            {
-                return m_numberOfUsableBits;
-            }
         }
     }
 }

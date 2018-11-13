@@ -177,8 +177,8 @@ namespace DiskAccessLibrary.FileSystems.NTFS
             WriteIndexRecord(childRecordIndex, childRecord);
 
             IndexEntry rootEntry = new IndexEntry();
-            rootEntry.SubnodeVBN = childRecord.RecordVBN;
             rootEntry.ParentNodeForm = true;
+            rootEntry.SubnodeVBN = childRecord.RecordVBN;
 
             m_rootRecord.IndexEntries.Clear();
             m_rootRecord.IsParentNode = true;
