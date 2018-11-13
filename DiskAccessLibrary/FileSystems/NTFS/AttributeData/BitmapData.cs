@@ -18,7 +18,7 @@ namespace DiskAccessLibrary.FileSystems.NTFS
     /// </remarks>
     public class BitmapData : AttributeData
     {
-        private const int ExtendGranularity = 8; // The number of bytes added to the bitmap when extending it, MUST be multiple of 8.
+        internal static readonly int ExtendGranularity = 8; // The number of bytes added to the bitmap when extending it, MUST be multiple of 8.
 
         private long m_searchStartIndex = 0;
         private long m_numberOfUsableBits;
@@ -118,7 +118,7 @@ namespace DiskAccessLibrary.FileSystems.NTFS
             if (numberOfBits > numberOfUnusedBits)
             {
                 long additionalBits = numberOfBits - numberOfUnusedBits;
-                ulong additionalBytes = (ulong)Math.Ceiling((double)additionalBits / (ExtendGranularity * 8)) * ExtendGranularity;
+                ulong additionalBytes = (ulong)(Math.Ceiling((double)additionalBits / (ExtendGranularity * 8)) * ExtendGranularity);
                 if (prewriteBytes)
                 {
                     this.WriteBytes(this.Length, new byte[additionalBytes]);
@@ -134,7 +134,7 @@ namespace DiskAccessLibrary.FileSystems.NTFS
         public void TruncateBitmap(long newLengthInBits)
         {
             m_numberOfUsableBits = newLengthInBits;
-            ulong newLengthInBytes = (ulong)Math.Ceiling((double)newLengthInBits / (ExtendGranularity * 8)) * ExtendGranularity;
+            ulong newLengthInBytes = (ulong)(Math.Ceiling((double)newLengthInBits / (ExtendGranularity * 8)) * ExtendGranularity);
             this.Truncate(newLengthInBytes);
         }
 
@@ -146,7 +146,7 @@ namespace DiskAccessLibrary.FileSystems.NTFS
             }
         }
 
-        private static bool IsBitClear(byte[] bitmap, int bitOffsetInBitmap)
+        internal static bool IsBitClear(byte[] bitmap, int bitOffsetInBitmap)
         {
             int byteOffset = bitOffsetInBitmap / 8;
             int bitOffsetInByte = bitOffsetInBitmap % 8;
@@ -154,14 +154,14 @@ namespace DiskAccessLibrary.FileSystems.NTFS
             return !isInUse;
         }
 
-        private static void SetBit(byte[] bitmap, int bitOffsetInBitmap)
+        internal static void SetBit(byte[] bitmap, int bitOffsetInBitmap)
         {
             int byteOffset = bitOffsetInBitmap / 8;
             int bitOffsetInByte = bitOffsetInBitmap % 8;
             bitmap[byteOffset] |= (byte)(0x01 << bitOffsetInByte);
         }
 
-        private static void ClearBit(byte[] bitmap, int bitOffsetInBitmap)
+        internal static void ClearBit(byte[] bitmap, int bitOffsetInBitmap)
         {
             int byteOffset = bitOffsetInBitmap / 8;
             int bitOffsetInByte = bitOffsetInBitmap % 8;
