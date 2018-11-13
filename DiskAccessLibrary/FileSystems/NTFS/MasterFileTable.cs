@@ -19,16 +19,16 @@ namespace DiskAccessLibrary.FileSystems.NTFS
 
         internal const long MasterFileTableSegmentNumber = 0;
         internal const long MftMirrorSegmentNumber = 1;
-        private const long LogFileSegmentNumber = 2;
-        private const long VolumeSegmentNumber = 3;
-        private const long AttrDefSegmentNumber = 4;
-        private const long RootDirSegmentNumber = 5;
-        private const long BitmapSegmentNumber = 6;
-        private const long BootSegmentNumber = 7;
-        private const long BadClusSegmentNumber = 8;
-        private const long SecureSegmentNumber = 9;
-        private const long UpCaseSegmentNumber = 10;
-        private const long ExtendSegmentNumber = 11;
+        internal const long LogFileSegmentNumber = 2;
+        internal const long VolumeSegmentNumber = 3;
+        internal const long AttrDefSegmentNumber = 4;
+        internal const long RootDirSegmentNumber = 5;
+        internal const long BitmapSegmentNumber = 6;
+        internal const long BootSegmentNumber = 7;
+        internal const long BadClusSegmentNumber = 8;
+        internal const long SecureSegmentNumber = 9;
+        internal const long UpCaseSegmentNumber = 10;
+        internal const long ExtendSegmentNumber = 11;
         // The $Extend Metafile is simply a directory index that contains information on where to locate the last four metafiles ($ObjId, $Quota, $Reparse and $UsnJrnl)
         internal static readonly MftSegmentReference LogSegmentReference = new MftSegmentReference(LogFileSegmentNumber, (ushort)LogFileSegmentNumber);
         private static readonly MftSegmentReference VolumeSegmentReference = new MftSegmentReference(VolumeSegmentNumber, (ushort)VolumeSegmentNumber);
