@@ -32,11 +32,11 @@ namespace DiskAccessLibrary.FileSystems.NTFS
         public ushort UpdateSequenceNumber; // a.k.a. USN
         // byte[] UpdateSequenceReplacementData
         /* End of LFS_RESTART_PAGE_HEADER */
-        public LfsRestartArea LogRestartArea;
+        public LfsRestartArea RestartArea;
 
         public LfsRestartPage()
         {
-            LogRestartArea = new LfsRestartArea();
+            RestartArea = new LfsRestartArea();
             MinorVersion = 1;
             MajorVersion = 1;
         }
@@ -55,7 +55,7 @@ namespace DiskAccessLibrary.FileSystems.NTFS
             MinorVersion = LittleEndianConverter.ToInt16(buffer, offset + 0x1A);
             MajorVersion = LittleEndianConverter.ToInt16(buffer, offset + 0x1C);
             UpdateSequenceNumber = LittleEndianConverter.ToUInt16(buffer, offset + multiSectorHeader.UpdateSequenceArrayOffset);
-            LogRestartArea = new LfsRestartArea(buffer, offset + restartOffset);
+            RestartArea = new LfsRestartArea(buffer, offset + restartOffset);
         }
 
         public byte[] GetBytes(int bytesPerSystemPage, bool applyUsaProtection)
@@ -75,7 +75,7 @@ namespace DiskAccessLibrary.FileSystems.NTFS
             LittleEndianWriter.WriteInt16(buffer, 0x1A, MinorVersion);
             LittleEndianWriter.WriteInt16(buffer, 0x1C, MajorVersion);
             LittleEndianWriter.WriteUInt16(buffer, UpdateSequenceArrayOffset, UpdateSequenceNumber);
-            LogRestartArea.WriteBytes(buffer, restartOffset);
+            RestartArea.WriteBytes(buffer, restartOffset);
 
             if (applyUsaProtection)
             {

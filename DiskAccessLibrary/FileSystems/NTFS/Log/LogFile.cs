@@ -45,7 +45,7 @@ namespace DiskAccessLibrary.FileSystems.NTFS
             byte[] secondPageBytes = ReadData(systemPageSize, (int)systemPageSize);
             MultiSectorHelper.RevertUsaProtection(secondPageBytes, 0);
             LfsRestartPage secondRestartPage = new LfsRestartPage(secondPageBytes, 0);
-            if (secondRestartPage.LogRestartArea.CurrentLsn > firstRestartPage.LogRestartArea.CurrentLsn)
+            if (secondRestartPage.RestartArea.CurrentLsn > firstRestartPage.RestartArea.CurrentLsn)
             {
                 m_restartPage = secondRestartPage;
                 m_isFirstRestartPageTurn = true;
@@ -64,9 +64,9 @@ namespace DiskAccessLibrary.FileSystems.NTFS
                 m_restartPage = ReadRestartPage();
             }
 
-            for (int index = 0; index < m_restartPage.LogRestartArea.LogClientArray.Count; index++)
+            for (int index = 0; index < m_restartPage.RestartArea.LogClientArray.Count; index++)
             {
-                if (String.Equals(m_restartPage.LogRestartArea.LogClientArray[index].ClientName, clientName, StringComparison.OrdinalIgnoreCase))
+                if (String.Equals(m_restartPage.RestartArea.LogClientArray[index].ClientName, clientName, StringComparison.OrdinalIgnoreCase))
                 {
                     return index;
                 }
@@ -81,7 +81,7 @@ namespace DiskAccessLibrary.FileSystems.NTFS
                 m_restartPage = ReadRestartPage();
             }
 
-            return m_restartPage.LogRestartArea.LogClientArray[clientIndex];
+            return m_restartPage.RestartArea.LogClientArray[clientIndex];
         }
 
         /// <remarks>
@@ -107,8 +107,8 @@ namespace DiskAccessLibrary.FileSystems.NTFS
                 WritePage(m_tailPageOffsetInFile, m_tailPage);
             }
 
-            m_restartPage.LogRestartArea.IsClean = isClean;
-            m_restartPage.LogRestartArea.RevisionNumber++;
+            m_restartPage.RestartArea.IsClean = isClean;
+            m_restartPage.RestartArea.RevisionNumber++;
             WriteRestartPage(m_restartPage);
         }
 
@@ -128,12 +128,12 @@ namespace DiskAccessLibrary.FileSystems.NTFS
                 m_restartPage = ReadRestartPage();
             }
 
-            if (!m_restartPage.LogRestartArea.IsInUse)
+            if (!m_restartPage.RestartArea.IsInUse)
             {
                 // If the log file is not in use than it must be clean.
                 return true;
             }
-            else if (m_restartPage.LogRestartArea.IsClean)
+            else if (m_restartPage.RestartArea.IsClean)
             {
                 // If the clean bit is set than the log file must be clean.
                 return true;
@@ -157,7 +157,7 @@ namespace DiskAccessLibrary.FileSystems.NTFS
             ulong pageOffsetInFile = LsnToPageOffsetInFile(lsn);
             int recordOffsetInPage = LsnToRecordOffsetInPage(lsn);
             LfsRecordPage page = ReadPage(pageOffsetInFile);
-            int dataOffset = m_restartPage.LogRestartArea.LogPageDataOffset;
+            int dataOffset = m_restartPage.RestartArea.LogPageDataOffset;
             LfsRecord record = page.ReadRecord(recordOffsetInPage);
             if (record.ThisLsn != lsn)
             {
@@ -174,7 +174,7 @@ namespace DiskAccessLibrary.FileSystems.NTFS
                 while (bytesRemaining > 0)
                 {
                     pageOffsetInFile += m_restartPage.LogPageSize;
-                    if (pageOffsetInFile == m_restartPage.LogRestartArea.FileSize)
+                    if (pageOffsetInFile == m_restartPage.RestartArea.FileSize)
                     {
                         pageOffsetInFile = m_restartPage.SystemPageSize * 2 + m_restartPage.LogPageSize * 2;
                     }
@@ -197,7 +197,7 @@ namespace DiskAccessLibrary.FileSystems.NTFS
             // It's perfectly valid to clear the CleanDismount flag after writing the transfer.
             // Note that CurrentLsn is used to determine which is restart page recent so we should not update the restart page without incrementing CurrentLsn first.
 
-            ushort clientSeqNumber = m_restartPage.LogRestartArea.LogClientArray[clientIndex].SeqNumber;
+            ushort clientSeqNumber = m_restartPage.RestartArea.LogClientArray[clientIndex].SeqNumber;
 
             LfsRecord record = new LfsRecord();
             record.ClientSeqNumber = clientSeqNumber;
@@ -218,8 +218,8 @@ namespace DiskAccessLibrary.FileSystems.NTFS
             }
 
             // Update CurrentLsn / LastLsnDataLength
-            m_restartPage.LogRestartArea.CurrentLsn = record.ThisLsn;
-            m_restartPage.LogRestartArea.LastLsnDataLength = (uint)record.Data.Length;
+            m_restartPage.RestartArea.CurrentLsn = record.ThisLsn;
+            m_restartPage.RestartArea.LastLsnDataLength = (uint)record.Data.Length;
 
             // If the client is writing a ClientRestart, the call to write a restart page (when updating the client record) is imminent, so no need to write a restart page now.
             // Note that CurrentLsn is used to determine which is restart page recent so we should not update the restart page without incrementing CurrentLsn.
@@ -237,7 +237,7 @@ namespace DiskAccessLibrary.FileSystems.NTFS
         private void FlushRecords(List<LfsRecord> records, out bool endOfTransferRecorded)
         {
             KeyValuePairList<ulong, LfsRecordPage> pagesToWrite = new KeyValuePairList<ulong, LfsRecordPage>();
-            int bytesAvailableInPage = (int)m_restartPage.LogPageSize - (int)m_restartPage.LogRestartArea.LogPageDataOffset;
+            int bytesAvailableInPage = (int)m_restartPage.LogPageSize - (int)m_restartPage.RestartArea.LogPageDataOffset;
             LfsRecordPage currentPage = null;
             bool overwriteTailPage = false;
 
@@ -246,13 +246,13 @@ namespace DiskAccessLibrary.FileSystems.NTFS
                 LfsRecord record = records[recordIndex];
                 ulong pageOffsetInFile = LsnToPageOffsetInFile(record.ThisLsn);
                 int recordOffsetInPage = LsnToRecordOffsetInPage(record.ThisLsn);
-                bool initializeNewPage = (recordOffsetInPage == m_restartPage.LogRestartArea.LogPageDataOffset);
+                bool initializeNewPage = (recordOffsetInPage == m_restartPage.RestartArea.LogPageDataOffset);
                 if (initializeNewPage) // We write the record at the beginning of a new page, we must initialize the page
                 {
-                    currentPage = new LfsRecordPage((int)m_restartPage.LogPageSize, m_restartPage.LogRestartArea.LogPageDataOffset);
+                    currentPage = new LfsRecordPage((int)m_restartPage.LogPageSize, m_restartPage.RestartArea.LogPageDataOffset);
                     currentPage.LastLsnOrFileOffset = 0;
                     currentPage.LastEndLsn = 0;
-                    currentPage.NextRecordOffset = m_restartPage.LogRestartArea.LogPageDataOffset;
+                    currentPage.NextRecordOffset = m_restartPage.RestartArea.LogPageDataOffset;
                     currentPage.UpdateSequenceNumber = m_nextUpdateSequenceNumber; // There is no rule governing the value of the USN
                     m_nextUpdateSequenceNumber++;
 
@@ -293,7 +293,7 @@ namespace DiskAccessLibrary.FileSystems.NTFS
                     currentPage.HasRecordEnd = true;
                 }
 
-                bool reusePage = !record.IsMultiPageRecord && (bytesAvailableInFirstPage >= m_restartPage.LogRestartArea.RecordHeaderLength);
+                bool reusePage = !record.IsMultiPageRecord && (bytesAvailableInFirstPage >= m_restartPage.RestartArea.RecordHeaderLength);
                 if (!reusePage)
                 {
                     currentPage = null;
@@ -302,13 +302,13 @@ namespace DiskAccessLibrary.FileSystems.NTFS
                 while (bytesRemaining > 0)
                 {
                     pageOffsetInFile += m_restartPage.LogPageSize;
-                    if (pageOffsetInFile == m_restartPage.LogRestartArea.FileSize)
+                    if (pageOffsetInFile == m_restartPage.RestartArea.FileSize)
                     {
                         pageOffsetInFile = m_restartPage.SystemPageSize * 2 + m_restartPage.LogPageSize * 2;
                     }
 
                     bytesToWrite = Math.Min(bytesRemaining, bytesAvailableInPage);
-                    LfsRecordPage nextPage = new LfsRecordPage((int)m_restartPage.LogPageSize, m_restartPage.LogRestartArea.LogPageDataOffset);
+                    LfsRecordPage nextPage = new LfsRecordPage((int)m_restartPage.LogPageSize, m_restartPage.RestartArea.LogPageDataOffset);
                     Array.Copy(recordBytes, recordBytes.Length - bytesRemaining, nextPage.Data, 0, bytesToWrite);
                     bytesRemaining -= bytesToWrite;
 
@@ -316,10 +316,10 @@ namespace DiskAccessLibrary.FileSystems.NTFS
                     if (bytesRemaining == 0)
                     {
                         nextPage.LastEndLsn = record.ThisLsn;
-                        nextPage.NextRecordOffset = (ushort)(m_restartPage.LogRestartArea.LogPageDataOffset + bytesToWrite);
+                        nextPage.NextRecordOffset = (ushort)(m_restartPage.RestartArea.LogPageDataOffset + bytesToWrite);
                         nextPage.Flags |= LfsRecordPageFlags.RecordEnd;
-                        int bytesAvailableInLastPage = (int)m_restartPage.LogPageSize - ((int)m_restartPage.LogRestartArea.LogPageDataOffset + bytesToWrite);
-                        bool reuseLastPage = (bytesAvailableInLastPage >= m_restartPage.LogRestartArea.RecordHeaderLength);
+                        int bytesAvailableInLastPage = (int)m_restartPage.LogPageSize - ((int)m_restartPage.RestartArea.LogPageDataOffset + bytesToWrite);
+                        bool reuseLastPage = (bytesAvailableInLastPage >= m_restartPage.RestartArea.RecordHeaderLength);
                         if (reuseLastPage)
                         {
                             currentPage = nextPage;
@@ -438,12 +438,12 @@ namespace DiskAccessLibrary.FileSystems.NTFS
                     tailPage.LastLsnOrFileOffset = tailPage.LastEndLsn;
                     WritePage(pageOffsetInFile, tailPage);
 
-                    if (tailPage.LastEndLsn > m_restartPage.LogRestartArea.CurrentLsn)
+                    if (tailPage.LastEndLsn > m_restartPage.RestartArea.CurrentLsn)
                     {
-                        m_restartPage.LogRestartArea.CurrentLsn = tailPage.LastEndLsn;
+                        m_restartPage.RestartArea.CurrentLsn = tailPage.LastEndLsn;
                         int recordOffsetInPage = LsnToRecordOffsetInPage(tailPage.LastEndLsn);
                         LfsRecord record = tailPage.ReadRecord(recordOffsetInPage);
-                        m_restartPage.LogRestartArea.LastLsnDataLength = (uint)record.Data.Length;
+                        m_restartPage.RestartArea.LastLsnDataLength = (uint)record.Data.Length;
                         WriteRestartPage(m_restartPage);
                     }
                 }
@@ -476,7 +476,7 @@ namespace DiskAccessLibrary.FileSystems.NTFS
                 return null;
             }
             MultiSectorHelper.RevertUsaProtection(pageBytes, 0);
-            return new LfsRecordPage(pageBytes, m_restartPage.LogRestartArea.LogPageDataOffset);
+            return new LfsRecordPage(pageBytes, m_restartPage.RestartArea.LogPageDataOffset);
         }
 
         private void WritePage(ulong pageOffset, LfsRecordPage page)
@@ -506,7 +506,7 @@ namespace DiskAccessLibrary.FileSystems.NTFS
 
         private ulong LsnToPageOffsetInFile(ulong lsn)
         {
-            int seqNumberBits = (int)m_restartPage.LogRestartArea.SeqNumberBits;
+            int seqNumberBits = (int)m_restartPage.RestartArea.SeqNumberBits;
             ulong fileOffset = (lsn << seqNumberBits) >> (seqNumberBits - 3);
             return fileOffset & ~(m_restartPage.LogPageSize - 1);
         }
@@ -528,8 +528,8 @@ namespace DiskAccessLibrary.FileSystems.NTFS
                 m_restartPage = ReadRestartPage();
             }
 
-            ulong currentLsn = m_restartPage.LogRestartArea.CurrentLsn;
-            int currentLsnRecordLength = (int)(m_restartPage.LogRestartArea.RecordHeaderLength + m_restartPage.LogRestartArea.LastLsnDataLength);
+            ulong currentLsn = m_restartPage.RestartArea.CurrentLsn;
+            int currentLsnRecordLength = (int)(m_restartPage.RestartArea.RecordHeaderLength + m_restartPage.RestartArea.LastLsnDataLength);
             return CalculateNextLsn(currentLsn, currentLsnRecordLength);
         }
 
@@ -542,25 +542,25 @@ namespace DiskAccessLibrary.FileSystems.NTFS
             {
                 int recordBytesInFirstPage = (int)m_restartPage.LogPageSize - recordOffsetInPage;
                 int bytesRemaining = recordLength - recordBytesInFirstPage;
-                int bytesAvailableInPage = (int)m_restartPage.LogPageSize - (int)m_restartPage.LogRestartArea.LogPageDataOffset;
+                int bytesAvailableInPage = (int)m_restartPage.LogPageSize - (int)m_restartPage.RestartArea.LogPageDataOffset;
                 int middlePageCount = bytesRemaining / bytesAvailableInPage;
                 int recordBytesInLastPage = bytesRemaining % bytesAvailableInPage;
-                bytesToSkip = recordBytesInFirstPage + middlePageCount * (int)m_restartPage.LogPageSize + m_restartPage.LogRestartArea.LogPageDataOffset + recordBytesInLastPage;
+                bytesToSkip = recordBytesInFirstPage + middlePageCount * (int)m_restartPage.LogPageSize + m_restartPage.RestartArea.LogPageDataOffset + recordBytesInLastPage;
                 nextRecordOffsetInPage = (recordOffsetInPage + bytesToSkip) % (int)m_restartPage.LogPageSize;
             }
 
             int bytesRemainingInPage = (int)m_restartPage.LogPageSize - nextRecordOffsetInPage;
-            if (bytesRemainingInPage < m_restartPage.LogRestartArea.RecordHeaderLength)
+            if (bytesRemainingInPage < m_restartPage.RestartArea.RecordHeaderLength)
             {
-                bytesToSkip += bytesRemainingInPage + m_restartPage.LogRestartArea.LogPageDataOffset;
+                bytesToSkip += bytesRemainingInPage + m_restartPage.RestartArea.LogPageDataOffset;
             }
 
             ulong pageOffsetInFile = LsnToPageOffsetInFile(lsn);
-            if (pageOffsetInFile + (uint)recordOffsetInPage + (uint)bytesToSkip >= m_restartPage.LogRestartArea.FileSize)
+            if (pageOffsetInFile + (uint)recordOffsetInPage + (uint)bytesToSkip >= m_restartPage.RestartArea.FileSize)
             {
                 // We skip the gap of LSNs that do not map to a valid file offset
-                int fileSizeBits = m_restartPage.LogRestartArea.FileSizeBits;
-                bytesToSkip += (int)Math.Pow(2, fileSizeBits) - (int)m_restartPage.LogRestartArea.FileSize;
+                int fileSizeBits = m_restartPage.RestartArea.FileSizeBits;
+                bytesToSkip += (int)Math.Pow(2, fileSizeBits) - (int)m_restartPage.RestartArea.FileSize;
                 // We skip the two restart pages and the two tail pages
                 bytesToSkip += (int)m_restartPage.SystemPageSize * 2 + (int)m_restartPage.LogPageSize * 2;
             }
