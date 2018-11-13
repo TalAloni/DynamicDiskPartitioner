@@ -93,7 +93,7 @@ namespace DiskAccessLibrary.FileSystems.NTFS
             m_segmentNumber = segmentNumber;
         }
 
-        public byte[] GetBytes(int bytesPerFileRecordSegment, ushort minorNTFSVersion, bool applyUsaProtection)
+        public byte[] GetBytes(int bytesPerFileRecordSegment, byte minorNTFSVersion, bool applyUsaProtection)
         {
             int strideCount = bytesPerFileRecordSegment / MultiSectorHelper.BytesPerStride;
             ushort updateSequenceArraySize = (ushort)(1 + strideCount);
@@ -200,7 +200,7 @@ namespace DiskAccessLibrary.FileSystems.NTFS
             }
         }
 
-        public int GetNumberOfBytesInUse(int bytesPerFileRecordSegment, ushort minorNTFSVersion)
+        public int GetNumberOfBytesInUse(int bytesPerFileRecordSegment, byte minorNTFSVersion)
         {
             int length = GetFirstAttributeOffset(bytesPerFileRecordSegment, minorNTFSVersion);
             foreach (AttributeRecord attribute in m_immediateAttributes)
@@ -211,7 +211,7 @@ namespace DiskAccessLibrary.FileSystems.NTFS
             return length;
         }
 
-        public int GetNumberOfBytesFree(int bytesPerFileRecordSegment, ushort minorNTFSVersion)
+        public int GetNumberOfBytesFree(int bytesPerFileRecordSegment, byte minorNTFSVersion)
         {
             int length = GetNumberOfBytesInUse(bytesPerFileRecordSegment, minorNTFSVersion);
             return bytesPerFileRecordSegment - length;
@@ -317,7 +317,7 @@ namespace DiskAccessLibrary.FileSystems.NTFS
             return (type == AttributesEndMarker);
         }
 
-        public static ushort GetFirstAttributeOffset(int bytesPerFileRecordSegment, ushort minorNTFSVersion)
+        public static ushort GetFirstAttributeOffset(int bytesPerFileRecordSegment, byte minorNTFSVersion)
         {
             int strideCount = bytesPerFileRecordSegment / MultiSectorHelper.BytesPerStride;
             ushort updateSequenceArraySize = (ushort)(1 + strideCount);
@@ -339,7 +339,7 @@ namespace DiskAccessLibrary.FileSystems.NTFS
             return firstAttributeOffset;
         }
 
-        public static int GetNumberOfBytesAvailable(int bytesPerFileRecordSegment, ushort minorNTFSVersion)
+        public static int GetNumberOfBytesAvailable(int bytesPerFileRecordSegment, byte minorNTFSVersion)
         {
             int firstAttributeOffset = FileRecordSegment.GetFirstAttributeOffset(bytesPerFileRecordSegment, minorNTFSVersion);
             return bytesPerFileRecordSegment - firstAttributeOffset - AttributesEndMarkerLength;

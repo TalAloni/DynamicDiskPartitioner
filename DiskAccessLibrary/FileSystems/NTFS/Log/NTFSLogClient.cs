@@ -223,7 +223,7 @@ namespace DiskAccessLibrary.FileSystems.NTFS
             }
         }
 
-        public void WriteRestartRecord(ushort majorNTFSVersion, bool isClean)
+        public void WriteRestartRecord(byte majorNTFSVersion, bool isClean)
         {
             ulong usnJournalUnknown1 = m_currentRestartRecord.UsnJournalUnknown1;
             ulong previousRestartRecordLsn = m_currentRestartRecord.PreviousRestartRecordLsn;
@@ -232,7 +232,7 @@ namespace DiskAccessLibrary.FileSystems.NTFS
             LfsRecord restartRecord = WriteRestartRecord(usnJournalUnknown1, previousRestartRecordLsn, usnJournal, usnJournalUnknown2, majorNTFSVersion, isClean);
         }
 
-        private LfsRecord WriteRestartRecord(ulong usnJournalUnknown1, ulong previousRestartRecordLsn, MftSegmentReference usnJournal, ulong usnJournalUnknown2, ushort majorNTFSVersion, bool isClean)
+        private LfsRecord WriteRestartRecord(ulong usnJournalUnknown1, ulong previousRestartRecordLsn, MftSegmentReference usnJournal, ulong usnJournalUnknown2, byte majorNTFSVersion, bool isClean)
         {
             NTFSRestartRecord restartRecord = new NTFSRestartRecord(m_majorVersion, m_minorVersion);
             restartRecord.StartOfCheckpointLsn = m_lastClientLsn;

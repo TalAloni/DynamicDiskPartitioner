@@ -117,7 +117,7 @@ namespace DiskAccessLibrary.FileSystems.NTFS
             return attribute;
         }
 
-        public static void SliceAttributes(List<FileRecordSegment> segments, List<AttributeRecord> attributes, int bytesPerFileRecordSegment, ushort minorNTFSVersion)
+        public static void SliceAttributes(List<FileRecordSegment> segments, List<AttributeRecord> attributes, int bytesPerFileRecordSegment, byte minorNTFSVersion)
         {
             int bytesAvailableInSegment = FileRecordSegment.GetNumberOfBytesAvailable(bytesPerFileRecordSegment, minorNTFSVersion);
             LinkedList<KeyValuePair<AttributeRecord, bool>> remainingAttributes = new LinkedList<KeyValuePair<AttributeRecord, bool>>();
@@ -267,7 +267,7 @@ namespace DiskAccessLibrary.FileSystems.NTFS
         /// <remarks>
         /// An attribute list MUST be sorted by AttributeType with a secondary sort by AttributeName.
         /// </remarks>
-        public static List<AttributeListEntry> BuildAttributeList(List<FileRecordSegment> segments, int bytesPerFileRecordSegment, ushort minorNTFSVersion)
+        public static List<AttributeListEntry> BuildAttributeList(List<FileRecordSegment> segments, int bytesPerFileRecordSegment, byte minorNTFSVersion)
         {
             int bytesAvailableInSegment = FileRecordSegment.GetNumberOfBytesAvailable(bytesPerFileRecordSegment, minorNTFSVersion);
 

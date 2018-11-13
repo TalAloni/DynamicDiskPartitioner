@@ -80,7 +80,7 @@ namespace DiskAccessLibrary.FileSystems.NTFS
             }
         }
 
-        public byte[] GetBytes(ushort majorNTFSVersion)
+        public byte[] GetBytes(byte majorNTFSVersion)
         {
             int length = (majorNTFSVersion == 3) ? LengthNTFS30 : LengthNTFS12;
             byte[] recordBytes = new byte[LengthNTFS30];

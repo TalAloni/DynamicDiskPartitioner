@@ -448,7 +448,7 @@ namespace DiskAccessLibrary.FileSystems.NTFS
             }
         }
 
-        public ushort MajorVersion
+        public byte MajorVersion
         {
             get
             {
@@ -456,7 +456,7 @@ namespace DiskAccessLibrary.FileSystems.NTFS
             }
         }
 
-        public ushort MinorVersion
+        public byte MinorVersion
         {
             get
             {
