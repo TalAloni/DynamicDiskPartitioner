@@ -133,6 +133,7 @@
     <Compile Include="FileSystems\NTFS\NTFSVolume.cs" />
     <Compile Include="FileSystems\NTFS\NTFSVolume.Extend.cs" />
     <Compile Include="FileSystems\NTFS\NTFSVolume.Recovery.cs" />
+    <Compile Include="FileSystems\NTFS\NTFSVolumeCreator.cs" />
     <Compile Include="FileSystems\NTFS\Structures\AttributeDefinitionEntry.cs" />
     <Compile Include="FileSystems\NTFS\Structures\AttributeListEntry.cs" />
     <Compile Include="FileSystems\NTFS\Structures\DataRun.cs" />
