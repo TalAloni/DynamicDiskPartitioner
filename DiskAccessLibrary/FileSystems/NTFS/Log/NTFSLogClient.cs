@@ -59,6 +59,13 @@ namespace DiskAccessLibrary.FileSystems.NTFS
             {
                 throw new InvalidDataException("NTFS Client was not found");
             }
+
+            bool isClientInUse = m_logFile.IsClientInUse(m_clientIndex);
+            if (!isClientInUse)
+            {
+                throw new NotSupportedException("NTFS Client is not in use");
+            }
+
             ulong lastClientRestartLsn = m_logFile.GetClientRecord(m_clientIndex).ClientRestartLsn;
             m_lastClientLsn = lastClientRestartLsn;
             m_currentRestartRecord = ReadRestartRecord(lastClientRestartLsn);
