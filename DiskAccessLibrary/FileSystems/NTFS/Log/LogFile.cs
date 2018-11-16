@@ -549,8 +549,16 @@ namespace DiskAccessLibrary.FileSystems.NTFS
             }
 
             ulong currentLsn = m_restartPage.RestartArea.CurrentLsn;
-            int currentLsnRecordLength = (int)(m_restartPage.RestartArea.RecordHeaderLength + m_restartPage.RestartArea.LastLsnDataLength);
-            return CalculateNextLsn(currentLsn, currentLsnRecordLength);
+            if (currentLsn == 0) // Freshly formatted disk
+            {
+                int bytesToSkip = (int)m_restartPage.SystemPageSize * 2 + (int)m_restartPage.LogPageSize * 2 + m_restartPage.RestartArea.LogPageDataOffset;
+                return (uint)bytesToSkip >> 3;
+            }
+            else
+            {
+                int currentLsnRecordLength = (int)(m_restartPage.RestartArea.RecordHeaderLength + m_restartPage.RestartArea.LastLsnDataLength);
+                return CalculateNextLsn(currentLsn, currentLsnRecordLength);
+            }
         }
 
         private ulong CalculateNextLsn(ulong lsn, int recordLength)
