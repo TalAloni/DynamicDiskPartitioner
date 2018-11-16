@@ -18,13 +18,10 @@ namespace DiskAccessLibrary.FileSystems.NTFS
             return "$I" + ((uint)indexedAttributeType).ToString("X");
         }
 
-        public static void InitializeIndexRoot(IndexRootRecord indexRoot, AttributeType indexedAttributeType, int bytesPerIndexRecord, int bytesPerCluster)
+        public static void InitializeIndexRoot(IndexRootRecord indexRoot, AttributeType indexedAttributeType, CollationRule collationRule, int bytesPerIndexRecord, int bytesPerCluster)
         {
             indexRoot.IndexedAttributeType = indexedAttributeType;
-            if (indexedAttributeType == AttributeType.FileName)
-            {
-                indexRoot.CollationRule = CollationRule.Filename;
-            }
+            indexRoot.CollationRule = collationRule;
             indexRoot.BytesPerIndexRecord = (uint)bytesPerIndexRecord;
             if (bytesPerIndexRecord >= bytesPerCluster)
             {

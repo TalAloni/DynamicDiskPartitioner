@@ -413,7 +413,7 @@ namespace DiskAccessLibrary.FileSystems.NTFS
             {
                 string indexName = IndexHelper.GetIndexName(AttributeType.FileName);
                 IndexRootRecord indexRoot = (IndexRootRecord)fileRecord.CreateAttributeRecord(AttributeType.IndexRoot, indexName);
-                IndexHelper.InitializeIndexRoot(indexRoot, AttributeType.FileName, m_volume.BytesPerIndexRecord, m_volume.BytesPerCluster);
+                IndexHelper.InitializeIndexRoot(indexRoot, AttributeType.FileName, CollationRule.Filename, m_volume.BytesPerIndexRecord, m_volume.BytesPerCluster);
             }
             else
             {
