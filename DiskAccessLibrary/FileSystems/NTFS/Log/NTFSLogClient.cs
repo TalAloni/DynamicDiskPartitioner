@@ -68,7 +68,14 @@ namespace DiskAccessLibrary.FileSystems.NTFS
 
             ulong lastClientRestartLsn = m_logFile.GetClientRecord(m_clientIndex).ClientRestartLsn;
             m_lastClientLsn = lastClientRestartLsn;
-            m_currentRestartRecord = ReadRestartRecord(lastClientRestartLsn);
+            if (lastClientRestartLsn == 0) // Freshly formatted disk
+            {
+                m_currentRestartRecord = new NTFSRestartRecord(1, 0);
+            }
+            else
+            {
+                m_currentRestartRecord = ReadRestartRecord(lastClientRestartLsn);
+            }
             m_majorVersion = m_currentRestartRecord.MajorVersion;
             m_minorVersion = m_currentRestartRecord.MinorVersion;
         }
