@@ -253,6 +253,44 @@ namespace DiskAccessLibrary.FileSystems.NTFS
             }
         }
 
+        public bool IsExtension
+        {
+            get
+            {
+                return (m_flags & FileRecordFlags.IsExtension) != 0;
+            }
+            set
+            {
+                if (value)
+                {
+                    m_flags |= FileRecordFlags.IsExtension;
+                }
+                else
+                {
+                    m_flags &= ~FileRecordFlags.IsExtension;
+                }
+            }
+        }
+
+        public bool IsSpecialIndex
+        {
+            get
+            {
+                return (m_flags & FileRecordFlags.IsSpecialIndex) != 0;
+            }
+            set
+            {
+                if (value)
+                {
+                    m_flags |= FileRecordFlags.IsSpecialIndex;
+                }
+                else
+                {
+                    m_flags &= ~FileRecordFlags.IsSpecialIndex;
+                }
+            }
+        }
+
         public List<AttributeRecord> ImmediateAttributes
         {
             get
