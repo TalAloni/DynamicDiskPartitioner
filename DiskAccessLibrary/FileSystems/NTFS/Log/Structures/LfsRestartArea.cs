@@ -149,5 +149,16 @@ namespace DiskAccessLibrary.FileSystems.NTFS
                 return FixedLengthNTFS30 + LogClientArray.Count * LfsClientRecord.Length;
             }
         }
+
+        internal static int CalculateFileSizeBits(long fileSize)
+        {
+            int fileSizeBits = 0;
+            while (fileSize > 0)
+            {
+                fileSize = fileSize / 2;
+                fileSizeBits++;
+            }
+            return fileSizeBits;
+        }
     }
 }

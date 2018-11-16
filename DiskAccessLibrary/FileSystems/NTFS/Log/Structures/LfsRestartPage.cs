@@ -96,5 +96,34 @@ namespace DiskAccessLibrary.FileSystems.NTFS
                 return m_systemPageSize;
             }
         }
+
+        public static LfsRestartPage Create(long fileSize, int bytesPerSystemPage, int bytesPerLogPage, params LfsClientRecord[] clients)
+        {
+            LfsRestartPage restartPage = new LfsRestartPage();
+            restartPage.LogPageSize = (uint)bytesPerLogPage;
+            restartPage.RestartArea.CurrentLsn = 0;
+            restartPage.RestartArea.LastLsnDataLength = 0;
+            restartPage.RestartArea.ClientFreeList = LfsRestartArea.NoClient;
+            restartPage.RestartArea.ClientInUseList = (clients.Length > 0) ? (ushort)0 : LfsRestartArea.NoClient;
+            restartPage.RestartArea.Flags = LfsRestartFlags.CleanDismount;
+            restartPage.RestartArea.FileSize = (ulong)fileSize;
+            restartPage.RestartArea.FileSizeBits = LfsRestartArea.CalculateFileSizeBits(fileSize);
+            restartPage.RestartArea.LogPageDataOffset = (ushort)LfsRecordPage.GetDataOffset(bytesPerLogPage);
+
+            if (clients.Length > 0)
+            {
+                clients[0].PrevClient = LfsRestartArea.NoClient;
+                clients[clients.Length - 1].NextClient = LfsRestartArea.NoClient;
+            }
+
+            for (int index = 1; index < clients.Length; index++)
+            {
+                clients[index].PrevClient = (ushort)(index - 1);
+            }
+
+            restartPage.RestartArea.LogClientArray.AddRange(clients);
+
+            return restartPage;
+        }
     }
 }
