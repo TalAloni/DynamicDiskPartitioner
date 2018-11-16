@@ -40,7 +40,7 @@ namespace DiskAccessLibrary.FileSystems.NTFS
             }
         }
 
-        private const string ClientName = "NTFS";
+        internal const string ClientName = "NTFS";
 
         private LogFile m_logFile;
         private int m_clientIndex;
