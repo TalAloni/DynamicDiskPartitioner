@@ -62,7 +62,7 @@ namespace DiskAccessLibrary.FileSystems.NTFS
             {
                 LfsClientRecord clientRecord = new LfsClientRecord(buffer, position);
                 LogClientArray.Add(clientRecord);
-                position += clientRecord.Length;
+                position += LfsClientRecord.Length;
             }
         }
 
@@ -87,7 +87,7 @@ namespace DiskAccessLibrary.FileSystems.NTFS
             foreach (LfsClientRecord clientRecord in LogClientArray)
             {
                 clientRecord.WriteBytes(buffer, position);
-                position += clientRecord.Length;
+                position += LfsClientRecord.Length;
             }
         }
 
@@ -146,12 +146,7 @@ namespace DiskAccessLibrary.FileSystems.NTFS
         {
             get
             {
-                int length = FixedLengthNTFS30;
-                foreach (LfsClientRecord clientRecord in LogClientArray)
-                {
-                    length += clientRecord.Length;
-                }
-                return length;
+                return FixedLengthNTFS30 + LogClientArray.Count * LfsClientRecord.Length;
             }
         }
     }
