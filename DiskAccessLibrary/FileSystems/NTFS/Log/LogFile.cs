@@ -74,6 +74,26 @@ namespace DiskAccessLibrary.FileSystems.NTFS
             return -1;
         }
 
+        public bool IsClientInUse(int clientIndex)
+        {
+            if (m_restartPage == null)
+            {
+                m_restartPage = ReadRestartPage();
+            }
+
+            int nextClientInUseIndex = m_restartPage.RestartArea.ClientInUseList;
+            while (nextClientInUseIndex != LfsRestartArea.NoClient)
+            {
+                if (nextClientInUseIndex == clientIndex)
+                {
+                    return true;
+                }
+                nextClientInUseIndex = m_restartPage.RestartArea.LogClientArray[nextClientInUseIndex].NextClient;
+            }
+
+            return false;
+        }
+
         public LfsClientRecord GetClientRecord(int clientIndex)
         {
             if (m_restartPage == null)
