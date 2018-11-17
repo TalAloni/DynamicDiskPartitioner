@@ -31,7 +31,7 @@ namespace DiskAccessLibrary.FileSystems.NTFS
             volumeClusterCount = (long)Math.Floor((double)volumeClusterCount / (VolumeBitmap.ExtendGranularity * 8)) * (VolumeBitmap.ExtendGranularity * 8);
             int sectorsPerCluster = bytesPerCluster / volume.BytesPerSector;
             int bytesPerFileRecordSegment = 1024;
-            int bytesPerIndexRecord = 4096;
+            int bytesPerIndexRecord = 4096; // Legal values are 1024, 2048 or 4096. NTFS v5.1 driver will always use 4096.
             int bootSegmentFileSize = 8192;
             int bootSegmentAllocatedLength = (int)Math.Ceiling((double)bootSegmentFileSize / bytesPerCluster) * bytesPerCluster;
             FileNameRecord bootFileNameRecord = new FileNameRecord(MasterFileTable.RootDirSegmentReference, "$Boot", false, DateTime.Now);
