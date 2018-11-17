@@ -76,7 +76,7 @@ namespace DiskAccessLibrary.FileSystems.NTFS
                         BitmapRange bitmapRange = new BitmapRange((uint)bitOffsetInCluster, 1);
                         byte[] operationData = bitmapRange.GetBytes();
                         ulong streamOffset = (ulong)(currentVCN * Volume.BytesPerCluster);
-                        Volume.LogClient.WriteLogRecord(FileRecord.BaseSegmentReference, this.AttributeRecord, streamOffset, NTFSLogOperation.SetBitsInNonResidentBitMap, operationData, NTFSLogOperation.ClearBitsInNonResidentBitMap, operationData, transactionID);
+                        Volume.LogClient.WriteLogRecord(FileRecord.BaseSegmentReference, this.AttributeRecord, streamOffset, Volume.BytesPerCluster, NTFSLogOperation.SetBitsInNonResidentBitMap, operationData, NTFSLogOperation.ClearBitsInNonResidentBitMap, operationData, transactionID);
                     }
                     SetBit(bufferedClusterBytes, bitOffsetInCluster);
                     WriteCluster(currentVCN, bufferedClusterBytes);
@@ -99,7 +99,7 @@ namespace DiskAccessLibrary.FileSystems.NTFS
                     BitmapRange bitmapRange = new BitmapRange((uint)bitOffsetInCluster, 1);
                     byte[] operationData = bitmapRange.GetBytes();
                     ulong streamOffset = (ulong)(currentVCN * Volume.BytesPerCluster);
-                    Volume.LogClient.WriteLogRecord(FileRecord.BaseSegmentReference, this.AttributeRecord, streamOffset, NTFSLogOperation.ClearBitsInNonResidentBitMap, operationData, NTFSLogOperation.SetBitsInNonResidentBitMap, operationData, transactionID);
+                    Volume.LogClient.WriteLogRecord(FileRecord.BaseSegmentReference, this.AttributeRecord, streamOffset, Volume.BytesPerCluster, NTFSLogOperation.ClearBitsInNonResidentBitMap, operationData, NTFSLogOperation.SetBitsInNonResidentBitMap, operationData, transactionID);
                 }
                 ClearBit(clusterBytes, bitOffsetInCluster);
                 WriteCluster(currentVCN, clusterBytes);
