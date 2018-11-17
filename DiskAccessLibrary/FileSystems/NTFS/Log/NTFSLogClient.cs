@@ -306,10 +306,15 @@ namespace DiskAccessLibrary.FileSystems.NTFS
         /// </summary>
         public LfsRecord WriteForgetTransactionRecord(uint transactionID)
         {
+            return WriteForgetTransactionRecord(transactionID, false);
+        }
+
+        public LfsRecord WriteForgetTransactionRecord(uint transactionID, bool flushToDisk)
+        {
             NTFSLogRecord ntfsLogRecord = new NTFSLogRecord();
             ntfsLogRecord.RedoOperation = NTFSLogOperation.ForgetTransaction;
             ntfsLogRecord.UndoOperation = NTFSLogOperation.CompensationLogRecord;
-            LfsRecord result = WriteLogRecord(ntfsLogRecord, transactionID, false);
+            LfsRecord result = WriteLogRecord(ntfsLogRecord, transactionID, flushToDisk);
             DeallocateTransactionID(transactionID);
             // Update the open attribute table and remove any open attribute that no longer has an associated transaction
             for(int index = 0; index < m_openAttributes.Count; index++)
