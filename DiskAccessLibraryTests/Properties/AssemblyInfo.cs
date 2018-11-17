@@ -2,16 +2,15 @@
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 
-[assembly: InternalsVisibleTo("DiskAccessLibraryTests")]
 // General Information about an assembly is controlled through the following 
 // set of attributes. Change these attribute values to modify the information
 // associated with an assembly.
-[assembly: AssemblyTitle("DiskAccessLibrary")]
+[assembly: AssemblyTitle("DiskAccessLibraryTests")]
 [assembly: AssemblyDescription("")]
 [assembly: AssemblyConfiguration("")]
 [assembly: AssemblyCompany("Tal Aloni")]
-[assembly: AssemblyProduct("DiskAccessLibrary")]
-[assembly: AssemblyCopyright("Copyright © Tal Aloni 2012-2018")]
+[assembly: AssemblyProduct("DiskAccessLibraryTests")]
+[assembly: AssemblyCopyright("Copyright © Tal Aloni 2018")]
 [assembly: AssemblyTrademark("")]
 [assembly: AssemblyCulture("")]
 
@@ -21,7 +20,7 @@ using System.Runtime.InteropServices;
 [assembly: ComVisible(false)]
 
 // The following GUID is for the ID of the typelib if this project is exposed to COM
-[assembly: Guid("be978a4f-67dd-49d3-8c5b-ff5ee86a0219")]
+[assembly: Guid("14ff1fc1-b5f1-4446-b600-909171e9f1b0")]
 
 // Version information for an assembly consists of the following four values:
 //
@@ -30,7 +29,5 @@ using System.Runtime.InteropServices;
 //      Build Number
 //      Revision
 //
-// You can specify all the values or you can default the Revision and Build Numbers 
-// by using the '*' as shown below:
-[assembly: AssemblyVersion("1.5.2.0")]
-[assembly: AssemblyFileVersion("1.5.2.0")]
+[assembly: AssemblyVersion("1.0.0.0")]
+[assembly: AssemblyFileVersion("1.0.0.0")]
