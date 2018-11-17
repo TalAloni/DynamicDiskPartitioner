@@ -353,6 +353,10 @@ namespace DiskAccessLibrary.FileSystems.NTFS
                     entry.FileReference = fileReference;
                     entry.LsnOfOpenRecord = m_lastClientLsn;
                     entry.AttributeTypeCode = attributeRecord.AttributeType;
+                    if (attributeRecord.AttributeType == AttributeType.IndexAllocation)
+                    {
+                        entry.BytesPerIndexBuffer = (uint)Volume.BytesPerIndexRecord;
+                    }
                     byte[] openAttributeBytes = entry.GetBytes();
                     byte[] attributeNameBytes = System.Text.Encoding.Unicode.GetBytes(attributeRecord.Name);
                     LfsRecord openAttributeRecord = WriteLogRecord(openAttributeOffset, 0, 0, 0, new List<long>(), NTFSLogOperation.OpenNonResidentAttribute, openAttributeBytes, NTFSLogOperation.Noop, attributeNameBytes, transactionID, false);
@@ -433,6 +437,10 @@ namespace DiskAccessLibrary.FileSystems.NTFS
                 entry.FileReference = openAttribute.FileReference;
                 entry.LsnOfOpenRecord = openAttribute.LsnOfOpenRecord;
                 entry.AttributeTypeCode = openAttribute.AttributeType;
+                if (openAttribute.AttributeType == AttributeType.IndexAllocation)
+                {
+                    entry.BytesPerIndexBuffer = (uint)Volume.BytesPerIndexRecord;
+                }
                 openAttributeTable.Add(entry);
                 if (openAttribute.AttributeName != String.Empty)
                 {
