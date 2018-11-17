@@ -158,7 +158,7 @@ namespace DiskAccessLibrary.FileSystems.NTFS
                     parentDirectoryIndex.AddEntry(fileRecord.BaseSegmentReference, fileNameRecord.GetBytes());
                 }
                 m_logClient.WriteForgetTransactionRecord(transactionID);
-                m_logClient.WriteRestartRecord(this.MajorVersion, true);
+                m_logClient.WriteRestartRecord(true);
                 return fileRecord;
             }
         }
@@ -183,7 +183,7 @@ namespace DiskAccessLibrary.FileSystems.NTFS
                     m_logClient.WriteForgetTransactionRecord(transactionID.Value);
                     if (m_logClient.TransactionCount == 0)
                     {
-                        m_logClient.WriteRestartRecord(this.MajorVersion, true);
+                        m_logClient.WriteRestartRecord(true);
                     }
                 }
             }
@@ -246,7 +246,7 @@ namespace DiskAccessLibrary.FileSystems.NTFS
                     newParentDirectoryIndex.AddEntry(fileRecord.BaseSegmentReference, fileNameRecord.GetBytes());
                 }
                 m_logClient.WriteForgetTransactionRecord(transactionID);
-                m_logClient.WriteRestartRecord(this.MajorVersion, true);
+                m_logClient.WriteRestartRecord(true);
             }
         }
 
@@ -287,7 +287,7 @@ namespace DiskAccessLibrary.FileSystems.NTFS
 
                 m_mft.DeleteFile(fileRecord, transactionID);
                 m_logClient.WriteForgetTransactionRecord(transactionID);
-                m_logClient.WriteRestartRecord(this.MajorVersion, true);
+                m_logClient.WriteRestartRecord(true);
             }
         }
 

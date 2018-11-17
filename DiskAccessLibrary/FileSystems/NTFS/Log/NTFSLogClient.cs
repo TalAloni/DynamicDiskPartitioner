@@ -237,16 +237,16 @@ namespace DiskAccessLibrary.FileSystems.NTFS
             }
         }
 
-        public void WriteRestartRecord(byte majorNTFSVersion, bool isClean)
+        public void WriteRestartRecord(bool isClean)
         {
             ulong usnJournalUnknown1 = m_currentRestartRecord.UsnJournalUnknown1;
             ulong previousRestartRecordLsn = m_currentRestartRecord.PreviousRestartRecordLsn;
             MftSegmentReference usnJournal = m_currentRestartRecord.UsnJournal;
             ulong usnJournalUnknown2 = m_currentRestartRecord.UsnJournalUnknown2;
-            LfsRecord restartRecord = WriteRestartRecord(usnJournalUnknown1, previousRestartRecordLsn, usnJournal, usnJournalUnknown2, majorNTFSVersion, isClean);
+            LfsRecord restartRecord = WriteRestartRecord(usnJournalUnknown1, previousRestartRecordLsn, usnJournal, usnJournalUnknown2, isClean);
         }
 
-        private LfsRecord WriteRestartRecord(ulong usnJournalUnknown1, ulong previousRestartRecordLsn, MftSegmentReference usnJournal, ulong usnJournalUnknown2, byte majorNTFSVersion, bool isClean)
+        private LfsRecord WriteRestartRecord(ulong usnJournalUnknown1, ulong previousRestartRecordLsn, MftSegmentReference usnJournal, ulong usnJournalUnknown2, bool isClean)
         {
             NTFSRestartRecord restartRecord = new NTFSRestartRecord(m_majorVersion, m_minorVersion);
             restartRecord.StartOfCheckpointLsn = m_lastClientLsn;
@@ -290,7 +290,7 @@ namespace DiskAccessLibrary.FileSystems.NTFS
                     DeallocateTransactionID(transactionID);
                 }
             }
-            byte[] clientData = restartRecord.GetBytes(majorNTFSVersion);
+            byte[] clientData = restartRecord.GetBytes(Volume.MajorVersion);
             LfsRecord result = m_logFile.WriteRecord(m_clientIndex, LfsRecordType.ClientRestart, 0, 0, 0, clientData, true);
             m_lastClientLsn = result.ThisLsn;
             LfsClientRecord clientRecord = m_logFile.GetClientRecord(m_clientIndex);
