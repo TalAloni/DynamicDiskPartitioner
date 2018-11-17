@@ -148,6 +148,16 @@ namespace DiskAccessLibrary.FileSystems.NTFS
             return length;
         }
 
+        internal static int GetEntryOffset(List<IndexEntry> entries, int entryIndex)
+        {
+            int length = 0;
+            for(int index = 0; index < entryIndex; index++)
+            {
+                length += entries[index].Length;
+            }
+            return length;
+        }
+
         public static List<IndexEntry> ReadIndexEntries(byte[] buffer, int offset)
         {
             List<IndexEntry> entries = new List<IndexEntry>();
