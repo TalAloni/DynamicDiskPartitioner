@@ -278,12 +278,12 @@ namespace DiskAccessLibrary.FileSystems.NTFS
                     byte[] openAttributeTableBytes = GetOpenAttributeTableBytes(out attributeNameTableBytes);
                     m_lastClientLsn = 0;
                     uint transactionID = AllocateTransactionID(); // These records must have a valid transactionID
-                    LfsRecord openAttributeTableRecord = WriteLogRecord(null, null, 0, NTFSLogOperation.OpenAttributeTableDump, openAttributeTableBytes, NTFSLogOperation.Noop, new byte[0], transactionID, false);
+                    LfsRecord openAttributeTableRecord = WriteLogRecord(null, null, 0, 0, 0, NTFSLogOperation.OpenAttributeTableDump, openAttributeTableBytes, NTFSLogOperation.Noop, new byte[0], transactionID, false);
                     restartRecord.OpenAttributeTableLsn = openAttributeTableRecord.ThisLsn;
                     restartRecord.OpenAttributeTableLength = (uint)openAttributeTableBytes.Length;
                     if (attributeNameTableBytes != null)
                     {
-                        LfsRecord attributeNameTableRecord = WriteLogRecord(null, null, 0, NTFSLogOperation.AttributeNamesDump, openAttributeTableBytes, NTFSLogOperation.Noop, new byte[0], transactionID, false);
+                        LfsRecord attributeNameTableRecord = WriteLogRecord(null, null, 0, 0, 0, NTFSLogOperation.AttributeNamesDump, openAttributeTableBytes, NTFSLogOperation.Noop, new byte[0], transactionID, false);
                         restartRecord.AttributeNamesLsn = attributeNameTableRecord.ThisLsn;
                         restartRecord.AttributeNamesLength = (uint)attributeNameTableBytes.Length;
                     }
@@ -332,10 +332,10 @@ namespace DiskAccessLibrary.FileSystems.NTFS
 
         public LfsRecord WriteLogRecord(MftSegmentReference fileReference, AttributeRecord attributeRecord, ulong streamOffset, NTFSLogOperation redoOperation, byte[] redoData, NTFSLogOperation undoOperation, byte[] undoData, uint transactionID)
         {
-            return WriteLogRecord(fileReference, attributeRecord, streamOffset, redoOperation, redoData, undoOperation, undoData, transactionID, true);
+            return WriteLogRecord(fileReference, attributeRecord, streamOffset, 0, 0, redoOperation, redoData, undoOperation, undoData, transactionID, true);
         }
 
-        public LfsRecord WriteLogRecord(MftSegmentReference fileReference, AttributeRecord attributeRecord, ulong streamOffset, NTFSLogOperation redoOperation, byte[] redoData, NTFSLogOperation undoOperation, byte[] undoData, uint transactionID, bool flushToDisk)
+        public LfsRecord WriteLogRecord(MftSegmentReference fileReference, AttributeRecord attributeRecord, ulong streamOffset, int recordOffset, int attributeOffset, NTFSLogOperation redoOperation, byte[] redoData, NTFSLogOperation undoOperation, byte[] undoData, uint transactionID, bool flushToDisk)
         {
             int openAttributeOffset = 0;
             if (fileReference != null)
@@ -375,7 +375,7 @@ namespace DiskAccessLibrary.FileSystems.NTFS
                 lcnList.Add(lcn);
             }
 
-            return WriteLogRecord(openAttributeOffset, streamOffset, 0, 0, lcnList, redoOperation, redoData, undoOperation, undoData, transactionID, flushToDisk);
+            return WriteLogRecord(openAttributeOffset, streamOffset, recordOffset, attributeOffset, lcnList, redoOperation, redoData, undoOperation, undoData, transactionID, flushToDisk);
         }
 
         private LfsRecord WriteLogRecord(int openAttributeOffset, ulong streamOffset, int recordOffset, int attributeOffset, List<long> lcnList, NTFSLogOperation redoOperation, byte[] redoData, NTFSLogOperation undoOperation, byte[] undoData, uint transactionID, bool flushToDisk)
