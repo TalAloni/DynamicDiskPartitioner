@@ -575,6 +575,19 @@ namespace DiskAccessLibrary.FileSystems.NTFS
             }
         }
 
+        internal long ConvertToDataOffset(long recordVBN)
+        {
+            if (m_rootRecord.BytesPerIndexRecord >= m_volume.BytesPerCluster)
+            {
+                // The VBN is a VCN
+                return recordVBN * m_volume.BytesPerCluster;
+            }
+            else
+            {
+                return recordVBN * IndexRecord.BytesPerIndexRecordBlock;
+            }
+        }
+
         private long ConvertToRecordIndex(long recordVBN)
         {
             long sectorIndex = ConvertToSectorIndex(recordVBN);
