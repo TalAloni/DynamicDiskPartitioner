@@ -73,6 +73,13 @@ namespace DiskAccessLibrary.FileSystems.NTFS
             }
         }
 
+        public byte[] GetBytes()
+        {
+            byte[] buffer = new byte[Length];
+            WriteBytes(buffer, 0);
+            return buffer;
+        }
+
         public bool IsLastEntry
         {
             get
