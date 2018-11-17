@@ -71,6 +71,11 @@ namespace DiskAccessLibrary.FileSystems.NTFS
             if (lastClientRestartLsn == 0) // Freshly formatted disk
             {
                 m_currentRestartRecord = new NTFSRestartRecord(1, 0);
+                if (!Volume.IsReadOnly)
+                {
+                    // An initial restart record must be present for any subsequent log operations to be found during analysis and redone / undone
+                    WriteRestartRecord(true);
+                }
             }
             else
             {
