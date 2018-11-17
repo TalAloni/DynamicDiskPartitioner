@@ -545,7 +545,7 @@ namespace DiskAccessLibrary.FileSystems.NTFS
             // TODO: We may truncate the IndexAllocation attribute data and bitmap
         }
 
-        private IndexRecord ReadIndexRecord(long subnodeVBN)
+        internal IndexRecord ReadIndexRecord(long subnodeVBN)
         {
             long sectorIndex = ConvertToSectorIndex(subnodeVBN);
             byte[] recordBytes = m_indexAllocationData.ReadSectors(sectorIndex, this.SectorsPerIndexRecord);
