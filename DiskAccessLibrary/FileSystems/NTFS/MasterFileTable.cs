@@ -62,14 +62,17 @@ namespace DiskAccessLibrary.FileSystems.NTFS
             {
                 throw new InvalidDataException("Invalid MFT Record, missing Data attribute");
             }
-            AttributeRecord bitmapRecord = m_mftRecord.BitmapRecord;
-            if (bitmapRecord == null)
-            {
-                throw new InvalidDataException("Invalid MFT Record, missing Bitmap attribute");
-            }
             m_mftData = new AttributeData(m_volume, m_mftRecord, dataRecord);
             long numberOfUsableBits = (long)(m_mftData.Length / (uint)m_volume.BytesPerFileRecordSegment);
-            m_mftBitmap = new BitmapData(volume, m_mftRecord, bitmapRecord, numberOfUsableBits);
+            if (!manageMftMirror)
+            {
+                AttributeRecord bitmapRecord = m_mftRecord.BitmapRecord;
+                if (bitmapRecord == null)
+                {
+                    throw new InvalidDataException("Invalid MFT Record, missing Bitmap attribute");
+                }
+                m_mftBitmap = new BitmapData(volume, m_mftRecord, bitmapRecord, numberOfUsableBits);
+            }
             AttributeRecordLengthToMakeNonResident = m_volume.BytesPerFileRecordSegment * 5 / 16; // We immitate the NTFS v5.1 driver
         }
 
