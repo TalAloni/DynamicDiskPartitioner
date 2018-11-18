@@ -45,11 +45,11 @@ namespace DiskAccessLibraryTests
         {
             VirtualHardDisk disk = VirtualHardDisk.CreateFixedDisk(path, size);
             disk.ExclusiveLock();
-            CreateVHDAndFormatPrimaryPartition(disk, bytesPerCluster, volumeLabel);
+            CreateAndFormatPrimaryPartition(disk, bytesPerCluster, volumeLabel);
             disk.ReleaseLock();
         }
 
-        public static NTFSVolume CreateVHDAndFormatPrimaryPartition(Disk disk, int bytesPerCluster, string volumeLabel)
+        public static NTFSVolume CreateAndFormatPrimaryPartition(Disk disk, int bytesPerCluster, string volumeLabel)
         {
             MasterBootRecord mbr = new MasterBootRecord();
             mbr.DiskSignature = (uint)new Random().Next(Int32.MaxValue);

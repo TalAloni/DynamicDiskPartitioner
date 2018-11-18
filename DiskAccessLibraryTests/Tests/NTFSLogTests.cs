@@ -57,7 +57,7 @@ namespace DiskAccessLibraryTests
         {
             VirtualHardDisk disk = VirtualHardDisk.CreateFixedDisk(path, size);
             disk.ExclusiveLock();
-            NTFSVolume volume = NTFSFormatTests.CreateVHDAndFormatPrimaryPartition(disk, bytesPerCluster, volumeLabel);
+            NTFSVolume volume = NTFSFormatTests.CreateAndFormatPrimaryPartition(disk, bytesPerCluster, volumeLabel);
             //NTFSVolume volume = NTFSFormatTests.CreateVHDAndFormatPrimaryPartition(disk, 4096, volumeLabel);
             long segmentNumber = MasterFileTable.FirstUserSegmentNumber;
             FileNameRecord fileNameRecord = new FileNameRecord(MasterFileTable.RootDirSegmentReference, fileName, false, DateTime.Now);
