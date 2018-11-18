@@ -294,7 +294,7 @@ namespace DiskAccessLibrary.FileSystems.NTFS
                     MftSegmentReference segmentReference;
                     if (baseSegment.SegmentNumber == MasterFileTable.MasterFileTableSegmentNumber)
                     {
-                        segmentReference = AllocateReservedFileRecordSegment();
+                        segmentReference = AllocateReservedFileRecordSegment(transactionID);
                     }
                     else
                     {
@@ -436,9 +436,9 @@ namespace DiskAccessLibrary.FileSystems.NTFS
             }
         }
 
-        private MftSegmentReference AllocateReservedFileRecordSegment()
+        private MftSegmentReference AllocateReservedFileRecordSegment(uint transactionID)
         {
-            long? segmentNumber = m_mftBitmap.AllocateRecord(FirstReservedSegmentNumber, FirstUserSegmentNumber - 1);
+            long? segmentNumber = m_mftBitmap.AllocateRecord(FirstReservedSegmentNumber, FirstUserSegmentNumber - 1, transactionID);
             if (!segmentNumber.HasValue)
             {
                 throw new DiskFullException();
