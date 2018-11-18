@@ -40,6 +40,7 @@ namespace DiskAccessLibraryTests
 
             NTFSFormatTests.Test(path, size);
             NTFSLogTests.Test(path, size);
+            NTFSVolumeTests.Test(path, size);
         }
     }
 }
