@@ -223,13 +223,14 @@ namespace DiskAccessLibrary.FileSystems.NTFS
                     oldParentDirectoryIndex.RemoveEntry(fileNameRecord.GetBytes());
                 }
 
-                DateTime creationTime = fileRecord.FileNameRecord.CreationTime;
-                DateTime modificationTime = fileRecord.FileNameRecord.ModificationTime;
-                DateTime mftModificationTime = fileRecord.FileNameRecord.MftModificationTime;
-                DateTime lastAccessTime = fileRecord.FileNameRecord.LastAccessTime;
+                // Windows will not update the dates and FileAttributes in $File_Name as often as their counterparts in $STANDARD_INFORMATION.
+                DateTime creationTime = fileRecord.StandardInformation.CreationTime;
+                DateTime modificationTime = fileRecord.StandardInformation.ModificationTime;
+                DateTime mftModificationTime = fileRecord.StandardInformation.MftModificationTime;
+                DateTime lastAccessTime = fileRecord.StandardInformation.LastAccessTime;
                 ulong allocatedLength = fileRecord.FileNameRecord.AllocatedLength;
                 ulong fileSize = fileRecord.FileNameRecord.FileSize;
-                FileAttributes fileAttributes = fileRecord.FileNameRecord.FileAttributes;
+                FileAttributes fileAttributes = fileRecord.StandardInformation.FileAttributes;
                 ushort packedEASize = fileRecord.FileNameRecord.PackedEASize;
                 fileNameRecords = IndexHelper.GenerateFileNameRecords(newParentDirectory, newFileName, fileRecord.IsDirectory, m_generateDosNames, newParentDirectoryIndex, creationTime, modificationTime, mftModificationTime, lastAccessTime, allocatedLength, fileSize, fileAttributes, packedEASize);
                 fileRecord.RemoveAttributeRecords(AttributeType.FileName, String.Empty);
