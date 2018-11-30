@@ -17,7 +17,7 @@ namespace DiskAccessLibrary
 {
     public class PhysicalDisk : Disk, IDiskGeometry
     {
-        // ReadFile failed with ERROR_INVALID_FUNCTION when transfer size was > 4880 sectors when working with an iSCSI drive
+        // ReadFile failed with ERROR_INVALID_FUNCTION when transfer size was > 4880 sectors when working with an iSCSI drive.
         // Note: The size of the internal buffer has no meaningful impact on performance, instead you should look at MaximumTransferSizeLBA.
         public const int MaximumDirectTransferSizeLBA = 2048; // 1 MB (assuming 512-byte sectors)
 
