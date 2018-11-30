@@ -309,12 +309,13 @@ namespace DiskAccessLibrary.FileSystems.NTFS
 
         public static FileSystemEntry ToFileSystemEntry(string path, FileRecord fileRecord)
         {
+            // Windows will not update the dates and FileAttributes in $File_Name as often as their counterparts in $STANDARD_INFORMATION.
             ulong size = fileRecord.IsDirectory ? 0 : fileRecord.DataRecord.DataLength;
             FileAttributes attributes = fileRecord.StandardInformation.FileAttributes;
             bool isHidden = (attributes & FileAttributes.Hidden) > 0;
             bool isReadonly = (attributes & FileAttributes.Readonly) > 0;
             bool isArchived = (attributes & FileAttributes.Archive) > 0;
-            return new FileSystemEntry(path, fileRecord.FileName, fileRecord.IsDirectory, size, fileRecord.FileNameRecord.CreationTime, fileRecord.FileNameRecord.ModificationTime, fileRecord.FileNameRecord.LastAccessTime, isHidden, isReadonly, isArchived);
+            return new FileSystemEntry(path, fileRecord.FileName, fileRecord.IsDirectory, size, fileRecord.StandardInformation.CreationTime, fileRecord.StandardInformation.ModificationTime, fileRecord.StandardInformation.LastAccessTime, isHidden, isReadonly, isArchived);
         }
 
         public static FileSystemEntry ToFileSystemEntry(string path, FileNameRecord fileNameRecord)
