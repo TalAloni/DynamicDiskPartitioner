@@ -186,3 +186,42 @@ Revision History:
         NTFS: LogFile: FlushRecords: Bugfix: PagePosition was not correctly set upon reuse.
         NTFS: NTFSFile: Improved implementation, can now access Alternate Data Streams.
         Added InvalidPathException implementation.        
+
+1.5.3 - NTFS: Changed NTFS version fields to byte to match VolumeInformation attribute record.
+        NTFS: NTFSBootRecord: Improved implementation.
+        NTFS: MasterFileTable: Marked all predefined segment numbers as internal.
+        NTFS: VolumeBitmap: Marked ExtendGranularity and Bitmap methods as internal.
+        NTFS: BitmapData: Marked ExtendGranularity and bitmap methods as internal.
+        NTFS: LfsRestartArea: Improved implementation.
+        NTFS: AttributeDefinitionEntry: Added constructor.
+        NTFS: Improved control over during attribute creation whether it will be resident or non-resident.
+        NTFS: AttributeDefinition: Added GetBytes method.
+        NTFS: LfsClientRecord: Corrected ClientNameMaxLength and Length values, Improved constructor.
+        NTFS: IndexHelper: InitializeIndexRoot: CollationRule now has to be specified excplicitly.
+        NTFS: FileRecordFlags: Added IsExtension and IsSpecialIndex flags.
+        NTFS: NTFSLogClient: Marked ClientName as internal.
+        NTFS: LogFile: Added IsClientInUse method.
+        NTFS: NTFSLogClient: Throw NotSupportedException if client is not in use.
+        NTFS: NTFSLogClient: Support ClientRestartLsn == 0 (on a freshly formatted disk).
+        NTFS: LogFile: Support CurrentLsn == 0 (on a freshly formatted disk).
+        NTFS: LFSRestartPage: Added Create method.
+        NTFS: Added NTFSVolumeCreator class.
+        NTFS: NTFSLogClient: WriteRestartRecord: Removed unnecessary parameter.
+        NTFS: NTFSLogClient: Added WriteForgetTransactionRecord overload with flushToDisk parameter.
+        NTFS: NTFSLogClient: WriteLogRecord: The recordOffset and attributeOffset parameters can now be specified.
+        NTFS: NTFSLogClient: Bugfix: Set BytesPerIndexBuffer for IndexAllocation attribute when writing OpenAttributeEntry.
+        NTFS: NTFSLogClient: Bugfix: Write an initial NTFS restart record before any log record if the disk is freshly formatted.
+        NTFS: IndexEntry: Added GetBytes method.
+        NTFS: IndexRecord: Added GetEntryOffset method.
+        NTFS: IndexData: Added ConvertToDataOffset method.
+        NTFS: NTFSVolumeCreator: Improved documentation.
+        NTFS: IndexData: Marked ReadIndexRecord method as internal.
+        NTFS: NTFSLogClient: WriteLogRecord: Bugfix: Correctly handle log records that affect multiple clusters by adding structureLength parameter.
+        NTFS: MasterFileTable: AllocateReservedFileRecordSegment: Bugfix: AllocateRecord was given invalid argument which caused an exception.
+        NTFS: MasterFileTable: Bugfix: Do not try to read MFT mirror bitmap attribute.
+        MasterBootRecord: Improved implementation.
+        Settings: Reduced MaximumTransferSizeLBA to 32768 sectors to avoid ERROR_NO_SYSTEM_RESOURCES when using overlapped IO.
+        NTFSFileSystem: Read the dates in $Standard_Information instead of the ones in $File_Name which are not updated as often.
+        NTFSFileSystem: SetDates: Bugfix: Directory index was not updated.
+        NTFSVolume: MoveFile: Use the dates and FileAttributes in $Standard_Information instead $File_Name.
+        IFileSystem: Added ListDataStreams method.
