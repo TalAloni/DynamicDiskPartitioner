@@ -31,8 +31,8 @@ namespace DiskAccessLibrary.FileSystems.NTFS
 
         public override FileSystemEntry GetEntry(string path)
         {
-            FileRecord record = m_volume.GetFileRecord(path);
-            return ToFileSystemEntry(path, record);
+            FileRecord fileRecord = m_volume.GetFileRecord(path);
+            return ToFileSystemEntry(path, fileRecord);
         }
 
         public override FileSystemEntry CreateFile(string path)
@@ -193,16 +193,16 @@ namespace DiskAccessLibrary.FileSystems.NTFS
 
         public override void SetAttributes(string path, bool? isHidden, bool? isReadonly, bool? isArchived)
         {
-            FileRecord record = m_volume.GetFileRecord(path);
+            FileRecord fileRecord = m_volume.GetFileRecord(path);
             if (isHidden.HasValue)
             {
                 if (isHidden.Value)
                 {
-                    record.StandardInformation.FileAttributes |= FileAttributes.Hidden;
+                    fileRecord.StandardInformation.FileAttributes |= FileAttributes.Hidden;
                 }
                 else
                 {
-                    record.StandardInformation.FileAttributes &= ~FileAttributes.Hidden;
+                    fileRecord.StandardInformation.FileAttributes &= ~FileAttributes.Hidden;
                 }
             }
 
@@ -210,11 +210,11 @@ namespace DiskAccessLibrary.FileSystems.NTFS
             {
                 if (isReadonly.Value)
                 {
-                    record.StandardInformation.FileAttributes |= FileAttributes.Readonly;
+                    fileRecord.StandardInformation.FileAttributes |= FileAttributes.Readonly;
                 }
                 else
                 {
-                    record.StandardInformation.FileAttributes &= ~FileAttributes.Readonly;
+                    fileRecord.StandardInformation.FileAttributes &= ~FileAttributes.Readonly;
                 }
             }
 
@@ -222,42 +222,42 @@ namespace DiskAccessLibrary.FileSystems.NTFS
             {
                 if (isArchived.Value)
                 {
-                    record.StandardInformation.FileAttributes |= FileAttributes.Archive;
+                    fileRecord.StandardInformation.FileAttributes |= FileAttributes.Archive;
                 }
                 else
                 {
-                    record.StandardInformation.FileAttributes &= ~FileAttributes.Archive;
+                    fileRecord.StandardInformation.FileAttributes &= ~FileAttributes.Archive;
                 }
             }
 
-            record.StandardInformation.MftModificationTime = DateTime.Now;
-            m_volume.UpdateFileRecord(record);
+            fileRecord.StandardInformation.MftModificationTime = DateTime.Now;
+            m_volume.UpdateFileRecord(fileRecord);
         }
 
         public override void SetDates(string path, DateTime? creationDT, DateTime? lastWriteDT, DateTime? lastAccessDT)
         {
-            FileRecord record = m_volume.GetFileRecord(path);
+            FileRecord fileRecord = m_volume.GetFileRecord(path);
             if (creationDT.HasValue)
             {
-                record.StandardInformation.CreationTime = creationDT.Value;
-                record.FileNameRecord.CreationTime = creationDT.Value;
+                fileRecord.StandardInformation.CreationTime = creationDT.Value;
+                fileRecord.FileNameRecord.CreationTime = creationDT.Value;
             }
 
             if (lastWriteDT.HasValue)
             {
-                record.StandardInformation.ModificationTime = lastWriteDT.Value;
-                record.FileNameRecord.ModificationTime = lastWriteDT.Value;
+                fileRecord.StandardInformation.ModificationTime = lastWriteDT.Value;
+                fileRecord.FileNameRecord.ModificationTime = lastWriteDT.Value;
             }
 
             if (lastAccessDT.HasValue)
             {
-                record.StandardInformation.LastAccessTime = lastAccessDT.Value;
-                record.FileNameRecord.LastAccessTime = lastAccessDT.Value;
+                fileRecord.StandardInformation.LastAccessTime = lastAccessDT.Value;
+                fileRecord.FileNameRecord.LastAccessTime = lastAccessDT.Value;
             }
 
-            record.StandardInformation.MftModificationTime = DateTime.Now;
-            record.FileNameRecord.MftModificationTime = DateTime.Now;
-            m_volume.UpdateFileRecord(record);
+            fileRecord.StandardInformation.MftModificationTime = DateTime.Now;
+            fileRecord.FileNameRecord.MftModificationTime = DateTime.Now;
+            m_volume.UpdateFileRecord(fileRecord);
         }
 
         public long GetMaximumSizeToExtend()
@@ -307,25 +307,25 @@ namespace DiskAccessLibrary.FileSystems.NTFS
             }
         }
 
-        public static FileSystemEntry ToFileSystemEntry(string path, FileRecord record)
+        public static FileSystemEntry ToFileSystemEntry(string path, FileRecord fileRecord)
         {
-            ulong size = record.IsDirectory ? 0 : record.DataRecord.DataLength;
-            FileAttributes attributes = record.StandardInformation.FileAttributes;
+            ulong size = fileRecord.IsDirectory ? 0 : fileRecord.DataRecord.DataLength;
+            FileAttributes attributes = fileRecord.StandardInformation.FileAttributes;
             bool isHidden = (attributes & FileAttributes.Hidden) > 0;
             bool isReadonly = (attributes & FileAttributes.Readonly) > 0;
             bool isArchived = (attributes & FileAttributes.Archive) > 0;
-            return new FileSystemEntry(path, record.FileName, record.IsDirectory, size, record.FileNameRecord.CreationTime, record.FileNameRecord.ModificationTime, record.FileNameRecord.LastAccessTime, isHidden, isReadonly, isArchived);
+            return new FileSystemEntry(path, fileRecord.FileName, fileRecord.IsDirectory, size, fileRecord.FileNameRecord.CreationTime, fileRecord.FileNameRecord.ModificationTime, fileRecord.FileNameRecord.LastAccessTime, isHidden, isReadonly, isArchived);
         }
 
-        public static FileSystemEntry ToFileSystemEntry(string path, FileNameRecord record)
+        public static FileSystemEntry ToFileSystemEntry(string path, FileNameRecord fileNameRecord)
         {
-            ulong size = record.FileSize;
-            bool isDirectory = record.IsDirectory;
-            FileAttributes attributes = record.FileAttributes;
+            ulong size = fileNameRecord.FileSize;
+            bool isDirectory = fileNameRecord.IsDirectory;
+            FileAttributes attributes = fileNameRecord.FileAttributes;
             bool isHidden = (attributes & FileAttributes.Hidden) > 0;
             bool isReadonly = (attributes & FileAttributes.Readonly) > 0;
             bool isArchived = (attributes & FileAttributes.Archive) > 0;
-            return new FileSystemEntry(path, record.FileName, isDirectory, size, record.CreationTime, record.ModificationTime, record.LastAccessTime, isHidden, isReadonly, isArchived);
+            return new FileSystemEntry(path, fileNameRecord.FileName, isDirectory, size, fileNameRecord.CreationTime, fileNameRecord.ModificationTime, fileNameRecord.LastAccessTime, isHidden, isReadonly, isArchived);
         }
     }
 }
