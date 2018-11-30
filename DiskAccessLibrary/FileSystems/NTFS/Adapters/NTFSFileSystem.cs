@@ -193,6 +193,8 @@ namespace DiskAccessLibrary.FileSystems.NTFS
 
         public override void SetAttributes(string path, bool? isHidden, bool? isReadonly, bool? isArchived)
         {
+            // The dates and FileAttributes stored in $Standard_Information are accessible to user-level processes,
+            // while the ones in $File_Name are maintained internally and not updated often.
             FileRecord fileRecord = m_volume.GetFileRecord(path);
             if (isHidden.HasValue)
             {
@@ -236,28 +238,49 @@ namespace DiskAccessLibrary.FileSystems.NTFS
 
         public override void SetDates(string path, DateTime? creationDT, DateTime? lastWriteDT, DateTime? lastAccessDT)
         {
+            // The dates and FileAttributes stored in $Standard_Information are accessible to user-level processes,
+            // while the ones in $File_Name are maintained internally and not updated often.
+            // http://cyberforensicator.com/2018/03/25/windows-10-time-rules/
             FileRecord fileRecord = m_volume.GetFileRecord(path);
             if (creationDT.HasValue)
             {
                 fileRecord.StandardInformation.CreationTime = creationDT.Value;
-                fileRecord.FileNameRecord.CreationTime = creationDT.Value;
             }
 
             if (lastWriteDT.HasValue)
             {
                 fileRecord.StandardInformation.ModificationTime = lastWriteDT.Value;
-                fileRecord.FileNameRecord.ModificationTime = lastWriteDT.Value;
             }
 
             if (lastAccessDT.HasValue)
             {
                 fileRecord.StandardInformation.LastAccessTime = lastAccessDT.Value;
-                fileRecord.FileNameRecord.LastAccessTime = lastAccessDT.Value;
             }
 
             fileRecord.StandardInformation.MftModificationTime = DateTime.Now;
-            fileRecord.FileNameRecord.MftModificationTime = DateTime.Now;
+
+            List<FileNameRecord> fileNameRecords = fileRecord.FileNameRecords;
+            foreach(FileNameRecord fileNameRecord in fileNameRecords)
+            {
+                if (creationDT.HasValue)
+                {
+                    fileNameRecord.CreationTime = creationDT.Value;
+                }
+
+                if (lastWriteDT.HasValue)
+                {
+                    fileNameRecord.ModificationTime = lastWriteDT.Value;
+                }
+
+                if (lastAccessDT.HasValue)
+                {
+                    fileNameRecord.LastAccessTime = lastAccessDT.Value;
+                }
+
+                fileNameRecord.MftModificationTime = DateTime.Now;
+            }
             m_volume.UpdateFileRecord(fileRecord);
+            m_volume.UpdateDirectoryIndex(fileRecord.ParentDirectoryReference, fileNameRecords);
         }
 
         public long GetMaximumSizeToExtend()
