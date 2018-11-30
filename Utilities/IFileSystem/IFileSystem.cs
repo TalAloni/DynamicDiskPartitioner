@@ -50,6 +50,13 @@ namespace Utilities
         /// <exception cref="System.IO.FileNotFoundException"></exception>
         /// <exception cref="System.IO.IOException"></exception>
         /// <exception cref="System.UnauthorizedAccessException"></exception>
+        List<KeyValuePair<string, ulong>> ListDataStreams(string path);
+
+        /// <exception cref="System.ArgumentException"></exception>
+        /// <exception cref="System.IO.DirectoryNotFoundException"></exception>
+        /// <exception cref="System.IO.FileNotFoundException"></exception>
+        /// <exception cref="System.IO.IOException"></exception>
+        /// <exception cref="System.UnauthorizedAccessException"></exception>
         Stream OpenFile(string path, FileMode mode, FileAccess access, FileShare share, FileOptions options);
 
         /// <exception cref="System.ArgumentException"></exception>
