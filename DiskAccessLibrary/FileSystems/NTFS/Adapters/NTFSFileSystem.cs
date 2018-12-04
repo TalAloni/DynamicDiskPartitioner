@@ -31,16 +31,45 @@ namespace DiskAccessLibrary.FileSystems.NTFS
 
         public override FileSystemEntry GetEntry(string path)
         {
+            string streamName = GetStreamName(path);
+            path = GetFilePath(path);
             FileRecord fileRecord = m_volume.GetFileRecord(path);
+            if (streamName != String.Empty && fileRecord.GetAttributeRecord(AttributeType.Data, streamName) == null)
+            {
+                throw new FileNotFoundException(String.Format("The file '{0}' does not contain a stream named '{1}'", path, streamName));
+            }
             return ToFileSystemEntry(path, fileRecord);
         }
 
         public override FileSystemEntry CreateFile(string path)
         {
+            string streamName = GetStreamName(path);
+            path = GetFilePath(path);
             string parentDirectoryName = Path.GetDirectoryName(path);
             string fileName = Path.GetFileName(path);
             FileRecord parentDirectoryRecord = m_volume.GetFileRecord(parentDirectoryName);
-            FileRecord fileRecord = m_volume.CreateFile(parentDirectoryRecord.BaseSegmentReference, fileName, false);
+            FileRecord fileRecord = null;
+            if (streamName == String.Empty)
+            {
+                fileRecord = m_volume.CreateFile(parentDirectoryRecord.BaseSegmentReference, fileName, false);
+            }
+            else
+            {
+                try
+                {
+                    fileRecord = m_volume.GetFileRecord(path);
+                }
+                catch (FileNotFoundException)
+                {
+                }
+
+                if (fileRecord == null)
+                {
+                    fileRecord = m_volume.CreateFile(parentDirectoryRecord.BaseSegmentReference, fileName, false);
+                }
+                fileRecord.CreateAttributeRecord(AttributeType.Data, streamName);
+                m_volume.UpdateFileRecord(fileRecord);
+            }
             return ToFileSystemEntry(path, fileRecord);
         }
 
@@ -64,8 +93,26 @@ namespace DiskAccessLibrary.FileSystems.NTFS
 
         public override void Delete(string path)
         {
+            string streamName = GetStreamName(path);
+            path = GetFilePath(path);
             FileRecord fileRecord = m_volume.GetFileRecord(path);
-            m_volume.DeleteFile(fileRecord);
+            if (streamName == String.Empty)
+            {
+                m_volume.DeleteFile(fileRecord);
+            }
+            else
+            {
+                // We only delete the named stream
+                AttributeRecord dataRecord = fileRecord.GetAttributeRecord(AttributeType.Data, streamName);
+                if (dataRecord == null)
+                {
+                    throw new FileNotFoundException(String.Format("The file '{0}' does not contain a stream named '{1}'", path, streamName));
+                }
+                AttributeData attributeData = new AttributeData(m_volume, fileRecord, dataRecord);
+                attributeData.Truncate(0);
+                fileRecord.RemoveAttributeRecord(AttributeType.Data, streamName);
+                m_volume.UpdateFileRecord(fileRecord);
+            }
         }
 
         public override List<FileSystemEntry> ListEntriesInDirectory(string path)
@@ -90,9 +137,27 @@ namespace DiskAccessLibrary.FileSystems.NTFS
             return result;
         }
 
+        public override List<KeyValuePair<string, ulong>> ListDataStreams(string path)
+        {
+            List<KeyValuePair<string, ulong>> result = new List<KeyValuePair<string, ulong>>();
+            FileRecord fileRecord = m_volume.GetFileRecord(path);
+            foreach (AttributeRecord attribute in fileRecord.Attributes)
+            {
+                if (attribute.AttributeType == AttributeType.Data)
+                {
+                    string streamName = String.Format(":{0}:$DATA", attribute.Name);
+                    result.Add(new KeyValuePair<string, ulong>(streamName, attribute.DataLength));
+                }
+            }
+            return result;
+        }
+
         public override Stream OpenFile(string path, FileMode mode, FileAccess access, FileShare share, FileOptions options)
         {
+            string streamName = GetStreamName(path);
+            path = GetFilePath(path);
             FileRecord fileRecord = null;
+            AttributeRecord dataRecord = null;
             if (mode == FileMode.CreateNew || mode == FileMode.Create || mode == FileMode.OpenOrCreate)
             {
                 bool fileExists = false;
@@ -112,9 +177,27 @@ namespace DiskAccessLibrary.FileSystems.NTFS
                 {
                     if (mode == FileMode.CreateNew)
                     {
-                        throw new AlreadyExistsException();
+                        if (streamName == String.Empty)
+                        {
+                            throw new AlreadyExistsException();
+                        }
+                        else
+                        {
+                            dataRecord = fileRecord.GetAttributeRecord(AttributeType.Data, streamName);
+                            if (dataRecord != null)
+                            {
+                                throw new AlreadyExistsException();
+                            }
+                        }
                     }
-                    else if (mode == FileMode.Create)
+
+                    if (streamName != String.Empty && dataRecord == null)
+                    {
+                        fileRecord.CreateAttributeRecord(AttributeType.Data, streamName);
+                        m_volume.UpdateFileRecord(fileRecord);
+                    }
+                    
+                    if (mode == FileMode.Create)
                     {
                         mode = FileMode.Truncate;
                     }
@@ -125,11 +208,21 @@ namespace DiskAccessLibrary.FileSystems.NTFS
                     string fileName = Path.GetFileName(path);
                     FileRecord directoryRecord = m_volume.GetFileRecord(directoryPath);
                     fileRecord = m_volume.CreateFile(directoryRecord.BaseSegmentReference, fileName, false);
+                    if (streamName != String.Empty)
+                    {
+                        fileRecord.CreateAttributeRecord(AttributeType.Data, streamName);
+                        m_volume.UpdateFileRecord(fileRecord);
+                    }
                 }
             }
             else // Open, Truncate or Append
             {
                 fileRecord = m_volume.GetFileRecord(path);
+                dataRecord = fileRecord.GetAttributeRecord(AttributeType.Data, streamName);
+                if (streamName != String.Empty && dataRecord == null)
+                {
+                    throw new FileNotFoundException(String.Format("The file '{0}' does not contain a stream named '{1}'", path, streamName));
+                }
             }
 
             if (fileRecord.IsDirectory)
@@ -165,7 +258,7 @@ namespace DiskAccessLibrary.FileSystems.NTFS
                 }
             }
 
-            NTFSFile file = new NTFSFile(m_volume, fileRecord);
+            NTFSFile file = new NTFSFile(m_volume, fileRecord, streamName);
             NTFSFileStream stream = new NTFSFileStream(file, access);
             openStreams.Add(stream);
             stream.Closed += delegate(object sender, EventArgs e)
@@ -326,7 +419,7 @@ namespace DiskAccessLibrary.FileSystems.NTFS
         {
             get
             {
-                return false;
+                return true;
             }
         }
 
@@ -350,6 +443,39 @@ namespace DiskAccessLibrary.FileSystems.NTFS
             bool isReadonly = (attributes & FileAttributes.Readonly) > 0;
             bool isArchived = (attributes & FileAttributes.Archive) > 0;
             return new FileSystemEntry(path, fileNameRecord.FileName, isDirectory, size, fileNameRecord.CreationTime, fileNameRecord.ModificationTime, fileNameRecord.LastAccessTime, isHidden, isReadonly, isArchived);
+        }
+
+        /// <summary>
+        /// Removes the stream name from the path
+        /// </summary>
+        public static string GetFilePath(string path)
+        {
+            int index = path.IndexOf(':');
+            if (index >= 0)
+            {
+                path = path.Substring(0, index);
+            }
+            return path;
+        }
+
+        public static string GetStreamName(string path)
+        {
+            int index = path.IndexOf(':');
+            if (index >= 0)
+            {
+                string streamName = path.Substring(index + 1);
+                if (streamName.EndsWith(":$DATA"))
+                {
+                    streamName = streamName.Substring(0, streamName.Length - 6);
+                }
+
+                if (streamName.Contains(":"))
+                {
+                    throw new InvalidPathException("Invalid stream name");
+                }
+                return streamName;
+            }
+            return String.Empty;
         }
     }
 }
