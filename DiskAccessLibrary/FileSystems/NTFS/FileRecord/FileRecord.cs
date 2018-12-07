@@ -85,7 +85,8 @@ namespace DiskAccessLibrary.FileSystems.NTFS
         public AttributeRecord CreateAttributeRecord(AttributeType type, string name)
         {
             bool isResident = (type != AttributeType.IndexAllocation);
-            AttributeRecord attribute = AttributeRecord.Create(type, name, m_segments[0].NextAttributeInstance, isResident);
+            AttributeRecord attribute = AttributeRecord.Create(type, name, isResident);
+            attribute.Instance = m_segments[0].NextAttributeInstance;
             m_segments[0].NextAttributeInstance++;
             FileRecordHelper.InsertSorted(this.Attributes, attribute);
             return attribute;

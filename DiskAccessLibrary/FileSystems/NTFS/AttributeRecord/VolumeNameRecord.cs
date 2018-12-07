@@ -20,7 +20,7 @@ namespace DiskAccessLibrary.FileSystems.NTFS
 
         private string m_volumeName;
 
-        public VolumeNameRecord(string name, ushort instance) : base(AttributeType.VolumeName, name, instance)
+        public VolumeNameRecord(string name) : base(AttributeType.VolumeName, name)
         {
             m_volumeName = String.Empty;
         }

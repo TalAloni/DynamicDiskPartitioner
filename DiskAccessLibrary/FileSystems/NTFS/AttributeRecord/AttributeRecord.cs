@@ -24,16 +24,15 @@ namespace DiskAccessLibrary.FileSystems.NTFS
         private byte m_nameLength; // number of characters
         // ushort NameOffset;
         public AttributeFlags Flags;
-        private ushort m_instance;
+        internal ushort Instance;
         /* End of ATTRIBUTE_RECORD_HEADER */
         private string m_name = String.Empty;
 
-        protected AttributeRecord(AttributeType attributeType, string name, bool isResident, ushort instance)
+        protected AttributeRecord(AttributeType attributeType, string name, bool isResident)
         {
             m_attribueType = attributeType;
             m_name = name;
             m_attributeForm = isResident ? AttributeForm.Resident : AttributeForm.NonResident;
-            m_instance = instance;
         }
 
         protected AttributeRecord(byte[] buffer, int offset)
@@ -44,7 +43,7 @@ namespace DiskAccessLibrary.FileSystems.NTFS
             m_nameLength = ByteReader.ReadByte(buffer, offset + 0x09);
             ushort nameOffset = LittleEndianConverter.ToUInt16(buffer, offset + 0x0A);
             Flags = (AttributeFlags)LittleEndianConverter.ToUInt16(buffer, offset + 0x0C);
-            m_instance = LittleEndianConverter.ToUInt16(buffer, offset + 0x0E);
+            Instance = LittleEndianConverter.ToUInt16(buffer, offset + 0x0E);
             if (m_nameLength > 0)
             {
                 m_name = ByteReader.ReadUTF16String(buffer, offset + nameOffset, m_nameLength);
@@ -64,7 +63,7 @@ namespace DiskAccessLibrary.FileSystems.NTFS
             ByteWriter.WriteByte(buffer, 0x09, m_nameLength);
             LittleEndianWriter.WriteUInt16(buffer, 0x0A, nameOffset);
             LittleEndianWriter.WriteUInt16(buffer, 0x0C, (ushort)Flags);
-            LittleEndianWriter.WriteUInt16(buffer, 0x0E, m_instance);
+            LittleEndianWriter.WriteUInt16(buffer, 0x0E, Instance);
 
             if (m_nameLength > 0)
             {
@@ -85,14 +84,6 @@ namespace DiskAccessLibrary.FileSystems.NTFS
             get
             {
                 return (m_attributeForm == AttributeForm.Resident);
-            }
-        }
-
-        public ushort Instance
-        {
-            get
-            {
-                return m_instance;
             }
         }
 
@@ -127,15 +118,15 @@ namespace DiskAccessLibrary.FileSystems.NTFS
             }
         }
 
-        public static AttributeRecord Create(AttributeType type, string name, ushort instance, bool isResident)
+        public static AttributeRecord Create(AttributeType type, string name, bool isResident)
         {
             if (isResident)
             {
-                return ResidentAttributeRecord.Create(type, name, instance);
+                return ResidentAttributeRecord.Create(type, name);
             }
             else
             {
-                return NonResidentAttributeRecord.Create(type, name, instance);
+                return NonResidentAttributeRecord.Create(type, name);
             }
         }
 

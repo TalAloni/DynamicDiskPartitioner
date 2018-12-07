@@ -22,7 +22,7 @@ namespace DiskAccessLibrary.FileSystems.NTFS
         private ResidentForm m_residentForm;
         private byte m_reserved;
 
-        public ResidentAttributeRecord(AttributeType attributeType, string name, ushort instance) : base(attributeType, name, true, instance)
+        public ResidentAttributeRecord(AttributeType attributeType, string name) : base(attributeType, name, true)
         {
             Data = new byte[0];
         }
@@ -109,24 +109,24 @@ namespace DiskAccessLibrary.FileSystems.NTFS
             return length;
         }
 
-        public static ResidentAttributeRecord Create(AttributeType type, string name, ushort instance)
+        public static ResidentAttributeRecord Create(AttributeType type, string name)
         {
             switch (type)
             {
                 case AttributeType.StandardInformation:
-                    return new StandardInformationRecord(name, instance);
+                    return new StandardInformationRecord(name);
                 case AttributeType.FileName:
-                    return new FileNameAttributeRecord(name, instance);
+                    return new FileNameAttributeRecord(name);
                 case AttributeType.VolumeName:
-                    return new VolumeNameRecord(name, instance);
+                    return new VolumeNameRecord(name);
                 case AttributeType.VolumeInformation:
-                    return new VolumeInformationRecord(name, instance);
+                    return new VolumeInformationRecord(name);
                 case AttributeType.IndexRoot:
-                    return new IndexRootRecord(name, instance);
+                    return new IndexRootRecord(name);
                 case AttributeType.IndexAllocation:
                     throw new ArgumentException("IndexAllocation attribute is always non-resident");
                 default:
-                    return new ResidentAttributeRecord(type, name, instance);
+                    return new ResidentAttributeRecord(type, name);
             }
         }
     }

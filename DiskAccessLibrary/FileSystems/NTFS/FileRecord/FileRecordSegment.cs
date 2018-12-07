@@ -159,7 +159,8 @@ namespace DiskAccessLibrary.FileSystems.NTFS
 
         internal AttributeRecord CreateAttributeRecord(AttributeType type, string name, bool isResident)
         {
-            AttributeRecord attribute = AttributeRecord.Create(type, name, NextAttributeInstance, isResident);
+            AttributeRecord attribute = AttributeRecord.Create(type, name, isResident);
+            attribute.Instance = NextAttributeInstance;
             NextAttributeInstance++;
             FileRecordHelper.InsertSorted(m_immediateAttributes, attribute);
             return attribute;

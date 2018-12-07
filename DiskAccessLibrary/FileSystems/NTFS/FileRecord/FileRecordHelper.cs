@@ -83,7 +83,8 @@ namespace DiskAccessLibrary.FileSystems.NTFS
                 throw new InvalidDataException(message);
             }
 
-            NonResidentAttributeRecord attribute = NonResidentAttributeRecord.Create(firstFragment.AttributeType, firstFragment.Name, nextAttributeInstance);
+            NonResidentAttributeRecord attribute = NonResidentAttributeRecord.Create(firstFragment.AttributeType, firstFragment.Name);
+            attribute.Instance = nextAttributeInstance;
             attribute.Flags = firstFragment.Flags;
             attribute.LowestVCN = 0;
             attribute.HighestVCN = -1;
@@ -219,7 +220,8 @@ namespace DiskAccessLibrary.FileSystems.NTFS
             // Each attribute record is aligned to 8-byte boundary, we must have enough room for padding
             availableLength = (int)Math.Floor((double)availableLength / 8) * 8;
             // Note that we're using the original record Instance instead of using the FileRecordSegment.NextAttributeInstance
-            NonResidentAttributeRecord slice = new NonResidentAttributeRecord(record.AttributeType, record.Name, record.Instance);
+            NonResidentAttributeRecord slice = new NonResidentAttributeRecord(record.AttributeType, record.Name);
+            slice.Instance = record.Instance;
             DataRunSequence dataRuns = record.DataRunSequence;
             long clusterCount = 0;
             for (int index = 0; index < runIndex; index++)

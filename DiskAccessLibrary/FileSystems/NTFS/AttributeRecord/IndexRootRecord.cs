@@ -25,7 +25,7 @@ namespace DiskAccessLibrary.FileSystems.NTFS
         private IndexHeader m_indexHeader;
         public List<IndexEntry> IndexEntries;
 
-        public IndexRootRecord(string name, ushort instance) : base(AttributeType.IndexRoot, name, instance)
+        public IndexRootRecord(string name) : base(AttributeType.IndexRoot, name)
         {
             m_indexHeader = new IndexHeader();
             IndexEntries = new List<IndexEntry>();

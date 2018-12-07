@@ -31,7 +31,7 @@ namespace DiskAccessLibrary.FileSystems.NTFS
         public ulong QuotaCharged; // NTFS v3.0+
         public ulong UpdateSequenceNumber; // a.k.a. USN, NTFS v3.0+
 
-        public StandardInformationRecord(string name, ushort instance) : base(AttributeType.StandardInformation, name, instance)
+        public StandardInformationRecord(string name) : base(AttributeType.StandardInformation, name)
         {
         }
 

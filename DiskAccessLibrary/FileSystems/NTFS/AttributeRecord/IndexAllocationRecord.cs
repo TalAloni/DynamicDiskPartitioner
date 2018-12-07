@@ -15,7 +15,7 @@ namespace DiskAccessLibrary.FileSystems.NTFS
     /// </remarks>
     public class IndexAllocationRecord : NonResidentAttributeRecord
     {
-        public IndexAllocationRecord(string name, ushort instance) : base(AttributeType.IndexAllocation, name, instance)
+        public IndexAllocationRecord(string name) : base(AttributeType.IndexAllocation, name)
         {
         }
 

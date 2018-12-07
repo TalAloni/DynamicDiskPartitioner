@@ -18,7 +18,7 @@ namespace DiskAccessLibrary.FileSystems.NTFS
     {
         public FileNameRecord Record;
 
-        public FileNameAttributeRecord(string name, ushort instance) : base(AttributeType.FileName, name, instance)
+        public FileNameAttributeRecord(string name) : base(AttributeType.FileName, name)
         {
         }
 
