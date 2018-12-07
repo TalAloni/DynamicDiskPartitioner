@@ -16,18 +16,30 @@ namespace DiskAccessLibrary.FileSystems.NTFS
     /// </summary>
     public class FileRecord
     {
-        private List<FileRecordSegment> m_segments;
+        private List<FileRecordSegment> m_segments; // Used for logging purposes and must not be modified outside UpdateSegments
+        
+        public ushort ReferenceCount;
+        public bool IsInUse;
+        public bool IsDirectory;
         private List<AttributeRecord> m_attributes;
 
         internal FileRecord(FileRecordSegment segment)
         {
             m_segments = new List<FileRecordSegment>();
             m_segments.Add(segment);
+
+            ReferenceCount = m_segments[0].ReferenceCount;
+            IsInUse = m_segments[0].IsInUse;
+            IsDirectory = m_segments[0].IsDirectory;
         }
 
         internal FileRecord(List<FileRecordSegment> segments)
         {
             m_segments = segments;
+
+            ReferenceCount = m_segments[0].ReferenceCount;
+            IsInUse = m_segments[0].IsInUse;
+            IsDirectory = m_segments[0].IsDirectory;
         }
 
         /// <remarks>
@@ -35,6 +47,9 @@ namespace DiskAccessLibrary.FileSystems.NTFS
         /// </remarks>
         public void UpdateSegments(int bytesPerFileRecordSegment, byte minorNTFSVersion)
         {
+            m_segments[0].ReferenceCount = ReferenceCount;
+            m_segments[0].IsInUse = IsInUse;
+            m_segments[0].IsDirectory = IsDirectory;
             List<AttributeRecord> attributes = this.Attributes;
 
             foreach (FileRecordSegment segment in m_segments)
@@ -164,6 +179,9 @@ namespace DiskAccessLibrary.FileSystems.NTFS
             return null;
         }
 
+        /// <summary>
+        /// Used for logging purposes and must not be modified outside UpdateSegments
+        /// </summary>
         internal List<FileRecordSegment> Segments
         {
             get
@@ -172,6 +190,9 @@ namespace DiskAccessLibrary.FileSystems.NTFS
             }
         }
 
+        /// <summary>
+        /// Used for logging purposes and must not be modified outside UpdateSegments
+        /// </summary>
         internal FileRecordSegment BaseSegment
         {
             get
@@ -341,22 +362,6 @@ namespace DiskAccessLibrary.FileSystems.NTFS
             get
             {
                 return GetAttributeRecord(AttributeType.Bitmap, String.Empty);
-            }
-        }
-
-        public bool IsInUse
-        {
-            get
-            {
-                return m_segments[0].IsInUse;
-            }
-        }
-
-        public bool IsDirectory
-        {
-            get
-            {
-                return m_segments[0].IsDirectory;
             }
         }
 
