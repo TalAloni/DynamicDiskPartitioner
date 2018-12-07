@@ -87,6 +87,13 @@ namespace DiskAccessLibrary.FileSystems.NTFS
             return sequence;
         }
 
+        public override AttributeRecord Clone()
+        {
+            NonResidentAttributeRecord clone = (NonResidentAttributeRecord)this.MemberwiseClone();
+            clone.m_dataRunSequence = m_dataRunSequence.Clone();
+            return clone;
+        }
+
         /// <summary>
         /// Each attribute record must be aligned to 8-byte boundary, so RecordLength must be a multiple of 8.
         /// When reading attributes, they may contain additional padding,

@@ -41,6 +41,11 @@ namespace DiskAccessLibrary.FileSystems.NTFS
             ByteWriter.WriteByte(buffer, offset + 0x0C, (byte)IndexFlags);
         }
 
+        public IndexHeader Clone()
+        {
+            return (IndexHeader)this.MemberwiseClone();
+        }
+
         public bool IsParentNode
         {
             get

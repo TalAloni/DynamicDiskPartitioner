@@ -78,6 +78,13 @@ namespace DiskAccessLibrary.FileSystems.NTFS
             return buffer;
         }
 
+        public FileNameRecord Clone()
+        {
+            FileNameRecord clone = (FileNameRecord)this.MemberwiseClone();
+            clone.ParentDirectory = this.ParentDirectory.Clone();
+            return clone;
+        }
+
         /// <param name="fileNameNamespace">POSIX or Win32 or DOS, multiple flags are not supported</param>
         public bool IsInNamespace(FileNameFlags fileNameNamespace)
         {

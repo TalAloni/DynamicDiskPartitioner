@@ -58,6 +58,13 @@ namespace DiskAccessLibrary.FileSystems.NTFS
             return buffer;
         }
 
+        public override AttributeRecord Clone()
+        {
+            ResidentAttributeRecord clone = (ResidentAttributeRecord)this.MemberwiseClone();
+            clone.Data = (byte[])this.Data.Clone();
+            return clone;
+        }
+
         public override ulong DataLength
         {
             get

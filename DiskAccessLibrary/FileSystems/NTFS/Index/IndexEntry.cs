@@ -73,6 +73,13 @@ namespace DiskAccessLibrary.FileSystems.NTFS
             }
         }
 
+        public IndexEntry Clone()
+        {
+            IndexEntry clone = (IndexEntry)this.MemberwiseClone();
+            clone.FileReference = this.FileReference.Clone();
+            return clone;
+        }
+
         public byte[] GetBytes()
         {
             byte[] buffer = new byte[Length];

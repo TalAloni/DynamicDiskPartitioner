@@ -71,6 +71,8 @@ namespace DiskAccessLibrary.FileSystems.NTFS
             }
         }
 
+        public abstract AttributeRecord Clone();
+
         public AttributeType AttributeType
         {
             get

@@ -74,6 +74,11 @@ namespace DiskAccessLibrary.FileSystems.NTFS
             return buffer;
         }
 
+        public DataRun Clone()
+        {
+            return (DataRun)this.MemberwiseClone();
+        }
+
         private static long ReadVarLong(ref byte[] buffer, int offset, int size)
         {
             ulong val = 0;

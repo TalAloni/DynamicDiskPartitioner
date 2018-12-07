@@ -61,6 +61,18 @@ namespace DiskAccessLibrary.FileSystems.NTFS
             return base.GetBytes();
         }
 
+        public override AttributeRecord Clone()
+        {
+            IndexRootRecord clone = (IndexRootRecord)base.Clone();
+            clone.m_indexHeader = m_indexHeader.Clone();
+            clone.IndexEntries = new List<IndexEntry>();
+            foreach (IndexEntry entry in IndexEntries)
+            {
+                clone.IndexEntries.Add(entry.Clone());
+            }
+            return clone;
+        }
+
         public override ulong DataLength
         {
             get
