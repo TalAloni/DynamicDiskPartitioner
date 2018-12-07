@@ -48,7 +48,7 @@ namespace DiskAccessLibrary.FileSystems.NTFS
 
                     if (attribute is ResidentAttributeRecord)
                     {
-                        result.Add(attribute);
+                        result.Add(attribute.Clone());
                     }
                     else
                     {
@@ -102,7 +102,7 @@ namespace DiskAccessLibrary.FileSystems.NTFS
                     long relativeOffset = absoluteOffset - previousLCN;
 
                     int runIndex = attribute.DataRunSequence.Count;
-                    attribute.DataRunSequence.AddRange(attributeFragment.DataRunSequence);
+                    attribute.DataRunSequence.AddRange(attributeFragment.DataRunSequence.Clone());
                     attribute.DataRunSequence[runIndex] = new DataRun(runLength, relativeOffset);
                     attribute.HighestVCN = attributeFragment.HighestVCN;
                 }
@@ -127,7 +127,7 @@ namespace DiskAccessLibrary.FileSystems.NTFS
                 if (attribute.AttributeType == AttributeType.StandardInformation ||
                     attribute.AttributeType == AttributeType.FileName)
                 {
-                    baseFileRecordSegment.AddAttributeRecord(attribute);
+                    baseFileRecordSegment.AddAttributeRecord(attribute.Clone());
                 }
                 else if (isMftFileRecord && attribute.AttributeType == AttributeType.Data)
                 {
@@ -163,6 +163,10 @@ namespace DiskAccessLibrary.FileSystems.NTFS
                 if (attribute.RecordLength <= remainingLengthInCurrentSegment)
                 {
                     remainingLengthInCurrentSegment -= (int)attribute.RecordLength;
+                    if (attribute is ResidentAttributeRecord)
+                    {
+                        attribute = attribute.Clone();
+                    }
                     segments[segmentIndex].AddAttributeRecord(attribute);
                     remainingAttributes.RemoveFirst();
                 }
@@ -226,7 +230,7 @@ namespace DiskAccessLibrary.FileSystems.NTFS
                 slice.AllocatedLength = record.AllocatedLength;
                 slice.FileSize = record.FileSize;
                 slice.ValidDataLength = record.ValidDataLength;
-                slice.DataRunSequence.Add(dataRuns[runIndex]);
+                slice.DataRunSequence.Add(dataRuns[runIndex].Clone());
             }
             else
             {
@@ -246,7 +250,7 @@ namespace DiskAccessLibrary.FileSystems.NTFS
             runIndex++;
             while (runIndex < dataRuns.Count && sliceRecordLength + dataRuns[runIndex].RecordLength <= availableLength)
             {
-                slice.DataRunSequence.Add(record.DataRunSequence[runIndex]);
+                slice.DataRunSequence.Add(record.DataRunSequence[runIndex].Clone());
                 sliceRecordLength += dataRuns[runIndex].RecordLength;
                 clusterCount += dataRuns[runIndex].RunLength;
                 runIndex++;

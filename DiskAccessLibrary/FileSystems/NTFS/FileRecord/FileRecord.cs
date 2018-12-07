@@ -55,7 +55,7 @@ namespace DiskAccessLibrary.FileSystems.NTFS
                 // A single record segment is needed
                 foreach (AttributeRecord attribute in attributes)
                 {
-                    m_segments[0].AddAttributeRecord(attribute);
+                    m_segments[0].AddAttributeRecord(attribute.Clone());
                 }
 
                 // Free the rest of the segments, if there are any
@@ -79,7 +79,12 @@ namespace DiskAccessLibrary.FileSystems.NTFS
             }
             else
             {
-                return new List<AttributeRecord>(m_segments[0].ImmediateAttributes);
+                List<AttributeRecord> result = new List<AttributeRecord>();
+                foreach (AttributeRecord attribute in m_segments[0].ImmediateAttributes)
+                {
+                    result.Add(attribute.Clone());
+                }
+                return result;
             }
         }
 
