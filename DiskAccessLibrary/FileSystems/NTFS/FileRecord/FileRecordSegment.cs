@@ -184,6 +184,13 @@ namespace DiskAccessLibrary.FileSystems.NTFS
             return null;
         }
 
+        public void AddAttributeRecord(AttributeRecord attribute)
+        {
+            attribute.Instance = NextAttributeInstance;
+            NextAttributeInstance++;
+            ImmediateAttributes.Add(attribute);
+        }
+
         public void RemoveAttributeRecord(AttributeType type, string name)
         {
             for (int index = 0; index < m_immediateAttributes.Count; index++)
