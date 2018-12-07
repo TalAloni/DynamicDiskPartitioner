@@ -338,7 +338,7 @@ namespace DiskAccessLibrary.FileSystems.NTFS
             return ReadClusters(clusterLCN, 1);
         }
 
-        protected internal byte[] ReadClusters(long clusterLCN, int count)
+        protected internal virtual byte[] ReadClusters(long clusterLCN, int count)
         {
             long firstSectorIndex = clusterLCN * m_bootRecord.SectorsPerCluster;
             int sectorsToRead = m_bootRecord.SectorsPerCluster * count;
@@ -348,18 +348,18 @@ namespace DiskAccessLibrary.FileSystems.NTFS
             return result;
         }
 
-        protected internal void WriteClusters(long clusterLCN, byte[] data)
+        protected internal virtual void WriteClusters(long clusterLCN, byte[] data)
         {
             long firstSectorIndex = clusterLCN * m_bootRecord.SectorsPerCluster;
             m_volume.WriteSectors(firstSectorIndex, data);
         }
 
-        protected internal byte[] ReadSectors(long sectorIndex, int sectorCount)
+        protected internal virtual byte[] ReadSectors(long sectorIndex, int sectorCount)
         {
             return m_volume.ReadSectors(sectorIndex, sectorCount);
         }
 
-        protected internal void WriteSectors(long sectorIndex, byte[] data)
+        protected internal virtual void WriteSectors(long sectorIndex, byte[] data)
         {
             m_volume.WriteSectors(sectorIndex, data);
         }
@@ -505,7 +505,7 @@ namespace DiskAccessLibrary.FileSystems.NTFS
             }
         }
 
-        internal int BytesPerCluster
+        protected internal int BytesPerCluster
         {
             get
             {
@@ -513,11 +513,19 @@ namespace DiskAccessLibrary.FileSystems.NTFS
             }
         }
 
-        internal int BytesPerSector
+        protected internal int BytesPerSector
         {
             get
             {
                 return m_bootRecord.BytesPerSector;
+            }
+        }
+
+        protected internal int SectorsPerCluster
+        {
+            get
+            {
+                return m_bootRecord.SectorsPerCluster;
             }
         }
 
@@ -534,14 +542,6 @@ namespace DiskAccessLibrary.FileSystems.NTFS
             get
             {
                 return m_bootRecord.BytesPerIndexRecord;
-            }
-        }
-
-        internal int SectorsPerCluster
-        {
-            get
-            {
-                return m_bootRecord.SectorsPerCluster;
             }
         }
 
