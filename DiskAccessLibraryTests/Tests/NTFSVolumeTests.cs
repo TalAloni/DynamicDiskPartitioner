@@ -77,12 +77,7 @@ namespace DiskAccessLibraryTests
                 disk.ExclusiveLock();
                 NTFSVolume volume = NTFSFormatTests.CreateAndFormatPrimaryPartition(disk, bytesPerCluster, volumeLabel);
                 string directoryName = "Directory";
-                FileRecord parentDirectoryRecord = volume.CreateFile(NTFSVolume.RootDirSegmentReference, directoryName, true);
-                for (int index = 1; index <= count; index++)
-                {
-                    string fileName = "File" + index.ToString("000000");
-                    FileRecord fileRecord = volume.CreateFile(parentDirectoryRecord.BaseSegmentReference, fileName, false);
-                }
+                CreateFiles(volume, directoryName, count);
                 disk.ReleaseLock();
 
                 VHDMountHelper.MountVHD(path);
@@ -103,13 +98,7 @@ namespace DiskAccessLibraryTests
                 }
                 VHDMountHelper.UnmountVHD(path);
                 disk.ExclusiveLock();
-                for (int index = 1; index <= count; index++)
-                {
-                    string fileName = "File" + index.ToString("000000");
-                    string filePath = "\\" + directoryName + "\\" + fileName;
-                    FileRecord fileRecord = volume.GetFileRecord(filePath);
-                    volume.DeleteFile(fileRecord);
-                }
+                DeleteFiles(volume, directoryName, count);
                 disk.ReleaseLock();
                 VHDMountHelper.MountVHD(path);
                 isErrorFree = ChkdskHelper.Chkdsk(driveName);
@@ -126,6 +115,27 @@ namespace DiskAccessLibraryTests
                 File.Delete(path);
 
                 bytesPerCluster = bytesPerCluster * 2;
+            }
+        }
+
+        private static void CreateFiles(NTFSVolume volume, string directoryName, int count)
+        {
+            FileRecord parentDirectoryRecord = volume.CreateFile(NTFSVolume.RootDirSegmentReference, directoryName, true);
+            for (int index = 1; index <= count; index++)
+            {
+                string fileName = "File" + index.ToString("000000");
+                FileRecord fileRecord = volume.CreateFile(parentDirectoryRecord.BaseSegmentReference, fileName, false);
+            }
+        }
+
+        private static void DeleteFiles(NTFSVolume volume, string directoryName, int count)
+        {
+            for (int index = 1; index <= count; index++)
+            {
+                string fileName = "File" + index.ToString("000000");
+                string filePath = "\\" + directoryName + "\\" + fileName;
+                FileRecord fileRecord = volume.GetFileRecord(filePath);
+                volume.DeleteFile(fileRecord);
             }
         }
     }
