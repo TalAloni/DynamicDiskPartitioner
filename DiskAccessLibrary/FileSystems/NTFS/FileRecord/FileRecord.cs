@@ -40,6 +40,7 @@ namespace DiskAccessLibrary.FileSystems.NTFS
             foreach (FileRecordSegment segment in m_segments)
             {
                 segment.ImmediateAttributes.Clear();
+                segment.NextAttributeInstance = 0;
             }
 
             int segmentLength = bytesPerFileRecordSegment - FileRecordSegment.GetNumberOfBytesAvailable(bytesPerFileRecordSegment, minorNTFSVersion);
@@ -54,7 +55,7 @@ namespace DiskAccessLibrary.FileSystems.NTFS
                 // A single record segment is needed
                 foreach (AttributeRecord attribute in attributes)
                 {
-                    m_segments[0].ImmediateAttributes.Add(attribute);
+                    m_segments[0].AddAttributeRecord(attribute);
                 }
 
                 // Free the rest of the segments, if there are any
@@ -86,8 +87,6 @@ namespace DiskAccessLibrary.FileSystems.NTFS
         {
             bool isResident = (type != AttributeType.IndexAllocation);
             AttributeRecord attribute = AttributeRecord.Create(type, name, isResident);
-            attribute.Instance = m_segments[0].NextAttributeInstance;
-            m_segments[0].NextAttributeInstance++;
             FileRecordHelper.InsertSorted(this.Attributes, attribute);
             return attribute;
         }
