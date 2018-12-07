@@ -29,6 +29,7 @@ namespace DiskAccessLibraryTests
                 }
             }
 
+            FileRecordTests.Tests();
             long size = 100 * 1024 * 1024;
             RawDiskImageTests.Test(path, size);
             if (!VHDMountHelper.IsVHDMountInstalled())

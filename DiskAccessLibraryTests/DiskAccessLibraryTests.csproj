@@ -40,6 +40,7 @@
     <Compile Include="Tests\NTFSLogTests.cs" />
     <Compile Include="Tests\NTFSVolumeTests.cs" />
     <Compile Include="Tests\RawDiskImageTests.cs" />
+    <Compile Include="UnitTests\FileRecordTests.cs" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\DiskAccessLibrary\DiskAccessLibrary.csproj">
