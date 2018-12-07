@@ -57,7 +57,7 @@ namespace DiskAccessLibrary.FileSystems.NTFS
                     m_segments[0].ImmediateAttributes.Add(attribute);
                 }
 
-                // free the rest of the segments, if there are any
+                // Free the rest of the segments, if there are any
                 for (int index = 1; index < m_segments.Count; index++)
                 {
                     m_segments[index].IsInUse = false;

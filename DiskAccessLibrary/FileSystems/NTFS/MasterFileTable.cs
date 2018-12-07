@@ -364,6 +364,9 @@ namespace DiskAccessLibrary.FileSystems.NTFS
             UpdateFileRecordSegment(baseSegment);
         }
 
+        /// <summary>
+        /// It's up to the caller to log the changes to the file record segment
+        /// </summary>
         public void UpdateFileRecordSegment(FileRecordSegment recordSegment)
         {
             long segmentNumber = recordSegment.SegmentNumber;
