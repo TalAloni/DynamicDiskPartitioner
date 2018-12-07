@@ -11,7 +11,7 @@ using Utilities;
 
 namespace DiskAccessLibrary.FileSystems.NTFS
 {
-    public class FileRecordHelper
+    internal class FileRecordHelper
     {
         /// <remarks>
         /// Only non-resident attributes can be fragmented.

@@ -19,13 +19,13 @@ namespace DiskAccessLibrary.FileSystems.NTFS
         private List<FileRecordSegment> m_segments;
         private List<AttributeRecord> m_attributes;
 
-        public FileRecord(FileRecordSegment segment)
+        internal FileRecord(FileRecordSegment segment)
         {
             m_segments = new List<FileRecordSegment>();
             m_segments.Add(segment);
         }
 
-        public FileRecord(List<FileRecordSegment> segments)
+        internal FileRecord(List<FileRecordSegment> segments)
         {
             m_segments = segments;
         }
@@ -159,7 +159,7 @@ namespace DiskAccessLibrary.FileSystems.NTFS
             return null;
         }
 
-        public List<FileRecordSegment> Segments
+        internal List<FileRecordSegment> Segments
         {
             get
             {
@@ -167,7 +167,7 @@ namespace DiskAccessLibrary.FileSystems.NTFS
             }
         }
 
-        public FileRecordSegment BaseSegment
+        internal FileRecordSegment BaseSegment
         {
             get
             {
