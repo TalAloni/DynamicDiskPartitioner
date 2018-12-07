@@ -171,7 +171,7 @@ namespace DiskAccessLibrary.FileSystems.NTFS
         {
             IndexRecord childRecord = new IndexRecord();
             childRecord.IsParentNode = m_rootRecord.IsParentNode;
-            childRecord.IndexEntries = new List<IndexEntry>(m_rootRecord.IndexEntries);
+            childRecord.IndexEntries.AddRange(m_rootRecord.IndexEntries);
             long childRecordIndex = AllocateIndexRecord();
             childRecord.RecordVBN = ConvertToVirtualBlockNumber(childRecordIndex);
             WriteIndexRecord(childRecordIndex, childRecord);
