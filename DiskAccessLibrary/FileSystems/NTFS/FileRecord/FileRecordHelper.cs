@@ -175,7 +175,7 @@ namespace DiskAccessLibrary.FileSystems.NTFS
                     }
                     else
                     {
-                        NonResidentAttributeRecord nonResidentAttribute = ((NonResidentAttributeRecord)attribute);
+                        NonResidentAttributeRecord nonResidentAttribute = (NonResidentAttributeRecord)attribute;
                         List<NonResidentAttributeRecord> slices = SliceAttributeRecord((NonResidentAttributeRecord)attribute, remainingLengthInCurrentSegment, bytesAvailableInSegment);
                         remainingAttributes.RemoveFirst();
                         slices.Reverse();
@@ -219,7 +219,6 @@ namespace DiskAccessLibrary.FileSystems.NTFS
                 clusterCount += dataRuns[index].RunLength;
             }
             slice.LowestVCN = clusterCount;
-            slice.DataRunSequence.Add(dataRuns[runIndex]);
             
             if (runIndex == 0)
             {
@@ -227,13 +226,14 @@ namespace DiskAccessLibrary.FileSystems.NTFS
                 slice.AllocatedLength = record.AllocatedLength;
                 slice.FileSize = record.FileSize;
                 slice.ValidDataLength = record.ValidDataLength;
+                slice.DataRunSequence.Add(dataRuns[runIndex]);
             }
             else
             {
                 // The DataRunSequence of each NonResidentDataRecord fragment starts at absolute LCN
                 long runLength = dataRuns[runIndex].RunLength;
                 long runStartLCN = dataRuns.GetDataClusterLCN(clusterCount);
-                slice.DataRunSequence[0] = new DataRun(runLength, runStartLCN);
+                slice.DataRunSequence.Add(new DataRun(runLength, runStartLCN));
             }
             clusterCount += dataRuns[runIndex].RunLength;
 
