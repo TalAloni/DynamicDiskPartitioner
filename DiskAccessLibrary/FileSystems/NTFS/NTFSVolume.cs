@@ -332,13 +332,12 @@ namespace DiskAccessLibrary.FileSystems.NTFS
             }
         }
 
-        // logical cluster
-        protected internal byte[] ReadCluster(long clusterLCN)
+        protected internal byte[] ReadCluster(long clusterLCN, ContentType contentType)
         {
-            return ReadClusters(clusterLCN, 1);
+            return ReadClusters(clusterLCN, 1, contentType);
         }
 
-        protected internal virtual byte[] ReadClusters(long clusterLCN, int count)
+        protected internal virtual byte[] ReadClusters(long clusterLCN, int count, ContentType contentType)
         {
             long firstSectorIndex = clusterLCN * m_bootRecord.SectorsPerCluster;
             int sectorsToRead = m_bootRecord.SectorsPerCluster * count;
@@ -348,18 +347,18 @@ namespace DiskAccessLibrary.FileSystems.NTFS
             return result;
         }
 
-        protected internal virtual void WriteClusters(long clusterLCN, byte[] data)
+        protected internal virtual void WriteClusters(long clusterLCN, byte[] data, ContentType contentType)
         {
             long firstSectorIndex = clusterLCN * m_bootRecord.SectorsPerCluster;
             m_volume.WriteSectors(firstSectorIndex, data);
         }
 
-        protected internal virtual byte[] ReadSectors(long sectorIndex, int sectorCount)
+        protected internal virtual byte[] ReadSectors(long sectorIndex, int sectorCount, ContentType contentType)
         {
             return m_volume.ReadSectors(sectorIndex, sectorCount);
         }
 
-        protected internal virtual void WriteSectors(long sectorIndex, byte[] data)
+        protected internal virtual void WriteSectors(long sectorIndex, byte[] data, ContentType contentType)
         {
             m_volume.WriteSectors(sectorIndex, data);
         }
@@ -416,9 +415,9 @@ namespace DiskAccessLibrary.FileSystems.NTFS
                 builder.AppendLine("Length of Volume Bitmap Attributes: " + volumeBitmapRecord.AttributesLengthOnDisk);
             }
 
-            byte[] bootRecord = ReadSectors(0, 1);
+            byte[] bootRecord = ReadSectors(0, 1, ContentType.FileData);
             long backupBootSectorIndex = (long)m_bootRecord.TotalSectors;
-            byte[] backupBootRecord = ReadSectors(backupBootSectorIndex, 1);
+            byte[] backupBootRecord = ReadSectors(backupBootSectorIndex, 1, ContentType.FileData);
             builder.AppendLine();
             builder.AppendLine("Valid backup boot sector: " + ByteUtils.AreByteArraysEqual(bootRecord, backupBootRecord));
             builder.AppendLine("Free space: " + this.FreeSpace);

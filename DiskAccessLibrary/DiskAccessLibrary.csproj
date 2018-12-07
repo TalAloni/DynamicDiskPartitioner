@@ -85,6 +85,7 @@
     <Compile Include="FileSystems\NTFS\Enums\AttributeForm.cs" />
     <Compile Include="FileSystems\NTFS\Enums\AttributeType.cs" />
     <Compile Include="FileSystems\NTFS\Enums\CollationRule.cs" />
+    <Compile Include="FileSystems\NTFS\Enums\ContentType.cs" />
     <Compile Include="FileSystems\NTFS\Enums\FileAttributes.cs" />
     <Compile Include="FileSystems\NTFS\Enums\FileNameFlags.cs" />
     <Compile Include="FileSystems\NTFS\Enums\FileRecordFlags.cs" />

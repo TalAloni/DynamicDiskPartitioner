@@ -12,12 +12,14 @@ namespace DiskAccessLibrary.FileSystems.NTFS
         private NTFSVolume m_volume;
         private FileRecord m_fileRecord;
         private NonResidentAttributeRecord m_attributeRecord;
+        private ContentType m_contentType;
 
         public NonResidentAttributeData(NTFSVolume volume, FileRecord fileRecord, NonResidentAttributeRecord attributeRecord)
         {
             m_volume = volume;
             m_fileRecord = fileRecord;
             m_attributeRecord = attributeRecord;
+            m_contentType = GetContentType(fileRecord, attributeRecord.AttributeType);
         }
 
         /// <param name="clusterVCN">Cluster index</param>
@@ -68,7 +70,7 @@ namespace DiskAccessLibrary.FileSystems.NTFS
                 long bytesRead = 0;
                 foreach (KeyValuePair<long, int> run in sequence)
                 {
-                    byte[] data = m_volume.ReadSectors(run.Key, run.Value);
+                    byte[] data = m_volume.ReadSectors(run.Key, run.Value, m_contentType);
                     Array.Copy(data, 0, result, bytesRead, data.Length);
                     bytesRead += data.Length;
                 }
@@ -164,7 +166,7 @@ namespace DiskAccessLibrary.FileSystems.NTFS
             {
                 byte[] sectors = new byte[run.Value * bytesPerSector];
                 Array.Copy(data, bytesWritten, sectors, 0, sectors.Length);
-                m_volume.WriteSectors(run.Key, sectors);
+                m_volume.WriteSectors(run.Key, sectors, m_contentType);
                 bytesWritten += sectors.Length;
             }
 
@@ -322,6 +324,43 @@ namespace DiskAccessLibrary.FileSystems.NTFS
             get
             {
                 return m_attributeRecord;
+            }
+        }
+
+        public static ContentType GetContentType(FileRecord fileRecord, AttributeType attributeType)
+        {
+            if (fileRecord != null)
+            {
+                long baseSegmentNumber = fileRecord.BaseSegmentNumber;
+                if (baseSegmentNumber == MasterFileTable.MasterFileTableSegmentNumber || baseSegmentNumber == MasterFileTable.MftMirrorSegmentNumber)
+                {
+                    return (attributeType == AttributeType.Data) ? ContentType.MftData : ContentType.MftBitmap;
+                }
+                else if (baseSegmentNumber == MasterFileTable.VolumeSegmentNumber)
+                {
+                    return ContentType.VolumeBitmap;
+                }
+            }
+            return GetContentType(attributeType);
+        }
+
+        public static ContentType GetContentType(AttributeType attributeType)
+        {
+            if (attributeType == AttributeType.AttributeList)
+            {
+                return ContentType.MftData;
+            }
+            else if (attributeType == AttributeType.IndexAllocation)
+            {
+                return ContentType.IndexData;
+            }
+            else if (attributeType == AttributeType.Bitmap)
+            {
+                return ContentType.IndexBitmap;
+            }
+            else
+            {
+                return ContentType.FileData;
             }
         }
     }

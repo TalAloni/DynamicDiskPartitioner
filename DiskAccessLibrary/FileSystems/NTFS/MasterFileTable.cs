@@ -153,7 +153,7 @@ namespace DiskAccessLibrary.FileSystems.NTFS
         private FileRecordSegment ReadMftRecordSegment(long mftStartLCN, long segmentNumber)
         {
             long sectorIndex = mftStartLCN * m_volume.SectorsPerCluster + segmentNumber * m_volume.SectorsPerFileRecordSegment;
-            byte[] segmentBytes = m_volume.ReadSectors(sectorIndex, m_volume.SectorsPerFileRecordSegment);
+            byte[] segmentBytes = m_volume.ReadSectors(sectorIndex, m_volume.SectorsPerFileRecordSegment, ContentType.MftData);
             MultiSectorHelper.RevertUsaProtection(segmentBytes, 0);
             FileRecordSegment result = new FileRecordSegment(segmentBytes, 0, segmentNumber);
             return result;
