@@ -184,6 +184,9 @@ namespace DiskAccessLibrary.FileSystems.NTFS
             return null;
         }
 
+        /// <summary>
+        /// This method should only be used to add attributes that have already been sorted
+        /// </summary>
         public void AddAttributeRecord(AttributeRecord attribute)
         {
             attribute.Instance = NextAttributeInstance;
