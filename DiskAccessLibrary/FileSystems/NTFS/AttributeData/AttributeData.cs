@@ -221,7 +221,7 @@ namespace DiskAccessLibrary.FileSystems.NTFS
                     if (m_fileRecord != null)
                     {
                         m_fileRecord.RemoveAttributeRecord(m_attributeRecord.AttributeType, m_attributeRecord.Name);
-                        m_fileRecord.Attributes.Add(attributeRecord);
+                        FileRecordHelper.InsertSorted(m_fileRecord.Attributes, attributeRecord);
                     }
                     m_attributeRecord = attributeRecord;
                 }
