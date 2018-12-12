@@ -225,3 +225,14 @@ Revision History:
         NTFSFileSystem: SetDates: Bugfix: Directory index was not updated.
         NTFSVolume: MoveFile: Use the dates and FileAttributes in $Standard_Information instead $File_Name.
         IFileSystem: Added ListDataStreams method.
+
+1.5.4 - NTFS: NTFSFileSystem: Added support for accessing Alternate Data Streams.
+        NTFS: AttributeRecord: The value of Instance can now be set at any point and is no longer set during class instantiation.
+        NTFS: FileRecordSegment: Added AddAttributeRecord method.
+        NTFS: FileRecord: UpdateSegments: Set AttributeRecord's Instance valu using NextAttributeInstance of the FileRecordSegment containing it.
+        NTFS: AttributeRecord: Added Clone method.
+        NTFS: Clone attributes when assembled from and splitted to FileRecordSegments.
+        NTFS: FileRecord: Use Segments for logging purposes.
+        NTFS: NTFSVolume: Added ContentType enum to help identify the content of volume clusters being accessed.
+        NTFS: AttributeData: Bugfix: Attribute sorting rules were not applied when converting a resident attribute to non-resident.
+        NTFS: IndexData: RemoveEntry: Bugfix: IndexOutOfRangeException was thrown in some cases.
