@@ -68,6 +68,9 @@ namespace DiskAccessLibrary.FileSystems.NTFS
                 result.Add(assembledAttribute);
             }
 
+            // Windows NTFS v5.1 driver will sometimes put in the base record segment resident attributes that sort after an attribute from the second segment,
+            // (while keeping the attribute sorting rules within each segment).
+            result.Sort(CompareAttributeTypes);
             return result;
         }
 
