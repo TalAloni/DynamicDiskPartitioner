@@ -288,7 +288,7 @@ namespace DiskAccessLibrary.FileSystems.NTFS
                     restartRecord.OpenAttributeTableLength = (uint)openAttributeTableBytes.Length;
                     if (attributeNameTableBytes != null)
                     {
-                        LfsRecord attributeNameTableRecord = WriteLogRecord(null, null, 0, 0, 0, 0, NTFSLogOperation.AttributeNamesDump, openAttributeTableBytes, NTFSLogOperation.Noop, new byte[0], transactionID, false);
+                        LfsRecord attributeNameTableRecord = WriteLogRecord(null, null, 0, 0, 0, 0, NTFSLogOperation.AttributeNamesDump, attributeNameTableBytes, NTFSLogOperation.Noop, new byte[0], transactionID, false);
                         restartRecord.AttributeNamesLsn = attributeNameTableRecord.ThisLsn;
                         restartRecord.AttributeNamesLength = (uint)attributeNameTableBytes.Length;
                     }
