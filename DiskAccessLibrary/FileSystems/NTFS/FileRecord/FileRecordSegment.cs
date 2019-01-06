@@ -15,7 +15,7 @@ namespace DiskAccessLibrary.FileSystems.NTFS
     /// FILE_RECORD_SEGMENT_HEADER: https://msdn.microsoft.com/de-de/windows/desktop/bb470124
     /// </summary>
     /// <remarks>
-    /// Attributes MUST be ordered by increasing attribute type code when written to disk.
+    /// Attributes MUST be ordered by increasing attribute type code (with a secondary ordering by name) when written to disk.
     /// </remarks>
     internal class FileRecordSegment
     {
