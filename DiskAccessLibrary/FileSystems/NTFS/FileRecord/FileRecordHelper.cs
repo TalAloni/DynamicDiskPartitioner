@@ -26,7 +26,7 @@ namespace DiskAccessLibrary.FileSystems.NTFS
             // Additional fragments immediately follow after the initial fragment.
             AttributeType currentAttributeType = AttributeType.None;
             string currentAttributeName = String.Empty;
-            List<NonResidentAttributeRecord> fragments = new List<NonResidentAttributeRecord>();
+            List<NonResidentAttributeRecord> currentAttributeFragments = new List<NonResidentAttributeRecord>();
             foreach (FileRecordSegment segment in segments)
             {
                 foreach (AttributeRecord attribute in segment.ImmediateAttributes)
@@ -36,14 +36,14 @@ namespace DiskAccessLibrary.FileSystems.NTFS
                         continue;
                     }
 
-                    bool additionalFragment = (attribute is NonResidentAttributeRecord) && (fragments.Count > 0) &&
+                    bool additionalFragment = (attribute is NonResidentAttributeRecord) && (currentAttributeFragments.Count > 0) &&
                                               (attribute.AttributeType == currentAttributeType) && (attribute.Name == currentAttributeName);
 
-                    if (!additionalFragment && fragments.Count > 0)
+                    if (!additionalFragment && currentAttributeFragments.Count > 0)
                     {
-                        NonResidentAttributeRecord assembledAttribute = AssembleFragments(fragments);
+                        NonResidentAttributeRecord assembledAttribute = AssembleFragments(currentAttributeFragments);
                         result.Add(assembledAttribute);
-                        fragments.Clear();
+                        currentAttributeFragments.Clear();
                     }
 
                     if (attribute is ResidentAttributeRecord)
@@ -52,7 +52,7 @@ namespace DiskAccessLibrary.FileSystems.NTFS
                     }
                     else
                     {
-                        fragments.Add((NonResidentAttributeRecord)attribute);
+                        currentAttributeFragments.Add((NonResidentAttributeRecord)attribute);
                         if (!additionalFragment)
                         {
                             currentAttributeType = attribute.AttributeType;
@@ -62,9 +62,9 @@ namespace DiskAccessLibrary.FileSystems.NTFS
                 }
             }
 
-            if (fragments.Count > 0)
+            if (currentAttributeFragments.Count > 0)
             {
-                NonResidentAttributeRecord assembledAttribute = AssembleFragments(fragments);
+                NonResidentAttributeRecord assembledAttribute = AssembleFragments(currentAttributeFragments);
                 result.Add(assembledAttribute);
             }
 
