@@ -1,4 +1,4 @@
-/* Copyright (C) 2014-2018 Tal Aloni <tal.aloni.il@gmail.com>. All rights reserved.
+/* Copyright (C) 2014-2019 Tal Aloni <tal.aloni.il@gmail.com>. All rights reserved.
  * 
  * You can redistribute this program and/or modify it under the terms of
  * the GNU Lesser Public License as published by the Free Software Foundation,
@@ -23,10 +23,7 @@ namespace DiskAccessLibrary.FileSystems.NTFS
         {
             List<AttributeRecord> result = new List<AttributeRecord>();
             // If two non-resident attributes have the same AttributeType and Name, then we need to assemble them back together.
-            // Additional fragments immediately follow after the initial fragment.
-            AttributeType currentAttributeType = AttributeType.None;
-            string currentAttributeName = String.Empty;
-            List<NonResidentAttributeRecord> currentAttributeFragments = new List<NonResidentAttributeRecord>();
+            List<NonResidentAttributeRecord> fragments = new List<NonResidentAttributeRecord>();
             foreach (FileRecordSegment segment in segments)
             {
                 foreach (AttributeRecord attribute in segment.ImmediateAttributes)
@@ -36,29 +33,43 @@ namespace DiskAccessLibrary.FileSystems.NTFS
                         continue;
                     }
 
-                    bool additionalFragment = (attribute is NonResidentAttributeRecord) && (currentAttributeFragments.Count > 0) &&
-                                              (attribute.AttributeType == currentAttributeType) && (attribute.Name == currentAttributeName);
-
-                    if (!additionalFragment && currentAttributeFragments.Count > 0)
-                    {
-                        NonResidentAttributeRecord assembledAttribute = AssembleFragments(currentAttributeFragments);
-                        result.Add(assembledAttribute);
-                        currentAttributeFragments.Clear();
-                    }
-
                     if (attribute is ResidentAttributeRecord)
                     {
                         result.Add(attribute.Clone());
                     }
                     else
                     {
-                        currentAttributeFragments.Add((NonResidentAttributeRecord)attribute);
-                        if (!additionalFragment)
-                        {
-                            currentAttributeType = attribute.AttributeType;
-                            currentAttributeName = attribute.Name;
-                        }
+                        fragments.Add((NonResidentAttributeRecord)attribute);
                     }
+                }
+            }
+
+            // Windows NTFS v5.1 driver will sometimes put in the base record segment resident attributes that sort after an attribute from the second segment,
+            // and will sometimes put non-resident fragment with a non-zero LowestVCN in a segment with a lower segment number than the segment containing the first fragment (LowestVCN == 0),
+            // (while keeping the attribute sorting rules within each segment).
+            fragments.Sort(CompareNonResidentAttributes);
+
+            AttributeType currentAttributeType = AttributeType.None;
+            string currentAttributeName = String.Empty;
+            List<NonResidentAttributeRecord> currentAttributeFragments = new List<NonResidentAttributeRecord>();
+            foreach (NonResidentAttributeRecord fragment in fragments)
+            {
+                bool additionalFragment = (currentAttributeFragments.Count > 0) &&
+                                          (fragment.AttributeType == currentAttributeType) &&
+                                          (fragment.Name == currentAttributeName);
+
+                if (!additionalFragment && currentAttributeFragments.Count > 0)
+                {
+                    NonResidentAttributeRecord assembledAttribute = AssembleFragments(currentAttributeFragments);
+                    result.Add(assembledAttribute);
+                    currentAttributeFragments.Clear();
+                }
+
+                currentAttributeFragments.Add(fragment);
+                if (!additionalFragment)
+                {
+                    currentAttributeType = fragment.AttributeType;
+                    currentAttributeName = fragment.Name;
                 }
             }
 
@@ -68,8 +79,6 @@ namespace DiskAccessLibrary.FileSystems.NTFS
                 result.Add(assembledAttribute);
             }
 
-            // Windows NTFS v5.1 driver will sometimes put in the base record segment resident attributes that sort after an attribute from the second segment,
-            // (while keeping the attribute sorting rules within each segment).
             result.Sort(CompareAttributeTypes);
             return result;
         }
@@ -305,6 +314,16 @@ namespace DiskAccessLibrary.FileSystems.NTFS
             if (result == 0)
             {
                 result = String.Compare(attribute1.Name, attribute2.Name, StringComparison.OrdinalIgnoreCase);
+            }
+            return result;
+        }
+
+        private static int CompareNonResidentAttributes(NonResidentAttributeRecord attribute1, NonResidentAttributeRecord attribute2)
+        {
+            int result = CompareAttributeTypes(attribute1, attribute2);
+            if (result == 0)
+            {
+                result = attribute1.LowestVCN.CompareTo(attribute2.LowestVCN);
             }
             return result;
         }
