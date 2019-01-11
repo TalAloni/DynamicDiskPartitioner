@@ -100,6 +100,7 @@ namespace DiskAccessLibraryTests
                 }
                 VHDMountHelper.UnmountVHD(path);
                 disk.ExclusiveLock();
+                volume = new NTFSVolume(partition);
                 DeleteFiles(volume, directoryName, count);
                 disk.ReleaseLock();
                 VHDMountHelper.MountVHD(path);
