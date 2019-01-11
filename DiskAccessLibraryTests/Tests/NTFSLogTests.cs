@@ -1,4 +1,4 @@
-/* Copyright (C) 2018 Tal Aloni <tal.aloni.il@gmail.com>. All rights reserved.
+/* Copyright (C) 2018-2019 Tal Aloni <tal.aloni.il@gmail.com>. All rights reserved.
  * 
  * You can redistribute this program and/or modify it under the terms of
  * the GNU Lesser Public License as published by the Free Software Foundation,
@@ -57,8 +57,8 @@ namespace DiskAccessLibraryTests
         {
             VirtualHardDisk disk = VirtualHardDisk.CreateFixedDisk(path, size);
             disk.ExclusiveLock();
-            NTFSVolume volume = NTFSFormatTests.CreateAndFormatPrimaryPartition(disk, bytesPerCluster, volumeLabel);
-            //NTFSVolume volume = NTFSFormatTests.CreateVHDAndFormatPrimaryPartition(disk, 4096, volumeLabel);
+            Partition partition = NTFSFormatTests.CreatePrimaryPartition(disk);
+            NTFSVolume volume = NTFSVolumeCreator.Format(partition, bytesPerCluster, volumeLabel);
             long segmentNumber = MasterFileTable.FirstUserSegmentNumber;
             FileNameRecord fileNameRecord = new FileNameRecord(MasterFileTable.RootDirSegmentReference, fileName, false, DateTime.Now);
             FileRecordSegment fileRecordSegment = CreateFileRecordSegment(segmentNumber, fileNameRecord, fileData);

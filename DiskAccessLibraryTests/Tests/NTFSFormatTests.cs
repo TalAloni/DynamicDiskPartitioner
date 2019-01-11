@@ -22,7 +22,11 @@ namespace DiskAccessLibraryTests
             while (bytesPerCluster <= 65536)
             {
                 string volumeLabel = "FormatTest_" + bytesPerCluster.ToString();
-                CreateVHDAndFormatPrimaryPartition(path, size, bytesPerCluster, volumeLabel);
+                VirtualHardDisk disk = VirtualHardDisk.CreateFixedDisk(path, size);
+                disk.ExclusiveLock();
+                Partition partition = CreatePrimaryPartition(disk);
+                NTFSVolumeCreator.Format(partition, bytesPerCluster, volumeLabel);
+                disk.ReleaseLock();
                 VHDMountHelper.MountVHD(path);
                 string driveName = MountHelper.WaitForDriveToMount(volumeLabel);
                 if (driveName == null)
@@ -41,14 +45,6 @@ namespace DiskAccessLibraryTests
             }
         }
 
-        public static void CreateVHDAndFormatPrimaryPartition(string path, long size, int bytesPerCluster, string volumeLabel)
-        {
-            VirtualHardDisk disk = VirtualHardDisk.CreateFixedDisk(path, size);
-            disk.ExclusiveLock();
-            CreateAndFormatPrimaryPartition(disk, bytesPerCluster, volumeLabel);
-            disk.ReleaseLock();
-        }
-
         public static Partition CreatePrimaryPartition(Disk disk)
         {
             MasterBootRecord mbr = new MasterBootRecord();
@@ -58,12 +54,6 @@ namespace DiskAccessLibraryTests
             mbr.PartitionTable[0].SectorCountLBA = (uint)Math.Min(disk.TotalSectors - 63, UInt32.MaxValue);
             MasterBootRecord.WriteToDisk(disk, mbr);
             return BasicDiskHelper.GetPartitions(disk)[0];
-        }
-
-        public static NTFSVolume CreateAndFormatPrimaryPartition(Disk disk, int bytesPerCluster, string volumeLabel)
-        {
-            Partition partition = CreatePrimaryPartition(disk);
-            return NTFSVolumeCreator.Format(partition, 3, 1, bytesPerCluster, volumeLabel);
         }
     }
 }

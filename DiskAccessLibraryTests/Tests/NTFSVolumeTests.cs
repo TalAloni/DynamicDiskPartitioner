@@ -1,4 +1,4 @@
-/* Copyright (C) 2018 Tal Aloni <tal.aloni.il@gmail.com>. All rights reserved.
+/* Copyright (C) 2018-2019 Tal Aloni <tal.aloni.il@gmail.com>. All rights reserved.
  * 
  * You can redistribute this program and/or modify it under the terms of
  * the GNU Lesser Public License as published by the Free Software Foundation,
@@ -29,7 +29,8 @@ namespace DiskAccessLibraryTests
                 string volumeLabel = "MoveTest_" + bytesPerCluster.ToString();
                 VirtualHardDisk disk = VirtualHardDisk.CreateFixedDisk(path, size);
                 disk.ExclusiveLock();
-                NTFSVolume volume = NTFSFormatTests.CreateAndFormatPrimaryPartition(disk, bytesPerCluster, volumeLabel);
+                Partition partition = NTFSFormatTests.CreatePrimaryPartition(disk);
+                NTFSVolume volume = NTFSVolumeCreator.Format(partition, bytesPerCluster, volumeLabel);
 
                 string directory1Name = "Directory1";
                 string directory2Name = "Directory2";
@@ -75,7 +76,8 @@ namespace DiskAccessLibraryTests
                 string volumeLabel = "CreateFilesTest_" + bytesPerCluster.ToString();
                 VirtualHardDisk disk = VirtualHardDisk.CreateFixedDisk(path, size);
                 disk.ExclusiveLock();
-                NTFSVolume volume = NTFSFormatTests.CreateAndFormatPrimaryPartition(disk, bytesPerCluster, volumeLabel);
+                Partition partition = NTFSFormatTests.CreatePrimaryPartition(disk);
+                NTFSVolume volume = NTFSVolumeCreator.Format(partition, bytesPerCluster, volumeLabel);
                 string directoryName = "Directory";
                 CreateFiles(volume, directoryName, count);
                 disk.ReleaseLock();
