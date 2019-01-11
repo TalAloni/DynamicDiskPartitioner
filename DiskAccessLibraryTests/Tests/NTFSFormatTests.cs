@@ -1,4 +1,4 @@
-/* Copyright (C) 2018 Tal Aloni <tal.aloni.il@gmail.com>. All rights reserved.
+/* Copyright (C) 2018-2019 Tal Aloni <tal.aloni.il@gmail.com>. All rights reserved.
  * 
  * You can redistribute this program and/or modify it under the terms of
  * the GNU Lesser Public License as published by the Free Software Foundation,
@@ -49,7 +49,7 @@ namespace DiskAccessLibraryTests
             disk.ReleaseLock();
         }
 
-        public static NTFSVolume CreateAndFormatPrimaryPartition(Disk disk, int bytesPerCluster, string volumeLabel)
+        public static Partition CreatePrimaryPartition(Disk disk)
         {
             MasterBootRecord mbr = new MasterBootRecord();
             mbr.DiskSignature = (uint)new Random().Next(Int32.MaxValue);
@@ -57,9 +57,12 @@ namespace DiskAccessLibraryTests
             mbr.PartitionTable[0].FirstSectorLBA = 63;
             mbr.PartitionTable[0].SectorCountLBA = (uint)Math.Min(disk.TotalSectors - 63, UInt32.MaxValue);
             MasterBootRecord.WriteToDisk(disk, mbr);
+            return BasicDiskHelper.GetPartitions(disk)[0];
+        }
 
-            MasterBootRecord.WriteToDisk(disk, mbr);
-            Partition partition = BasicDiskHelper.GetPartitions(disk)[0];
+        public static NTFSVolume CreateAndFormatPrimaryPartition(Disk disk, int bytesPerCluster, string volumeLabel)
+        {
+            Partition partition = CreatePrimaryPartition(disk);
             return NTFSVolumeCreator.Format(partition, 3, 1, bytesPerCluster, volumeLabel);
         }
     }
