@@ -6,6 +6,7 @@ namespace DiskAccessLibrary.FileSystems.NTFS
         FileData,
         IndexBitmap,
         IndexData,
+        LogFileData,
         MftBitmap,
         MftData,
         VolumeBitmap,
