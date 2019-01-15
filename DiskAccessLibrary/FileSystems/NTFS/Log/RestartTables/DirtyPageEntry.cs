@@ -1,4 +1,4 @@
-/* Copyright (C) 2018 Tal Aloni <tal.aloni.il@gmail.com>. All rights reserved.
+/* Copyright (C) 2018-2019 Tal Aloni <tal.aloni.il@gmail.com>. All rights reserved.
  * 
  * You can redistribute this program and/or modify it under the terms of
  * the GNU Lesser Public License as published by the Free Software Foundation,
@@ -25,9 +25,9 @@ namespace DiskAccessLibrary.FileSystems.NTFS
         public uint TargetAttributeOffset;
         public uint LengthOfTransfer;
         // uint LcnsToFollow;
-        public uint Reserved; // v0.0 only
-        public long VCN; // Stored as ulong but can be represented using long
-        public ulong OldestLsn;
+        public uint Reserved;   // v0.0 only
+        public long VCN;        // Stored as ulong but can be represented using long
+        public ulong OldestLsn; // Oldest LSN of log record update that has not yet been written through to the disk
         public List<long> LCNsForPage = new List<long>();
 
         public DirtyPageEntry(uint majorVersion)
