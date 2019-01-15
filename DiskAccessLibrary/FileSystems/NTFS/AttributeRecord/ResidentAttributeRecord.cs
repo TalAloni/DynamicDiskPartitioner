@@ -36,7 +36,12 @@ namespace DiskAccessLibrary.FileSystems.NTFS
 
             if (dataOffset + dataLength > this.RecordLengthOnDisk)
             {
-                throw new InvalidDataException("Corrupt attribute, data outside of attribute record");
+                throw new InvalidDataException("Corrupt resident attribute, data outside of attribute record");
+            }
+
+            if (dataOffset % 8 > 0)
+            {
+                throw new InvalidDataException("Corrupt resident attribute, data not aligned to 8-byte boundary");
             }
 
             Data = ByteReader.ReadBytes(buffer, offset + dataOffset, (int)dataLength);
