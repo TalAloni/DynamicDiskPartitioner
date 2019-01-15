@@ -1,4 +1,4 @@
-/* Copyright (C) 2014-2018 Tal Aloni <tal.aloni.il@gmail.com>. All rights reserved.
+/* Copyright (C) 2014-2019 Tal Aloni <tal.aloni.il@gmail.com>. All rights reserved.
  * 
  * You can redistribute this program and/or modify it under the terms of
  * the GNU Lesser Public License as published by the Free Software Foundation,
@@ -47,7 +47,7 @@ namespace DiskAccessLibrary.FileSystems.NTFS
             byte[] buffer = new byte[this.RecordLength];
             WriteHeader(buffer, HeaderLength);
             uint dataLength = (uint)Data.Length;
-            ushort dataOffset = (ushort)(HeaderLength + Name.Length * 2);
+            ushort dataOffset = (ushort)(Math.Ceiling((double)(HeaderLength + Name.Length * 2) / 8) * 8);
 
             LittleEndianWriter.WriteUInt32(buffer, 0x10, dataLength);
             LittleEndianWriter.WriteUInt16(buffer, 0x14, dataOffset);
@@ -110,9 +110,10 @@ namespace DiskAccessLibrary.FileSystems.NTFS
         /// </summary>
         public static int GetRecordLength(int nameLength, int dataLength)
         {
-            int length = HeaderLength + nameLength * 2 + dataLength;
+            // Data must be aligned to 8-byte boundary
+            int length = (int)Math.Ceiling((double)(HeaderLength + nameLength * 2) / 8) * 8;
             // Each record must be aligned to 8-byte boundary
-            length = (int)Math.Ceiling((double)length / 8) * 8;
+            length += (int)Math.Ceiling((double)dataLength / 8) * 8;
             return length;
         }
 
