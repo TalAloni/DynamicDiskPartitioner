@@ -37,6 +37,7 @@ namespace DiskAccessLibrary.FileSystems.NTFS
         internal static readonly MftSegmentReference BitmapSegmentReference = new MftSegmentReference(BitmapSegmentNumber, (ushort)BitmapSegmentNumber);
         private static readonly MftSegmentReference BootSegmentReference = new MftSegmentReference(BootSegmentNumber, (ushort)BootSegmentNumber);
         internal readonly int AttributeRecordLengthToMakeNonResident;
+        internal readonly long NumberOfClustersRequiredToExtend;
 
         private NTFSVolume m_volume;
         private FileRecord m_mftRecord;
@@ -74,6 +75,7 @@ namespace DiskAccessLibrary.FileSystems.NTFS
                 m_mftBitmap = new BitmapData(volume, m_mftRecord, bitmapRecord, numberOfUsableBits);
             }
             AttributeRecordLengthToMakeNonResident = m_volume.BytesPerFileRecordSegment * 5 / 16; // We immitate the NTFS v5.1 driver
+            NumberOfClustersRequiredToExtend = GetNumberOfClusteredRequiredToExtend();
         }
 
         private FileRecord ReadMftRecord(bool useMftMirror, bool readMftMirror)
@@ -490,16 +492,12 @@ namespace DiskAccessLibrary.FileSystems.NTFS
 
         public void Extend()
         {
-            ulong additionalDataLength = (ulong)(m_volume.BytesPerFileRecordSegment * ExtendGranularity);
-            ulong additionalBitmapLength = ExtendGranularity / 8;
-            // We calculate the maximum possible number of free cluster required
-            long numberOfClustersRequiredForData = (long)Math.Ceiling((double)additionalDataLength / m_volume.BytesPerCluster);
-            long numberOfClustersRequiredForBitmap = (long)Math.Ceiling((double)additionalBitmapLength / m_volume.BytesPerCluster);
-            if (numberOfClustersRequiredForData + numberOfClustersRequiredForBitmap > m_volume.NumberOfFreeClusters)
+            if (NumberOfClustersRequiredToExtend > m_volume.NumberOfFreeClusters)
             {
                 throw new DiskFullException();
             }
 
+            int additionalDataLength = m_volume.BytesPerFileRecordSegment * ExtendGranularity;
             // MFT Bitmap: ValidDataLength could be smaller than FileSize, however, we will later copy the value of ValidDataLength.
             // to the MFT mirror, we have to make sure that the copy will not become stale after writing beyond the current ValidDataLength.
             m_mftBitmap.ExtendBitmap(ExtendGranularity, true);
@@ -518,6 +516,16 @@ namespace DiskAccessLibrary.FileSystems.NTFS
             // CHKDSK seems to expect the mirror's NextAttributeInstance to be the same as the MFT.
             mftRecordSegmentFromMirror.NextAttributeInstance = m_mftRecord.BaseSegment.NextAttributeInstance;
             mftMirror.UpdateFileRecordSegment(mftRecordSegmentFromMirror);
+        }
+
+        private long GetNumberOfClusteredRequiredToExtend()
+        {
+            ulong additionalDataLength = (ulong)(m_volume.BytesPerFileRecordSegment * ExtendGranularity);
+            ulong additionalBitmapLength = (uint)ExtendGranularity / 8;
+            // We calculate the maximum possible number of free cluster required
+            long numberOfClustersRequiredForData = (long)Math.Ceiling((double)additionalDataLength / m_volume.BytesPerCluster);
+            long numberOfClustersRequiredForBitmap = (long)Math.Ceiling((double)additionalBitmapLength / m_volume.BytesPerCluster);
+            return numberOfClustersRequiredForData + numberOfClustersRequiredForBitmap;
         }
 
         // In NTFS v3.1 the FileRecord's self reference SegmentNumber is 32 bits,
