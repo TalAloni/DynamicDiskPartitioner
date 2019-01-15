@@ -1,4 +1,4 @@
-/* Copyright (C) 2018 Tal Aloni <tal.aloni.il@gmail.com>. All rights reserved.
+/* Copyright (C) 2018-2019 Tal Aloni <tal.aloni.il@gmail.com>. All rights reserved.
  * 
  * You can redistribute this program and/or modify it under the terms of
  * the GNU Lesser Public License as published by the Free Software Foundation,
@@ -111,15 +111,15 @@ namespace DiskAccessLibrary.FileSystems.NTFS
             ExtendBitmap(numberOfBits, false);
         }
 
-        /// <param name="prewriteBytes">True to zero out the extension in advance, False to rely on ValidDataLength</param>
-        internal void ExtendBitmap(long numberOfBits, bool prewriteBytes)
+        /// <param name="zeroOutExtensionInAdvance">True to zero out the extension in advance, False to rely on ValidDataLength</param>
+        internal void ExtendBitmap(long numberOfBits, bool zeroOutExtensionInAdvance)
         {
             long numberOfUnusedBits = (long)(this.Length * 8 - (ulong)m_numberOfUsableBits);
             if (numberOfBits > numberOfUnusedBits)
             {
                 long additionalBits = numberOfBits - numberOfUnusedBits;
                 ulong additionalBytes = (ulong)(Math.Ceiling((double)additionalBits / (ExtendGranularity * 8)) * ExtendGranularity);
-                if (prewriteBytes)
+                if (zeroOutExtensionInAdvance)
                 {
                     this.WriteBytes(this.Length, new byte[additionalBytes]);
                 }
