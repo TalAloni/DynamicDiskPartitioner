@@ -1,4 +1,4 @@
-/* Copyright (C) 2014-2018 Tal Aloni <tal.aloni.il@gmail.com>. All rights reserved.
+/* Copyright (C) 2014-2019 Tal Aloni <tal.aloni.il@gmail.com>. All rights reserved.
  * 
  * You can redistribute this program and/or modify it under the terms of
  * the GNU Lesser Public License as published by the Free Software Foundation,
@@ -133,7 +133,7 @@ namespace DiskAccessLibrary.FileSystems.NTFS
         public virtual FileRecord CreateFile(MftSegmentReference parentDirectory, string fileName, bool isDirectory)
         {
             // Worst case scenrario: the MFT might be full and the parent directory index requires multiple splits
-            if (NumberOfFreeClusters < 24)
+            if (NumberOfFreeClusters < m_mft.NumberOfClustersRequiredToExtend + 8)
             {
                 throw new DiskFullException();
             }
@@ -192,7 +192,7 @@ namespace DiskAccessLibrary.FileSystems.NTFS
         public virtual void MoveFile(FileRecord fileRecord, MftSegmentReference newParentDirectory, string newFileName)
         {
             // Worst case scenrario: the new parent directory index requires multiple splits
-            if (NumberOfFreeClusters < 4)
+            if (NumberOfFreeClusters < 8)
             {
                 throw new DiskFullException();
             }
