@@ -1,4 +1,4 @@
-/* Copyright (C) 2014-2018 Tal Aloni <tal.aloni.il@gmail.com>. All rights reserved.
+/* Copyright (C) 2014-2019 Tal Aloni <tal.aloni.il@gmail.com>. All rights reserved.
  * 
  * You can redistribute this program and/or modify it under the terms of
  * the GNU Lesser Public License as published by the Free Software Foundation,
@@ -6,6 +6,7 @@
  */
 using System;
 using System.Collections.Generic;
+using System.IO;
 using Utilities;
 
 namespace DiskAccessLibrary.FileSystems.NTFS
@@ -47,6 +48,11 @@ namespace DiskAccessLibrary.FileSystems.NTFS
             if (m_nameLength > 0)
             {
                 m_name = ByteReader.ReadUTF16String(buffer, offset + nameOffset, m_nameLength);
+            }
+
+            if (m_recordLengthOnDisk % 8 > 0)
+            {
+                throw new InvalidDataException("Corrupt attribute, record not aligned to 8-byte boundary");
             }
         }
 
