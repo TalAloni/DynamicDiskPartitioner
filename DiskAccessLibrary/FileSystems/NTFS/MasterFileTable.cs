@@ -505,7 +505,12 @@ namespace DiskAccessLibrary.FileSystems.NTFS
             // MFT Data: ValidDataLength must be equal to FileSize.
             // We are opting to skip updating the FileNameRecord and RootDirectory index.
             // Note: The NTFS v5.1 driver does not bother updating the FileNameRecord.
-            m_mftData.WriteBytes(m_mftData.Length, new byte[additionalDataLength]);
+            while (additionalDataLength > 0)
+            {
+                int transferSize = Math.Min(Settings.MaximumTransferSizeLBA * m_volume.BytesPerSector, additionalDataLength);
+                m_mftData.WriteBytes(m_mftData.Length, new byte[transferSize]);
+                additionalDataLength -= transferSize;
+            }
 
             // Update the MFT mirror
             MasterFileTable mftMirror = new MasterFileTable(m_volume, false, true);
