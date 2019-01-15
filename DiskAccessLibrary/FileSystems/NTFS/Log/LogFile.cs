@@ -1,4 +1,4 @@
-/* Copyright (C) 2018 Tal Aloni <tal.aloni.il@gmail.com>. All rights reserved.
+/* Copyright (C) 2018-2019 Tal Aloni <tal.aloni.il@gmail.com>. All rights reserved.
  * 
  * You can redistribute this program and/or modify it under the terms of
  * the GNU Lesser Public License as published by the Free Software Foundation,
@@ -177,15 +177,19 @@ namespace DiskAccessLibrary.FileSystems.NTFS
             ulong pageOffsetInFile = LsnToPageOffsetInFile(lsn);
             int recordOffsetInPage = LsnToRecordOffsetInPage(lsn);
             LfsRecordPage page = ReadPage(pageOffsetInFile);
+            if (page == null)
+            {
+                throw new InvalidDataException("LfsRecord LSN points to an uninitialized page");
+            }
             int dataOffset = m_restartPage.RestartArea.LogPageDataOffset;
             LfsRecord record = page.ReadRecord(recordOffsetInPage);
             if (record.ThisLsn != lsn)
             {
-                throw new InvalidDataException("LogRecord Lsn does not match expected value");
+                throw new InvalidDataException("LfsRecord LSN does not match expected value");
             }
             if (record.Length < LfsRecord.HeaderLength)
             {
-                throw new InvalidDataException("LogRecord length is invalid");
+                throw new InvalidDataException("LfsRecord length is invalid");
             }
             if (record.IsMultiPageRecord)
             {
