@@ -236,3 +236,19 @@ Revision History:
         NTFS: NTFSVolume: Added ContentType enum to help identify the content of volume clusters being accessed.
         NTFS: AttributeData: Bugfix: Attribute sorting rules were not applied when converting a resident attribute to non-resident.
         NTFS: IndexData: RemoveEntry: Bugfix: IndexOutOfRangeException was thrown in some cases.
+
+1.5.5 - NTFS: FileRecordHelper: Bugfix: In some cases attributes were written to disk in a way that violated sorting rules.
+        NTFS: NTFSLogClient: WriteRestartRecord: Bugfix: attribute name table was not written.
+        NTFS: FileRecordHelper: Bugfix: Do not assume attribute fragments are sorted by LowestVCN when read from segments ordered by segment number.
+        NTFS: MasterFileTable: AllocateReservedFileRecordSegment: Throw NotSupportedException instead of DiskFullException if all reserved file record segments have been exhausted.
+        NTFS: Added LogFileData to ContentType enum.
+        NTFS: NTFSVolumeCreator: Added Format method overload.
+        NTFS: LogFile: Throw InvalidDataException if LfsRecord LSN points to an uninitialized page.
+        NTFS: ResidentAttributeRecord: Bugfix: Data was not aligned to 8-byte boundary in some cases.
+        NTFS: ResidentAttributeRecord: Throw InvalidDataException if data is not aligned to 8-byte boundary.
+        NTFS: AttributeRecord: Throw InvalidDataException if attribute record is not aligned to 8-byte boundary.
+        NTFS: FileRecordSegment: Throw InvalidDataException if first attribute is not aligned to 8-byte boundary.
+        NTFS: NTFSVolume: Improved free space check before CreateFile and MoveFile.
+        NTFS: MasterFileTable: Extend: Use MaximumTransferSizeLBA when zeroing-out MFT Data extension.
+        NTFS: MasterFileTable: Increased MFT extend granularity to decrease MFT fragmentation.
+        NTFS: AttributeData: Extend: Bugfix: Attempted to write partial cluster that was not the last cluster when converting attribute to non-resident.
