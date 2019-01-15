@@ -15,7 +15,11 @@ namespace DiskAccessLibrary.FileSystems.NTFS
     {
         internal const int FirstReservedSegmentNumber = 16; // 16-23 are reserved for additional FileRecordSegments for the MFT record
         internal const int FirstUserSegmentNumber = 24;
-        private const int ExtendGranularity = 16; // The number of records added to the MFT when extending it, MUST be multiple of 8
+        private const int ExtendGranularitySmallVolume = 256;  // The number of records added to the MFT when extending it, MUST be multiple of 8
+        private const int ExtendGranularityMediumVolume = 4096;
+        private const int ExtendGranularityLargeVolume = 65536;
+        private const long MediumVolumeThreshold = 1073741824; //  1 GB
+        private const long LargeVolumeThreshold = 17179869184; // 16 GB
 
         internal const long MasterFileTableSegmentNumber = 0;
         internal const long MftMirrorSegmentNumber = 1;
@@ -37,6 +41,7 @@ namespace DiskAccessLibrary.FileSystems.NTFS
         internal static readonly MftSegmentReference BitmapSegmentReference = new MftSegmentReference(BitmapSegmentNumber, (ushort)BitmapSegmentNumber);
         private static readonly MftSegmentReference BootSegmentReference = new MftSegmentReference(BootSegmentNumber, (ushort)BootSegmentNumber);
         internal readonly int AttributeRecordLengthToMakeNonResident;
+        private readonly int ExtendGranularity;
         internal readonly long NumberOfClustersRequiredToExtend;
 
         private NTFSVolume m_volume;
@@ -75,6 +80,18 @@ namespace DiskAccessLibrary.FileSystems.NTFS
                 m_mftBitmap = new BitmapData(volume, m_mftRecord, bitmapRecord, numberOfUsableBits);
             }
             AttributeRecordLengthToMakeNonResident = m_volume.BytesPerFileRecordSegment * 5 / 16; // We immitate the NTFS v5.1 driver
+            if (m_volume.Size >= LargeVolumeThreshold)
+            {
+                ExtendGranularity = ExtendGranularityLargeVolume;
+            }
+            else if (m_volume.Size >= MediumVolumeThreshold)
+            {
+                ExtendGranularity = ExtendGranularityMediumVolume;
+            }
+            else
+            {
+                ExtendGranularity = ExtendGranularitySmallVolume;
+            }
             NumberOfClustersRequiredToExtend = GetNumberOfClusteredRequiredToExtend();
         }
 
