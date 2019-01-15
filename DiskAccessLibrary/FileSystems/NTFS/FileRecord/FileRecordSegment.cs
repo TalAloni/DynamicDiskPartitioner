@@ -1,4 +1,4 @@
-/* Copyright (C) 2014-2018 Tal Aloni <tal.aloni.il@gmail.com>. All rights reserved.
+/* Copyright (C) 2014-2019 Tal Aloni <tal.aloni.il@gmail.com>. All rights reserved.
  * 
  * You can redistribute this program and/or modify it under the terms of
  * the GNU Lesser Public License as published by the Free Software Foundation,
@@ -75,6 +75,11 @@ namespace DiskAccessLibrary.FileSystems.NTFS
             // 2 bytes padding
             m_segmentNumberOnDisk = LittleEndianConverter.ToUInt32(buffer, offset + 0x2C);
             UpdateSequenceNumber = LittleEndianConverter.ToUInt16(buffer, offset + multiSectorHeader.UpdateSequenceArrayOffset);
+
+            if (firstAttributeOffset % 8 > 0)
+            {
+                throw new InvalidDataException("Corrupt file record segment, first attribute not aligned to 8-byte boundary");
+            }
 
             // Read attributes
             int position = offset + firstAttributeOffset;
@@ -376,9 +381,7 @@ namespace DiskAccessLibrary.FileSystems.NTFS
                 updateSequenceArrayOffset = NTFS31UpdateSequenceArrayOffset;
             }
 
-            // Aligned to 8 byte boundary
-            // Note: I had an issue with 4 byte boundary under Windows 7 using disk with 2048 bytes per sector.
-            //       Windows used an 8 byte boundary.
+            // FirstAttributeOffset MUST be aligned to 8-byte boundary
             ushort firstAttributeOffset = (ushort)(Math.Ceiling((double)(updateSequenceArrayOffset + updateSequenceArraySize * 2) / 8) * 8);
             return firstAttributeOffset;
         }
