@@ -1,4 +1,4 @@
-/* Copyright (C) 2014-2018 Tal Aloni <tal.aloni.il@gmail.com>. All rights reserved.
+/* Copyright (C) 2014-2019 Tal Aloni <tal.aloni.il@gmail.com>. All rights reserved.
  * 
  * You can redistribute this program and/or modify it under the terms of
  * the GNU Lesser Public License as published by the Free Software Foundation,
@@ -216,6 +216,15 @@ namespace DiskAccessLibrary.FileSystems.NTFS
                     NonResidentAttributeRecord attributeRecord = NonResidentAttributeRecord.Create(m_attributeRecord.AttributeType, m_attributeRecord.Name);
                     NonResidentAttributeData attributeData = new NonResidentAttributeData(m_volume, null, attributeRecord);
                     attributeData.Extend(finalDataLength);
+                    if (data.Length % m_volume.BytesPerCluster > 0)
+                    {
+                        int fillDataLength = m_volume.BytesPerCluster - (data.Length % m_volume.BytesPerCluster);
+                        if ((uint)data.Length + (uint)fillDataLength < finalDataLength)
+                        {
+                            // Only the last cluster can be partially used, if this is not the last cluster, zero-fill it
+                            data = ByteUtils.Concatenate(data, new byte[fillDataLength]);
+                        }
+                    }
                     attributeData.WriteClusters(0, data);
                     // Note that we overwrite the old attribute only after writing the non-resident data
                     if (m_fileRecord != null)
