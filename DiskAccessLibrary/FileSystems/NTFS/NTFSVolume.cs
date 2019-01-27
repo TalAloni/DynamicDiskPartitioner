@@ -244,6 +244,10 @@ namespace DiskAccessLibrary.FileSystems.NTFS
 
                 foreach (FileNameRecord fileNameRecord in fileNameRecords)
                 {
+                    if (!fileRecord.IsDirectory)
+                    {
+                        fileNameRecord.FileSize = fileRecord.DataRecord.DataLength;
+                    }
                     newParentDirectoryIndex.AddEntry(fileRecord.BaseSegmentReference, fileNameRecord.GetBytes());
                 }
                 m_logClient.WriteForgetTransactionRecord(transactionID);
