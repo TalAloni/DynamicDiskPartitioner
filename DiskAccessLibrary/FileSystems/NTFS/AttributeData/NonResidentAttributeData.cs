@@ -203,6 +203,16 @@ namespace DiskAccessLibrary.FileSystems.NTFS
             m_attributeRecord.FileSize += additionalLengthInBytes;
             if (m_fileRecord != null)
             {
+                if (m_attributeRecord.AttributeType == AttributeType.Data && m_attributeRecord.Name == String.Empty)
+                {
+                    // Windows NTFS v5.1 driver updates the value of the AllocatedLength field but does not usually update the value of
+                    // the FileSize field belonging to the FileNameRecords that are stored in the FileRecord, which is likely to be 0.
+                    List<FileNameRecord> fileNameRecords = m_fileRecord.FileNameRecords;
+                    foreach (FileNameRecord fileNameRecord in fileNameRecords)
+                    {
+                        fileNameRecord.AllocatedLength = m_attributeRecord.AllocatedLength;
+                    }
+                }
                 m_volume.UpdateFileRecord(m_fileRecord);
             }
         }
@@ -273,6 +283,16 @@ namespace DiskAccessLibrary.FileSystems.NTFS
 
             if (m_fileRecord != null)
             {
+                if (m_attributeRecord.AttributeType == AttributeType.Data && m_attributeRecord.Name == String.Empty)
+                {
+                    // Windows NTFS v5.1 driver updates the value of the AllocatedLength field but does not usually update the value of
+                    // the FileSize field belonging to the FileNameRecords that are stored in the FileRecord, which is likely to be 0.
+                    List<FileNameRecord> fileNameRecords = m_fileRecord.FileNameRecords;
+                    foreach (FileNameRecord fileNameRecord in fileNameRecords)
+                    {
+                        fileNameRecord.AllocatedLength = m_attributeRecord.AllocatedLength;
+                    }
+                }
                 m_volume.UpdateFileRecord(m_fileRecord);
             }
         }

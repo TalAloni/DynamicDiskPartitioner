@@ -1,4 +1,4 @@
-/* Copyright (C) 2014-2018 Tal Aloni <tal.aloni.il@gmail.com>. All rights reserved.
+/* Copyright (C) 2014-2019 Tal Aloni <tal.aloni.il@gmail.com>. All rights reserved.
  * 
  * You can redistribute this program and/or modify it under the terms of
  * the GNU Lesser Public License as published by the Free Software Foundation,
@@ -48,7 +48,7 @@ namespace DiskAccessLibrary.FileSystems.NTFS
             m_data.WriteBytes(offset, data);
             if (m_data.AttributeName == String.Empty && fileSizeBefore != m_data.Length)
             {
-                UpdateFileNameRecords();
+                UpdateDirectoryIndex();
             }
         }
 
@@ -70,11 +70,11 @@ namespace DiskAccessLibrary.FileSystems.NTFS
 
             if (m_data.AttributeName == String.Empty)
             {
-                UpdateFileNameRecords();
+                UpdateDirectoryIndex();
             }
         }
 
-        private void UpdateFileNameRecords()
+        private void UpdateDirectoryIndex()
         {
             List<FileNameRecord> fileNameRecords = m_fileRecord.FileNameRecords;
             foreach (FileNameRecord fileNameRecord in fileNameRecords)
@@ -82,7 +82,6 @@ namespace DiskAccessLibrary.FileSystems.NTFS
                 fileNameRecord.AllocatedLength = m_data.AllocatedLength;
                 fileNameRecord.FileSize = m_data.Length;
             }
-            m_volume.UpdateFileRecord(m_fileRecord);
             m_volume.UpdateDirectoryIndex(m_fileRecord.ParentDirectoryReference, fileNameRecords);
         }
 
