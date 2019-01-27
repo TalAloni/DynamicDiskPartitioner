@@ -229,10 +229,12 @@ namespace DiskAccessLibrary.FileSystems.NTFS
                 DateTime mftModificationTime = fileRecord.StandardInformation.MftModificationTime;
                 DateTime lastAccessTime = fileRecord.StandardInformation.LastAccessTime;
                 ulong allocatedLength = fileRecord.FileNameRecord.AllocatedLength;
-                ulong fileSize = fileRecord.FileNameRecord.FileSize;
                 FileAttributes fileAttributes = fileRecord.StandardInformation.FileAttributes;
                 ushort packedEASize = fileRecord.FileNameRecord.PackedEASize;
-                fileNameRecords = IndexHelper.GenerateFileNameRecords(newParentDirectory, newFileName, fileRecord.IsDirectory, m_generateDosNames, newParentDirectoryIndex, creationTime, modificationTime, mftModificationTime, lastAccessTime, allocatedLength, fileSize, fileAttributes, packedEASize);
+                // Windows NTFS v5.1 driver does not usually update the value of the FileSize field belonging to the FileNameRecords that are stored in the FileRecord.
+                // The driver does update the value during a rename, which is inconsistent file creation and is likely to be incidental rather than intentional.
+                // We will set the value to 0 to be consistent with file creation.
+                fileNameRecords = IndexHelper.GenerateFileNameRecords(newParentDirectory, newFileName, fileRecord.IsDirectory, m_generateDosNames, newParentDirectoryIndex, creationTime, modificationTime, mftModificationTime, lastAccessTime, allocatedLength, 0, fileAttributes, packedEASize);
                 fileRecord.RemoveAttributeRecords(AttributeType.FileName, String.Empty);
                 foreach (FileNameRecord fileNameRecord in fileNameRecords)
                 {
