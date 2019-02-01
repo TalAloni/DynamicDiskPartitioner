@@ -1,4 +1,4 @@
-/* Copyright (C) 2014-2018 Tal Aloni <tal.aloni.il@gmail.com>. All rights reserved.
+/* Copyright (C) 2014-2019 Tal Aloni <tal.aloni.il@gmail.com>. All rights reserved.
  * 
  * You can redistribute this program and/or modify it under the terms of
  * the GNU Lesser Public License as published by the Free Software Foundation,
@@ -49,6 +49,11 @@ namespace DiskAccessLibrary.FileSystems.NTFS
             FileSize = LittleEndianConverter.ToUInt64(buffer, offset + 0x30);
             ValidDataLength = LittleEndianConverter.ToUInt64(buffer, offset + 0x38);
             m_dataRunSequence = new DataRunSequence(buffer, offset + mappingPairsOffset, (int)this.RecordLengthOnDisk - mappingPairsOffset);
+
+            if (CompressionUnit != 0)
+            {
+                throw new NotSupportedException("NTFS compression is not supported");
+            }
 
             if ((HighestVCN - LowestVCN + 1) != m_dataRunSequence.DataClusterCount)
             {
