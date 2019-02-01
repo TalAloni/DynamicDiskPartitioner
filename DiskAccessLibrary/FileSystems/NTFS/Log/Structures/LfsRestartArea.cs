@@ -19,7 +19,7 @@ namespace DiskAccessLibrary.FileSystems.NTFS
         private const int FixedLengthNTFS30 = 0x40; // NTFS v3.0 and v3.1
         public const ushort NoClient = 0xFFFF;
 
-        public ulong CurrentLsn;
+        public ulong CurrentLsn;       // The last LSN that was written before writing the restart page, also used to determine which of the two restart pages is more recent
         // ushort LogClients;
         public ushort ClientFreeList;  // The index of the first free log client record in the array
         public ushort ClientInUseList; // The index of the first in-use log client record in the array

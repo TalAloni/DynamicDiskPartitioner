@@ -246,7 +246,7 @@ namespace DiskAccessLibrary.FileSystems.NTFS
             m_restartPage.RestartArea.LastLsnDataLength = (uint)record.Data.Length;
 
             // If the client is writing a ClientRestart, the call to write a restart page (when updating the client record) is imminent, so no need to write a restart page now.
-            // Note that CurrentLsn is used to determine which is restart page recent so we should not update the restart page without incrementing CurrentLsn.
+            // Note that CurrentLsn is used to determine which restart page is more recent so we should not update the restart page without incrementing CurrentLsn.
             if (recordType != LfsRecordType.ClientRestart && endOfTransferRecorded)
             {
                 // When the NTFS v5.1 driver restarts a dirty log file, it does not expect to find more than one transfer after the last flushed LSN.
