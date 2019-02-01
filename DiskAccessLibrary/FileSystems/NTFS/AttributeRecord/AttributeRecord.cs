@@ -16,7 +16,7 @@ namespace DiskAccessLibrary.FileSystems.NTFS
     /// </summary>
     public abstract class AttributeRecord
     {
-        public const int AttributeRecordHeaderLength = 16; // The part that is common to both resident and non-resident attributes
+        internal const int AttributeRecordHeaderLength = 0x10; // The part that is common to both resident and non-resident attributes
 
         /* Start of ATTRIBUTE_RECORD_HEADER */
         private AttributeType m_attribueType;
