@@ -1,4 +1,4 @@
-/* Copyright (C) 2018 Tal Aloni <tal.aloni.il@gmail.com>. All rights reserved.
+/* Copyright (C) 2018-2019 Tal Aloni <tal.aloni.il@gmail.com>. All rights reserved.
  * 
  * You can redistribute this program and/or modify it under the terms of
  * the GNU Lesser Public License as published by the Free Software Foundation,
@@ -84,17 +84,23 @@ namespace DiskAccessLibrary.FileSystems.NTFS
             return buffer;
         }
 
-        public static uint GetSystemPageSize(byte[] buffer, int offset)
-        {
-            return LittleEndianConverter.ToUInt32(buffer, offset + 0x10);
-        }
-
         public uint SystemPageSize
         {
             get
             {
                 return m_systemPageSize;
             }
+        }
+
+        public static bool IsRestartPage(byte[] buffer, int offset)
+        {
+            string signature = ByteReader.ReadAnsiString(buffer, offset + 0x00, MultiSectorHeader.SignatureLength);
+            return (signature == ValidSignature || signature == ModifiedSignature);
+        }
+
+        public static uint GetSystemPageSize(byte[] buffer, int offset)
+        {
+            return LittleEndianConverter.ToUInt32(buffer, offset + 0x10);
         }
 
         public static LfsRestartPage Create(long fileSize, int bytesPerSystemPage, int bytesPerLogPage, params LfsClientRecord[] clients)
