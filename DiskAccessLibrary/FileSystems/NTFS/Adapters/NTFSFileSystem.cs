@@ -67,6 +67,14 @@ namespace DiskAccessLibrary.FileSystems.NTFS
                 {
                     fileRecord = m_volume.CreateFile(parentDirectoryRecord.BaseSegmentReference, fileName, false);
                 }
+                else
+                {
+                    // We might need to allocate an additional FileRecordSegment so we have to make sure we can extend the MFT if it is full
+                    if (m_volume.NumberOfFreeClusters < m_volume.NumberOfClustersRequiredToExtendMft)
+                    {
+                        throw new DiskFullException();
+                    }
+                }
                 fileRecord.CreateAttributeRecord(AttributeType.Data, streamName);
                 m_volume.UpdateFileRecord(fileRecord);
             }
@@ -193,6 +201,11 @@ namespace DiskAccessLibrary.FileSystems.NTFS
 
                     if (streamName != String.Empty && dataRecord == null)
                     {
+                        // We might need to allocate an additional FileRecordSegment so we have to make sure we can extend the MFT if it is full
+                        if (m_volume.NumberOfFreeClusters < m_volume.NumberOfClustersRequiredToExtendMft)
+                        {
+                            throw new DiskFullException();
+                        }
                         fileRecord.CreateAttributeRecord(AttributeType.Data, streamName);
                         m_volume.UpdateFileRecord(fileRecord);
                     }
