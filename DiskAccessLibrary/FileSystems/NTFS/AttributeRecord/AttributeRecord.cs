@@ -16,6 +16,7 @@ namespace DiskAccessLibrary.FileSystems.NTFS
     /// </summary>
     public abstract class AttributeRecord
     {
+        public const int MaxAttributeNameLength = 255; // Unicode characters
         internal const int AttributeRecordHeaderLength = 0x10; // The part that is common to both resident and non-resident attributes
 
         /* Start of ATTRIBUTE_RECORD_HEADER */
