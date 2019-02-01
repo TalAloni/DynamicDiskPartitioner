@@ -571,6 +571,14 @@ namespace DiskAccessLibrary.FileSystems.NTFS
             }
         }
 
+        internal long NumberOfClustersRequiredToExtendMft
+        {
+            get
+            {
+                return m_mft.NumberOfClustersRequiredToExtend;
+            }
+        }
+
         internal NTFSLogClient LogClient
         {
             get
