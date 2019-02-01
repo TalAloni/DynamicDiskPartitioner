@@ -58,6 +58,7 @@
     <Compile Include="Exceptions\DeviceNotReadyException.cs" />
     <Compile Include="Exceptions\DirectoryNotEmptyException.cs" />
     <Compile Include="Exceptions\DiskFullException.cs" />
+    <Compile Include="Exceptions\InvalidNameException.cs" />
     <Compile Include="Exceptions\InvalidPathException.cs" />
     <Compile Include="Exceptions\SharingViolationException.cs" />
     <Compile Include="FileSystems\FileSystemHelper.cs" />
