@@ -1,4 +1,4 @@
-/* Copyright (C) 2014-2018 Tal Aloni <tal.aloni.il@gmail.com>. All rights reserved.
+/* Copyright (C) 2014-2019 Tal Aloni <tal.aloni.il@gmail.com>. All rights reserved.
  * 
  * You can redistribute this program and/or modify it under the terms of
  * the GNU Lesser Public License as published by the Free Software Foundation,
@@ -105,6 +105,11 @@ namespace DiskAccessLibrary.FileSystems.NTFS
 
         public AttributeRecord CreateAttributeRecord(AttributeType type, string name)
         {
+            if (name.Length > AttributeRecord.MaxAttributeNameLength)
+            {
+                throw new InvalidNameException();
+            }
+
             bool isResident = (type != AttributeType.IndexAllocation);
             AttributeRecord attribute = AttributeRecord.Create(type, name, isResident);
             FileRecordHelper.InsertSorted(this.Attributes, attribute);
