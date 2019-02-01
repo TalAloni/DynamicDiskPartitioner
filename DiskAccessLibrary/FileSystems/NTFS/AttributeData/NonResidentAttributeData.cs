@@ -193,7 +193,8 @@ namespace DiskAccessLibrary.FileSystems.NTFS
             {
                 ulong bytesToAllocate = additionalLengthInBytes - freeBytesInCurrentAllocation;
                 long clustersToAllocate = (long)Math.Ceiling((double)bytesToAllocate / m_volume.BytesPerCluster);
-                if (clustersToAllocate > m_volume.NumberOfFreeClusters)
+                // We might need to allocate an additional FileRecordSegment so we have to make sure we can extend the MFT if it is full
+                if (clustersToAllocate + m_volume.NumberOfClustersRequiredToExtendMft > m_volume.NumberOfFreeClusters)
                 {
                     throw new DiskFullException();
                 }
