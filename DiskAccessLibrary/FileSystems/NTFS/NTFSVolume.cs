@@ -215,10 +215,11 @@ namespace DiskAccessLibrary.FileSystems.NTFS
                 {
                     FileRecord newParentDirectoryRecord = GetFileRecord(newParentDirectory);
                     newParentDirectoryIndex = new IndexData(this, newParentDirectoryRecord, AttributeType.FileName);
-                    if (newParentDirectoryIndex.ContainsFileName(newFileName))
-                    {
-                        throw new AlreadyExistsException();
-                    }
+                }
+
+                if (newParentDirectoryIndex.ContainsFileName(newFileName))
+                {
+                    throw new AlreadyExistsException();
                 }
 
                 List<FileNameRecord> fileNameRecords = fileRecord.FileNameRecords;
