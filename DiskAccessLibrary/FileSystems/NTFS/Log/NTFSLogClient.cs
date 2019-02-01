@@ -301,6 +301,9 @@ namespace DiskAccessLibrary.FileSystems.NTFS
             LfsClientRecord clientRecord = m_logFile.GetClientRecord(m_clientIndex);
             clientRecord.OldestLsn = restartRecord.StartOfCheckpointLsn;
             clientRecord.ClientRestartLsn = result.ThisLsn;
+            // Note that writing a client restart record without also updating ClientRestartLsn has no effect.
+            // During the analysis pass, the NTFS v5.1 driver will use ClientRestartLsn in the most recent restart page to determine
+            // the StartOfCheckpointLsn that the scan should start from, any client restart record that is found during the scan will be ignored.
             m_logFile.WriteRestartPage(isClean);
             m_currentRestartRecord = restartRecord;
             return result;
