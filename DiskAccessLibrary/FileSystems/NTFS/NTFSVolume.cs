@@ -132,6 +132,11 @@ namespace DiskAccessLibrary.FileSystems.NTFS
 
         public virtual FileRecord CreateFile(MftSegmentReference parentDirectory, string fileName, bool isDirectory)
         {
+            if (fileName.Length > FileNameRecord.MaxFileNameLength)
+            {
+                throw new InvalidNameException();
+            }
+
             // Worst case scenrario: the MFT might be full and the parent directory index requires multiple splits
             if (NumberOfFreeClusters < m_mft.NumberOfClustersRequiredToExtend + 8)
             {
