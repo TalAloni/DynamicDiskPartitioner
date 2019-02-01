@@ -21,6 +21,11 @@ namespace DiskAccessLibrary.FileSystems.NTFS
 
         public static NTFSVolume Format(Volume volume, byte majorNTFSVersion, byte minorNTFSVersion, int bytesPerCluster, string volumeLabel)
         {
+            if (volumeLabel.Length > VolumeNameRecord.MaxVolumeNameLength)
+            {
+                throw new InvalidNameException();
+            }
+
             if (bytesPerCluster % volume.BytesPerSector > 0)
             {
                 throw new ArgumentException("bytesPerCluster must be a multiple of volume.BytesPerSector");
