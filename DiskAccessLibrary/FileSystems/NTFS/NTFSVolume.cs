@@ -33,6 +33,7 @@ namespace DiskAccessLibrary.FileSystems.NTFS
         private object m_bitmapLock = new object();
         private VolumeInformationRecord m_volumeInformation;
         private readonly bool GenerateDosNames = false;
+        private readonly int NumberOfClustersRequiredToExtendIndex;
 
         public NTFSVolume(Volume volume) : this(volume, false)
         { 
@@ -63,6 +64,7 @@ namespace DiskAccessLibrary.FileSystems.NTFS
             m_logFile = new LogFile(this);
             m_logClient = new NTFSLogClient(m_logFile);
             m_bitmap = new VolumeBitmap(this);
+            NumberOfClustersRequiredToExtendIndex = (int)Math.Ceiling((double)(IndexData.ExtendGranularity * m_bootRecord.BytesPerIndexRecord) / m_bootRecord.BytesPerCluster);
         }
 
         public virtual FileRecord GetFileRecord(string path)
@@ -137,8 +139,9 @@ namespace DiskAccessLibrary.FileSystems.NTFS
                 throw new InvalidNameException();
             }
 
-            // Worst case scenrario: the MFT might be full and the parent directory index requires multiple splits
-            if (NumberOfFreeClusters < m_mft.NumberOfClustersRequiredToExtend + 8)
+            // Worst case scenrario: the MFT might be full and the parent directory index requires multiple splits.
+            // We assume IndexData.ExtendGranularity is bigger than or equal to the number of splits.
+            if (NumberOfFreeClusters < m_mft.NumberOfClustersRequiredToExtend + NumberOfClustersRequiredToExtendIndex)
             {
                 throw new DiskFullException();
             }
@@ -196,8 +199,9 @@ namespace DiskAccessLibrary.FileSystems.NTFS
 
         public virtual void MoveFile(FileRecord fileRecord, MftSegmentReference newParentDirectory, string newFileName)
         {
-            // Worst case scenrario: the new parent directory index requires multiple splits
-            if (NumberOfFreeClusters < 8)
+            // Worst case scenrario: the new parent directory index requires multiple splits.
+            // We assume IndexData.ExtendGranularity is bigger than or equal to the number of splits.
+            if (NumberOfFreeClusters < NumberOfClustersRequiredToExtendIndex)
             {
                 throw new DiskFullException();
             }
