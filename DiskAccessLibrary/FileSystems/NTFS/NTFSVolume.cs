@@ -32,7 +32,7 @@ namespace DiskAccessLibrary.FileSystems.NTFS
         private object m_mftLock = new object(); // We use this lock to synchronize MFT and directory indexes operations (and their associated logging operations)
         private object m_bitmapLock = new object();
         private VolumeInformationRecord m_volumeInformation;
-        private readonly bool m_generateDosNames = false;
+        private readonly bool GenerateDosNames = false;
 
         public NTFSVolume(Volume volume) : this(volume, false)
         { 
@@ -153,7 +153,7 @@ namespace DiskAccessLibrary.FileSystems.NTFS
                     throw new AlreadyExistsException();
                 }
 
-                List<FileNameRecord> fileNameRecords = IndexHelper.GenerateFileNameRecords(parentDirectory, fileName, isDirectory, m_generateDosNames, parentDirectoryIndex);
+                List<FileNameRecord> fileNameRecords = IndexHelper.GenerateFileNameRecords(parentDirectory, fileName, isDirectory, GenerateDosNames, parentDirectoryIndex);
                 uint transactionID = m_logClient.AllocateTransactionID();
                 FileRecord fileRecord = m_mft.CreateFile(fileNameRecords, transactionID);
 
@@ -240,7 +240,7 @@ namespace DiskAccessLibrary.FileSystems.NTFS
                 // Windows NTFS v5.1 driver does not usually update the value of the FileSize field belonging to the FileNameRecords that are stored in the FileRecord.
                 // The driver does update the value during a rename, which is inconsistent file creation and is likely to be incidental rather than intentional.
                 // We will set the value to 0 to be consistent with file creation.
-                fileNameRecords = IndexHelper.GenerateFileNameRecords(newParentDirectory, newFileName, fileRecord.IsDirectory, m_generateDosNames, newParentDirectoryIndex, creationTime, modificationTime, mftModificationTime, lastAccessTime, allocatedLength, 0, fileAttributes, packedEASize);
+                fileNameRecords = IndexHelper.GenerateFileNameRecords(newParentDirectory, newFileName, fileRecord.IsDirectory, GenerateDosNames, newParentDirectoryIndex, creationTime, modificationTime, mftModificationTime, lastAccessTime, allocatedLength, 0, fileAttributes, packedEASize);
                 fileRecord.RemoveAttributeRecords(AttributeType.FileName, String.Empty);
                 foreach (FileNameRecord fileNameRecord in fileNameRecords)
                 {
