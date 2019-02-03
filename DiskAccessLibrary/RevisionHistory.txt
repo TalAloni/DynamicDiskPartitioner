@@ -252,3 +252,20 @@ Revision History:
         NTFS: MasterFileTable: Extend: Use MaximumTransferSizeLBA when zeroing-out MFT Data extension.
         NTFS: MasterFileTable: Increased MFT extend granularity to decrease MFT fragmentation.
         NTFS: AttributeData: Extend: Bugfix: Attempted to write partial cluster that was not the last cluster when converting attribute to non-resident.
+
+1.5.6 - NTFS: NTFSFileSystem: Bugfix: SetDates caused FileSize to be set to 0 in the directory index.
+        NTFS: NTFSVolume: Bugfix: MoveFile caused FileSize to be set to 0 in the directory index.
+        NTFS: NTFSVolume: MoveFile: Set the value of the FileSize field belonging to the FileNameRecords that are stored in the FileRecord to 0.
+        NTFS: Minor optimization: Reduce the number of times UpdateFileRecord is called when extending / truncating the primary data record.
+        NTFS: DataRun: Throw InvalidDataException if RunOffset or RunLength fields are longer than 8 bytes.
+        NTFS: NTFSVolumeCreator: Format: Throw InvalidNameException if volume label exceeds 32 characters.
+        NTFS: NTFSVolume: CreateFile: Throw InvalidNameException if filename exceeds 255 characters.
+        NTFS: FileRecord: CreateAttributeRecord: Throw InvalidNameException if attribute name length exceeds 255 characters.
+        NTFS: NonResidentAttributeData: Extend: Improved free space checking.
+        NTFS: NTFSFileSystem: Improved free space checking before creating alternate data stream.
+        NTFS: MasterFileTable: CreateFile: Optimized method to call UpdateFileRecordSegment only once.
+        NTFS: NonResidentAttributeRecord: Throw NotSupportedException if NTFS compression is used.
+        NTFS: NTFSVolume: MoveFile: Bugfix: Check if destination filename already exists when renaming a file.
+        NTFS: LfsRestartPage: Added IsRestartPage method.
+        NTFS: NTFSVolume: Improved free space checking before creating / moving a file.
+        NTFS: Minor documentation improvements.
