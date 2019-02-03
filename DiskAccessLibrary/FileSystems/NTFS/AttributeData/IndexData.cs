@@ -1,4 +1,4 @@
-/* Copyright (C) 2014-2018 Tal Aloni <tal.aloni.il@gmail.com>. All rights reserved.
+/* Copyright (C) 2014-2019 Tal Aloni <tal.aloni.il@gmail.com>. All rights reserved.
  * 
  * You can redistribute this program and/or modify it under the terms of
  * the GNU Lesser Public License as published by the Free Software Foundation,
@@ -13,7 +13,7 @@ namespace DiskAccessLibrary.FileSystems.NTFS
 {
     public partial class IndexData
     {
-        private const int ExtendGranularity = 16; // Number of IndexRecord slots to allocate during each time we extend the data, we wish to avoid the data being too fragmented.
+        internal const int ExtendGranularity = 16; // Number of IndexRecord slots to allocate during each time we extend the data, we wish to avoid the data being too fragmented.
 
         private NTFSVolume m_volume;
         private FileRecord m_fileRecord;
