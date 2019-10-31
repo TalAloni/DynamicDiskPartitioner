@@ -1,4 +1,4 @@
-/* Copyright (C) 2016 Tal Aloni <tal.aloni.il@gmail.com>. All rights reserved.
+/* Copyright (C) 2016-2019 Tal Aloni <tal.aloni.il@gmail.com>. All rights reserved.
  * 
  * You can redistribute this program and/or modify it under the terms of
  * the GNU Lesser Public License as published by the Free Software Foundation,
@@ -21,6 +21,8 @@ namespace DynamicDiskPartitioner
             {
                 PhysicalDisk physicalDisk = (PhysicalDisk)disk;
                 builder.AppendLine(physicalDisk.Description);
+                builder.AppendLine("S/N: " + physicalDisk.SerialNumber);
+                builder.AppendLine();
             }
             builder.AppendFormat("Size: {0} bytes\n", disk.Size.ToString("###,###,###,###,##0"));
             builder.AppendFormat("Bytes per sector (logical): {0}\n", disk.BytesPerSector);
