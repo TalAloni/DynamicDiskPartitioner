@@ -1,4 +1,4 @@
-/* Copyright (C) 2014-2016 Tal Aloni <tal.aloni.il@gmail.com>. All rights reserved.
+/* Copyright (C) 2014-2019 Tal Aloni <tal.aloni.il@gmail.com>. All rights reserved.
  * 
  * You can redistribute this program and/or modify it under the terms of
  * the GNU Lesser Public License as published by the Free Software Foundation,
@@ -16,9 +16,14 @@ namespace DiskAccessLibrary.FileSystems
     {
         public static FileSystem ReadFileSystem(Volume volume)
         {
+            return ReadFileSystem(volume, false);
+        }
+
+        public static FileSystem ReadFileSystem(Volume volume, bool isReadOnly)
+        {
             try
             {
-                return new NTFSFileSystem(volume);
+                return new NTFSFileSystem(volume, isReadOnly);
             }
             catch (InvalidDataException)
             {

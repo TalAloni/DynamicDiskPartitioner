@@ -19,9 +19,9 @@ namespace DiskAccessLibrary.FileSystems.NTFS
         private NTFSVolume m_volume;
         private Dictionary<long, List<NTFSFileStream>> m_openStreams = new Dictionary<long, List<NTFSFileStream>>();
 
-        public NTFSFileSystem(Volume volume)
+        public NTFSFileSystem(Volume volume, bool isReadOnly)
         {
-            m_volume = new NTFSVolume(volume);
+            m_volume = new NTFSVolume(volume, isReadOnly);
         }
 
         public NTFSFileSystem(NTFSVolume volume)

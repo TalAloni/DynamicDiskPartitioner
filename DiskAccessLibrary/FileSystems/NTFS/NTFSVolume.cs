@@ -24,6 +24,7 @@ namespace DiskAccessLibrary.FileSystems.NTFS
     public partial class NTFSVolume : IExtendableFileSystem
     {
         private Volume m_volume;
+        private bool m_isReadOnly;
         private NTFSBootRecord m_bootRecord; // Partition's boot record
         private MasterFileTable m_mft;
         private LogFile m_logFile;
@@ -39,9 +40,14 @@ namespace DiskAccessLibrary.FileSystems.NTFS
         { 
         }
 
-        public NTFSVolume(Volume volume, bool useMftMirror)
+        public NTFSVolume(Volume volume, bool isReadOnly) : this(volume, isReadOnly, false)
+        {
+        }
+
+        public NTFSVolume(Volume volume, bool isReadOnly, bool useMftMirror)
         {
             m_volume = volume;
+            m_isReadOnly = volume.IsReadOnly || isReadOnly;
 
             byte[] bootSector = m_volume.ReadSector(0);
             m_bootRecord = NTFSBootRecord.ReadRecord(bootSector);
@@ -358,13 +364,16 @@ namespace DiskAccessLibrary.FileSystems.NTFS
             long firstSectorIndex = clusterLCN * m_bootRecord.SectorsPerCluster;
             int sectorsToRead = m_bootRecord.SectorsPerCluster * count;
 
-            byte[] result = m_volume.ReadSectors(firstSectorIndex, sectorsToRead);
-
-            return result;
+            return m_volume.ReadSectors(firstSectorIndex, sectorsToRead);
         }
 
         protected internal virtual void WriteClusters(long clusterLCN, byte[] data, ContentType contentType)
         {
+            if (IsReadOnly)
+            {
+                throw new UnauthorizedAccessException("Attempted to perform write on a filesystem mounted for readonly access");
+            }
+
             long firstSectorIndex = clusterLCN * m_bootRecord.SectorsPerCluster;
             m_volume.WriteSectors(firstSectorIndex, data);
         }
@@ -376,6 +385,11 @@ namespace DiskAccessLibrary.FileSystems.NTFS
 
         protected internal virtual void WriteSectors(long sectorIndex, byte[] data, ContentType contentType)
         {
+            if (IsReadOnly)
+            {
+                throw new UnauthorizedAccessException("Attempted to perform write on a filesystem mounted for readonly access");
+            }
+
             m_volume.WriteSectors(sectorIndex, data);
         }
 
@@ -492,7 +506,7 @@ namespace DiskAccessLibrary.FileSystems.NTFS
         {
             get
             {
-                return m_volume.IsReadOnly;
+                return m_isReadOnly;
             }
         }
 
