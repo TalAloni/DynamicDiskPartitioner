@@ -113,7 +113,7 @@ namespace DynamicDiskPartitioner
         public static string GetFileSystemInformation(Volume volume)
         {
             StringBuilder builder = new StringBuilder();
-            FileSystem fileSystem = FileSystemHelper.ReadFileSystem(volume);
+            FileSystem fileSystem = FileSystemHelper.ReadFileSystem(volume, true);
             if (fileSystem != null)
             {
                 builder.AppendFormat("File system: {0}\n", fileSystem.Name);

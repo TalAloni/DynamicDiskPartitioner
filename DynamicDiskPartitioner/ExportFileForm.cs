@@ -26,7 +26,7 @@ namespace DynamicDiskPartitioner
 
         private void ExportFileForm_Load(object sender, EventArgs e)
         {
-            m_fileSystem = FileSystemHelper.ReadFileSystem(m_volume);
+            m_fileSystem = FileSystemHelper.ReadFileSystem(m_volume, true);
             if (m_fileSystem != null)
             {
                 foreach (FileSystemEntry entry in m_fileSystem.ListEntriesInRootDirectory())
