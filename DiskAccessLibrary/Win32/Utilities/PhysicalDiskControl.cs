@@ -1,4 +1,4 @@
-/* Copyright (C) 2014-2016 Tal Aloni <tal.aloni.il@gmail.com>. All rights reserved.
+/* Copyright (C) 2014-2019 Tal Aloni <tal.aloni.il@gmail.com>. All rights reserved.
  * 
  * You can redistribute this program and/or modify it under the terms of
  * the GNU Lesser Public License as published by the Free Software Foundation,
@@ -6,6 +6,7 @@
  */
 using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.IO;
 using System.Runtime.InteropServices;
 using System.Text;
@@ -371,9 +372,43 @@ namespace DiskAccessLibrary
             {
                 int offset = (int)deviceDescriptor.SerialNumberOffset - Marshal.SizeOf(deviceDescriptor);
                 string serialNumber = ByteReader.ReadNullTerminatedAnsiString(deviceDescriptor.RawDeviceProperties, offset);
-                return serialNumber.Trim();
+                return DecodeDeviceSerialNumber(serialNumber.Trim());
             }
             return String.Empty;
+        }
+
+        /// <summary>
+        /// Serial number may be encoded in HEX (with each two characters swapped)
+        /// </summary>
+        private static string DecodeDeviceSerialNumber(string serialNumber)
+        {
+            if (serialNumber.Length % 2 == 0)
+            {
+                StringBuilder builder = new StringBuilder();
+                for (int index = 0; index < serialNumber.Length; index += 2)
+                {
+                    short character;
+                    if (!Int16.TryParse(serialNumber.Substring(index, 2), NumberStyles.AllowHexSpecifier, CultureInfo.CurrentCulture.NumberFormat, out character))
+                    {
+                        // This is not an HEX string
+                        return serialNumber;
+                    }
+
+                    // Each two characters are swapped
+                    if (builder.Length % 2 == 1)
+                    {
+                        builder.Insert(builder.Length - 1, (char)character);
+                    }
+                    else
+                    {
+                        builder.Append((char)character);
+                    }
+                }
+
+                return builder.ToString().Trim();
+            }
+
+            return serialNumber;
         }
 
         public static STORAGE_DEVICE_DESCRIPTOR GetDeviceDescriptor(SafeFileHandle hDevice)
