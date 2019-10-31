@@ -24,7 +24,8 @@ namespace DiskAccessLibrary.FileSystems.NTFS
 
         public LogFile(NTFSVolume volume) : base(volume, MasterFileTable.LogSegmentReference)
         {
-            if (!IsLogClean())
+            // We only throw exception if the volume is not readonly 
+            if (!IsLogClean() && !volume.IsReadOnly)
             {
                 throw new NotSupportedException("The volume was not dismounted cleanly, the Windows NTFS driver must be used to bring the volume back to a consistent state");
             }
