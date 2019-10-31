@@ -129,3 +129,5 @@ Revision History:
 1.5.5 - Minor improvements.
 
 1.5.6 - Minor improvements.
+
+1.5.7 - Mount NTFS volume as readonly when write access is not needed.

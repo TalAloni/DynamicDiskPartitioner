@@ -269,3 +269,7 @@ Revision History:
         NTFS: LfsRestartPage: Added IsRestartPage method.
         NTFS: NTFSVolume: Improved free space checking before creating / moving a file.
         NTFS: Minor documentation improvements.
+
+1.5.7 - PhysicalDiskControl: Decode HEX encoded disk serial number.
+        NTFSVolume: Ability to mount as readonly.
+        NTFSLogFile: Do not throw NotSupportedException for dirty volume when mounted as readonly.
