@@ -1,4 +1,4 @@
-/* Copyright (C) 2018 Tal Aloni <tal.aloni.il@gmail.com>. All rights reserved.
+/* Copyright (C) 2018-2019 Tal Aloni <tal.aloni.il@gmail.com>. All rights reserved.
  * 
  * You can redistribute this program and/or modify it under the terms of
  * the GNU Lesser Public License as published by the Free Software Foundation,
@@ -79,7 +79,15 @@ namespace DiskAccessLibrary.FileSystems.NTFS
             }
             else
             {
-                m_currentRestartRecord = ReadRestartRecord(lastClientRestartLsn);
+                if (!Volume.IsReadOnly)
+                {
+                    m_currentRestartRecord = ReadRestartRecord(lastClientRestartLsn);
+                }
+                else
+                {
+                    // If volume is mounted as readonly we can skip reading the actual restart record
+                    m_currentRestartRecord = new NTFSRestartRecord(1, 0);
+                }
             }
             m_majorVersion = m_currentRestartRecord.MajorVersion;
             m_minorVersion = m_currentRestartRecord.MinorVersion;
