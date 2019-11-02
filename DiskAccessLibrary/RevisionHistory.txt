@@ -273,3 +273,5 @@ Revision History:
 1.5.7 - PhysicalDiskControl: Decode HEX encoded disk serial number.
         NTFSVolume: Ability to mount as readonly.
         NTFSLogFile: Do not throw NotSupportedException for dirty volume when mounted as readonly.
+
+1.5.8 - NTFS: NTFSLogClient: Skip reading restart record if volume is mounted as readonly.
