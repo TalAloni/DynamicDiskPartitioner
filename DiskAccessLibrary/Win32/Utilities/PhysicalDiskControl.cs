@@ -405,10 +405,28 @@ namespace DiskAccessLibrary
                     }
                 }
 
-                return builder.ToString().Trim();
+                string decodedSerialNumber = builder.ToString().Trim();
+                if (ContainsNonPrintableCharacters(decodedSerialNumber))
+                {
+                    return serialNumber;
+                }
+
+                return decodedSerialNumber;
             }
 
             return serialNumber;
+        }
+
+        private static bool ContainsNonPrintableCharacters(string value)
+        {
+            foreach (char c in value)
+            {
+                if (Char.IsControl(c))
+                {
+                    return true;
+                }
+            }
+            return false;
         }
 
         public static STORAGE_DEVICE_DESCRIPTOR GetDeviceDescriptor(SafeFileHandle hDevice)
