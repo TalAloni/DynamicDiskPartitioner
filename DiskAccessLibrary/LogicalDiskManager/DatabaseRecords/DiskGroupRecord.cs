@@ -32,8 +32,8 @@ namespace DiskAccessLibrary.LogicalDiskManager
             }
             else if (RecordRevision == 4)
             {
-                DiskGroupGuid = BigEndianReader.ReadGuidBytes(this.Data, ref offset);
-                DiskSetGuid = BigEndianReader.ReadGuidBytes(this.Data, ref offset);
+                DiskGroupGuid = BigEndianReader.ReadGuid(this.Data, ref offset);
+                DiskSetGuid = BigEndianReader.ReadGuid(this.Data, ref offset);
             }
             else
             {
@@ -89,8 +89,8 @@ namespace DiskAccessLibrary.LogicalDiskManager
             }
             else
             {
-                BigEndianWriter.WriteGuidBytes(data, ref offset, DiskGroupGuid);
-                BigEndianWriter.WriteGuidBytes(data, ref offset, DiskSetGuid);
+                BigEndianWriter.WriteGuid(data, ref offset, DiskGroupGuid);
+                BigEndianWriter.WriteGuid(data, ref offset, DiskSetGuid);
             }
             offset += 4;
             BigEndianWriter.WriteUInt64(data, ref offset, CommitTransactionID);

@@ -33,7 +33,7 @@ namespace DynamicDiskPartitioner
 
         protected override void WriteOperationParameters(byte[] buffer, int offset)
         {
-            BigEndianWriter.WriteGuidBytes(buffer, offset + 0, VolumeGuid);
+            BigEndianWriter.WriteGuid(buffer, offset + 0, VolumeGuid);
             BigEndianWriter.WriteUInt64(buffer, offset + 16, NumberOfCommittedSectors);
         }
     }

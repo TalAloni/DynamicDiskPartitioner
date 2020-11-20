@@ -67,7 +67,7 @@ namespace DiskAccessLibrary.LogicalDiskManager
             SizeLBA = ReadVarULong(this.Data, ref offset);
             offset += 4;
             PartitionType = (PartitionType)ByteReader.ReadByte(this.Data, ref offset);
-            VolumeGuid = BigEndianReader.ReadGuidBytes(this.Data, ref offset);
+            VolumeGuid = BigEndianReader.ReadGuid(this.Data, ref offset);
 
             if (HasUnknownID1Flag)
             {
@@ -137,7 +137,7 @@ namespace DiskAccessLibrary.LogicalDiskManager
             WritePaddedVarULong(data, ref offset, SizeLBA);
             offset += 4;
             ByteWriter.WriteByte(data, ref offset, (byte)PartitionType);
-            BigEndianWriter.WriteGuidBytes(data, ref offset, VolumeGuid);
+            BigEndianWriter.WriteGuid(data, ref offset, VolumeGuid);
 
             if (HasUnknownID1Flag)
             {

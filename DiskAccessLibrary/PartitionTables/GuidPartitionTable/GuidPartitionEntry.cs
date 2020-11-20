@@ -41,8 +41,8 @@ namespace DiskAccessLibrary
 
         public void WriteBytes(byte[] buffer, int offset)
         {
-            LittleEndianWriter.WriteGuidBytes(buffer, offset + 0, PartitionTypeGuid);
-            LittleEndianWriter.WriteGuidBytes(buffer, offset + 16, PartitionGuid);
+            LittleEndianWriter.WriteGuid(buffer, offset + 0, PartitionTypeGuid);
+            LittleEndianWriter.WriteGuid(buffer, offset + 16, PartitionGuid);
             LittleEndianWriter.WriteUInt64(buffer, offset + 32, FirstLBA);
             LittleEndianWriter.WriteUInt64(buffer, offset + 40, LastLBA);
             LittleEndianWriter.WriteUInt64(buffer, offset + 48, AttributeFlags);
