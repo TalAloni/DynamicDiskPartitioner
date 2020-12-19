@@ -9,7 +9,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Text;
 
-namespace Utilities
+namespace DiskAccessLibrary.FileSystems.Abstractions
 {
     public abstract class FileSystem : IFileSystem
     {

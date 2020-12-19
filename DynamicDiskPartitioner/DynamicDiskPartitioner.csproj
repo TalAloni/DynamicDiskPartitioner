@@ -127,6 +127,10 @@
     </Compile>
   </ItemGroup>
   <ItemGroup>
+    <ProjectReference Include="..\DiskAccessLibrary.FileSystems.Abstractions\DiskAccessLibrary.FileSystems.Abstractions.csproj">
+      <Project>{9119EC7E-AF78-4814-BF03-F3823A29A471}</Project>
+      <Name>DiskAccessLibrary.FileSystems.Abstractions</Name>
+    </ProjectReference>
     <ProjectReference Include="..\DiskAccessLibrary\DiskAccessLibrary.csproj">
       <Project>{000D0367-63A1-475D-982D-67A0B93BABEB}</Project>
       <Name>DiskAccessLibrary</Name>

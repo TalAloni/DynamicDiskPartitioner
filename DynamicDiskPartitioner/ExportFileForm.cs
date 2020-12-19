@@ -9,6 +9,7 @@ using System.Threading;
 using System.Windows.Forms;
 using DiskAccessLibrary;
 using DiskAccessLibrary.FileSystems;
+using DiskAccessLibrary.FileSystems.Abstractions;
 using Utilities;
 
 namespace DynamicDiskPartitioner
