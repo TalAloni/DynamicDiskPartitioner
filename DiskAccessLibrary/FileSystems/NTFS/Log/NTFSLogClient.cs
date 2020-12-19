@@ -7,7 +7,6 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
-using Utilities;
 
 namespace DiskAccessLibrary.FileSystems.NTFS
 {

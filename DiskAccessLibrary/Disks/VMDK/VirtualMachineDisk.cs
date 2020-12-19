@@ -8,7 +8,6 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Text;
-using Utilities;
 using DiskAccessLibrary.VMDK;
 
 namespace DiskAccessLibrary

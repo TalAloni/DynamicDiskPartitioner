@@ -6,8 +6,6 @@
  */
 using System;
 using System.IO;
-using System.Collections.Generic;
-using Utilities;
 using DiskAccessLibrary.VHD;
 
 namespace DiskAccessLibrary

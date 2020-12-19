@@ -5,9 +5,7 @@
  * either version 3 of the License, or (at your option) any later version.
  */
 using System;
-using System.Collections.Generic;
 using System.IO;
-using Utilities;
 
 namespace DiskAccessLibrary.FileSystems.NTFS
 {
