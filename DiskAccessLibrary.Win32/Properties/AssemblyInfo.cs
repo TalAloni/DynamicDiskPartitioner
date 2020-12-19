@@ -2,17 +2,15 @@
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 
-[assembly: InternalsVisibleTo("DiskAccessLibrary.Win32")]
-[assembly: InternalsVisibleTo("DiskAccessLibrary.Tests")]
 // General Information about an assembly is controlled through the following 
 // set of attributes. Change these attribute values to modify the information
 // associated with an assembly.
-[assembly: AssemblyTitle("DiskAccessLibrary")]
+[assembly: AssemblyTitle("DiskAccessLibrary.Win32")]
 [assembly: AssemblyDescription("")]
 [assembly: AssemblyConfiguration("")]
 [assembly: AssemblyCompany("Tal Aloni")]
-[assembly: AssemblyProduct("DiskAccessLibrary")]
-[assembly: AssemblyCopyright("Copyright © Tal Aloni 2012-2019")]
+[assembly: AssemblyProduct("DiskAccessLibrary.Win32")]
+[assembly: AssemblyCopyright("Copyright © Tal Aloni 2012-2020")]
 [assembly: AssemblyTrademark("")]
 [assembly: AssemblyCulture("")]
 
@@ -22,7 +20,7 @@ using System.Runtime.InteropServices;
 [assembly: ComVisible(false)]
 
 // The following GUID is for the ID of the typelib if this project is exposed to COM
-[assembly: Guid("be978a4f-67dd-49d3-8c5b-ff5ee86a0219")]
+[assembly: Guid("bc3a1619-ec5c-4cbb-895b-3668d3ace1ae")]
 
 // Version information for an assembly consists of the following four values:
 //

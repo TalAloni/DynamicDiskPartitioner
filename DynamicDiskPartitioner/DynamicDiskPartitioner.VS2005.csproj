@@ -131,6 +131,10 @@
       <Project>{9119EC7E-AF78-4814-BF03-F3823A29A471}</Project>
       <Name>DiskAccessLibrary.FileSystems.Abstractions.VS2005</Name>
     </ProjectReference>
+    <ProjectReference Include="..\DiskAccessLibrary.Win32\DiskAccessLibrary.Win32.VS2005.csproj">
+      <Project>{5D20BF8C-412F-43C5-8438-971CA8C3EA7D}</Project>
+      <Name>DiskAccessLibrary.Win32.VS2005</Name>
+    </ProjectReference>
     <ProjectReference Include="..\DiskAccessLibrary\DiskAccessLibrary.VS2005.csproj">
       <Project>{000D0367-63A1-475D-982D-67A0B93BABEB}</Project>
       <Name>DiskAccessLibrary.VS2005</Name>

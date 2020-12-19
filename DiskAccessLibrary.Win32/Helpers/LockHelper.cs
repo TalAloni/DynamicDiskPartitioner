@@ -11,13 +11,6 @@ using DiskAccessLibrary;
 
 namespace DiskAccessLibrary
 {
-    public enum LockStatus
-    {
-        Success,
-        CannotLockDisk,
-        CannotLockVolume,
-    }
-
     public partial class LockHelper
     {
         /// <summary>

@@ -208,30 +208,12 @@
     <Compile Include="Volumes\RemovableVolume.cs" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="Win32\Disks\PhysicalDisk.cs" />
-    <Compile Include="Win32\Disks\PhysicalDiskHandlePool.cs" />
     <Compile Include="Win32\Enums\Win32Error.cs" />
-    <Compile Include="Win32\Helpers\DiskOfflineHelper.cs" />
     <Compile Include="Win32\Helpers\IOExceptionHelper.cs" />
-    <Compile Include="Win32\Helpers\LockHelper.cs" />
-    <Compile Include="Win32\Helpers\PhysicalDiskHelper.cs" />
-    <Compile Include="Win32\Helpers\WindowsVolumeHelper.cs" />
-    <Compile Include="Win32\Helpers\WindowsVolumeManager.cs" />
-    <Compile Include="Win32\LogicalDiskManager\DiskGroupDatabase.Win32.cs" />
-    <Compile Include="Win32\LogicalDiskManager\LockHelper.cs" />
-    <Compile Include="Win32\LogicalDiskManager\LockManager.cs" />
-    <Compile Include="Win32\LogicalDiskManager\DiskLockHelper.cs" />
-    <Compile Include="Win32\LogicalDiskManager\WindowsDynamicDiskHelper.cs" />
-    <Compile Include="Win32\LogicalDiskManager\WindowsDynamicVolumeHelper.cs" />
-    <Compile Include="Win32\Utilities\DeviceInterfaceUtils.cs" />
     <Compile Include="Win32\Utilities\FileStreamEx.cs" />
     <Compile Include="Win32\Utilities\FileStreamUtils.cs" />
     <Compile Include="Win32\Utilities\HandleUtils.cs" />
-    <Compile Include="Win32\Utilities\PhysicalDiskControl.cs" />
     <Compile Include="Win32\Utilities\SecurityUtils.cs" />
-    <Compile Include="Win32\Utilities\VolumeControl.cs" />
-    <Compile Include="Win32\Volumes\OperatingSystemVolume.cs" />
-    <Compile Include="Win32\Volumes\VolumeHandlePool.cs" />
   </ItemGroup>
   <ItemGroup>
     <Content Include="RevisionHistory.txt" />

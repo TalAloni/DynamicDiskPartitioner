@@ -11,18 +11,18 @@ using DiskAccessLibrary;
 
 namespace DiskAccessLibrary.LogicalDiskManager
 {
-    public partial class DiskGroupDatabase
+    public partial class PhysicalDiskGroupDatabase
     {
         public static DiskGroupDatabase ReadFromPhysicalDisks(Guid diskGroupGuid)
         {
             List<DynamicDisk> dynamicDisks = WindowsDynamicDiskHelper.GetPhysicalDynamicDisks(diskGroupGuid);
-            return ReadFromDisks(dynamicDisks, diskGroupGuid);
+            return DiskGroupDatabase.ReadFromDisks(dynamicDisks, diskGroupGuid);
         }
 
         public static List<DiskGroupDatabase> ReadFromPhysicalDisks()
         {
             List<DynamicDisk> dynamicDisks = WindowsDynamicDiskHelper.GetPhysicalDynamicDisks();
-            return ReadFromDisks(dynamicDisks);
+            return DiskGroupDatabase.ReadFromDisks(dynamicDisks);
         }
     }
 }

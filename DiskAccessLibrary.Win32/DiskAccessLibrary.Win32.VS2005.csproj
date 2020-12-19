@@ -4,11 +4,11 @@
     <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
     <ProductVersion>8.0.50727</ProductVersion>
     <SchemaVersion>2.0</SchemaVersion>
-    <ProjectGuid>{0C358FE7-A183-4F61-AF87-1E3B9A296C96}</ProjectGuid>
-    <OutputType>Exe</OutputType>
+    <ProjectGuid>{5D20BF8C-412F-43C5-8438-971CA8C3EA7D}</ProjectGuid>
+    <OutputType>Library</OutputType>
     <AppDesignerFolder>Properties</AppDesignerFolder>
-    <RootNamespace>DiskAccessLibrary.Tests</RootNamespace>
-    <AssemblyName>DiskAccessLibrary.Tests</AssemblyName>
+    <RootNamespace>DiskAccessLibrary.Win32</RootNamespace>
+    <AssemblyName>DiskAccessLibrary.Win32</AssemblyName>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
     <DebugSymbols>true</DebugSymbols>
@@ -29,24 +29,32 @@
   </PropertyGroup>
   <ItemGroup>
     <Reference Include="System" />
+    <Reference Include="System.Data" />
+    <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="Helpers\ChkdskHelper.cs" />
-    <Compile Include="Helpers\MountHelper.cs" />
-    <Compile Include="Helpers\VHDMountHelper.cs" />
-    <Compile Include="Program.cs" />
+    <Compile Include="Disks\PhysicalDisk.cs" />
+    <Compile Include="Disks\PhysicalDiskHandlePool.cs" />
+    <Compile Include="Enums\LockStatus.cs" />
+    <Compile Include="Helpers\DiskOfflineHelper.cs" />
+    <Compile Include="Helpers\LockHelper.cs" />
+    <Compile Include="Helpers\PhysicalDiskHelper.cs" />
+    <Compile Include="Helpers\WindowsVolumeHelper.cs" />
+    <Compile Include="Helpers\WindowsVolumeManager.cs" />
+    <Compile Include="LogicalDiskManager\DiskLockHelper.cs" />
+    <Compile Include="LogicalDiskManager\LockHelper.cs" />
+    <Compile Include="LogicalDiskManager\PhysicalDiskGroupDatabase.cs" />
+    <Compile Include="LogicalDiskManager\LockManager.cs" />
+    <Compile Include="LogicalDiskManager\WindowsDynamicDiskHelper.cs" />
+    <Compile Include="LogicalDiskManager\WindowsDynamicVolumeHelper.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
-    <Compile Include="Tests\NTFSFormatTests.cs" />
-    <Compile Include="Tests\NTFSLogTests.cs" />
-    <Compile Include="Tests\NTFSVolumeTests.cs" />
-    <Compile Include="Tests\RawDiskImageTests.cs" />
-    <Compile Include="UnitTests\FileRecordTests.cs" />
+    <Compile Include="Utilities\DeviceInterfaceUtils.cs" />
+    <Compile Include="Utilities\PhysicalDiskControl.cs" />
+    <Compile Include="Utilities\VolumeControl.cs" />
+    <Compile Include="Volumes\OperatingSystemVolume.cs" />
+    <Compile Include="Volumes\VolumeHandlePool.cs" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\DiskAccessLibrary.Win32\DiskAccessLibrary.Win32.VS2005.csproj">
-      <Project>{5D20BF8C-412F-43C5-8438-971CA8C3EA7D}</Project>
-      <Name>DiskAccessLibrary.Win32.VS2005</Name>
-    </ProjectReference>
     <ProjectReference Include="..\DiskAccessLibrary\DiskAccessLibrary.VS2005.csproj">
       <Project>{000D0367-63A1-475D-982D-67A0B93BABEB}</Project>
       <Name>DiskAccessLibrary.VS2005</Name>
