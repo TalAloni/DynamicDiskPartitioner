@@ -8,6 +8,8 @@ using System.Threading;
 using System.Windows.Forms;
 using DiskAccessLibrary;
 using DiskAccessLibrary.LogicalDiskManager;
+using DiskAccessLibrary.LogicalDiskManager.Win32;
+using DiskAccessLibrary.Win32;
 using Utilities;
 
 namespace DynamicDiskPartitioner

@@ -11,6 +11,7 @@ using DiskAccessLibrary;
 using DiskAccessLibrary.FileSystems;
 using DiskAccessLibrary.FileSystems.Abstractions;
 using DiskAccessLibrary.LogicalDiskManager;
+using DiskAccessLibrary.Win32;
 using Utilities;
 
 namespace DynamicDiskPartitioner

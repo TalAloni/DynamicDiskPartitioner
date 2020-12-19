@@ -4,6 +4,7 @@ using System.ServiceProcess;
 using System.Text;
 using DiskAccessLibrary;
 using DiskAccessLibrary.LogicalDiskManager;
+using DiskAccessLibrary.LogicalDiskManager.Win32;
 using Utilities;
 
 namespace DynamicDiskPartitioner

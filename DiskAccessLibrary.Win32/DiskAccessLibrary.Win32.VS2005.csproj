@@ -36,12 +36,12 @@
     <Compile Include="Disks\PhysicalDisk.cs" />
     <Compile Include="Disks\PhysicalDiskHandlePool.cs" />
     <Compile Include="Enums\LockStatus.cs" />
-    <Compile Include="Helpers\DiskOfflineHelper.cs" />
     <Compile Include="Helpers\LockHelper.cs" />
     <Compile Include="Helpers\PhysicalDiskHelper.cs" />
     <Compile Include="Helpers\WindowsVolumeHelper.cs" />
     <Compile Include="Helpers\WindowsVolumeManager.cs" />
     <Compile Include="LogicalDiskManager\DiskLockHelper.cs" />
+    <Compile Include="LogicalDiskManager\DiskOfflineHelper.cs" />
     <Compile Include="LogicalDiskManager\LockHelper.cs" />
     <Compile Include="LogicalDiskManager\PhysicalDiskGroupDatabase.cs" />
     <Compile Include="LogicalDiskManager\LockManager.cs" />

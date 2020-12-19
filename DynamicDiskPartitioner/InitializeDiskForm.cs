@@ -6,6 +6,7 @@ using System.Drawing;
 using System.Text;
 using System.Windows.Forms;
 using DiskAccessLibrary;
+using DiskAccessLibrary.Win32;
 using Utilities;
 
 namespace DynamicDiskPartitioner
