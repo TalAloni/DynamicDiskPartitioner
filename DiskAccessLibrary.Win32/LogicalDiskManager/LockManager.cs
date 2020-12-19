@@ -6,9 +6,7 @@
  */
 using System;
 using System.Collections.Generic;
-using DiskAccessLibrary;
 using DiskAccessLibrary.Win32;
-using DiskAccessLibrary.LogicalDiskManager;
 
 namespace DiskAccessLibrary.LogicalDiskManager.Win32
 {

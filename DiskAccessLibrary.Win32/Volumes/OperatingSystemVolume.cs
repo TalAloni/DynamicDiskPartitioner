@@ -9,7 +9,6 @@ using System.Collections.Generic;
 using System.IO;
 using System.Runtime.InteropServices;
 using Microsoft.Win32.SafeHandles;
-using Utilities;
 
 namespace DiskAccessLibrary.Win32
 {

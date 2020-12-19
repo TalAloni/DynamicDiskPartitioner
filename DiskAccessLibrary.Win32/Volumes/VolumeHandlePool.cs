@@ -8,7 +8,6 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using Microsoft.Win32.SafeHandles;
-using Utilities;
 
 namespace DiskAccessLibrary.Win32
 {

@@ -8,7 +8,6 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using DiskAccessLibrary.Win32;
-using Utilities;
 
 namespace DiskAccessLibrary.LogicalDiskManager.Win32
 {

@@ -4,10 +4,8 @@
  * the GNU Lesser Public License as published by the Free Software Foundation,
  * either version 3 of the License, or (at your option) any later version.
  */
-using System;
 using System.Collections.Generic;
 using DiskAccessLibrary.Win32;
-using Utilities;
 
 namespace DiskAccessLibrary.LogicalDiskManager.Win32
 {
