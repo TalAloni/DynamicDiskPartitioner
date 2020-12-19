@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using DiskAccessLibrary.FileSystems.NTFS;
 using Utilities;
 
-namespace DiskAccessLibraryTests
+namespace DiskAccessLibrary.Tests
 {
     public class FileRecordTests
     {

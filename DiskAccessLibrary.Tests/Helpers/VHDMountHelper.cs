@@ -9,7 +9,7 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 
-namespace DiskAccessLibraryTests
+namespace DiskAccessLibrary.Tests
 {
     public class VHDMountHelper
     {

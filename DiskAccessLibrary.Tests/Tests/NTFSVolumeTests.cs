@@ -11,7 +11,7 @@ using DiskAccessLibrary;
 using DiskAccessLibrary.FileSystems.NTFS;
 using Utilities;
 
-namespace DiskAccessLibraryTests
+namespace DiskAccessLibrary.Tests
 {
     public class NTFSVolumeTests
     {

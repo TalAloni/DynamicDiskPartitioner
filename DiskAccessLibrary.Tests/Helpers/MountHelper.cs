@@ -9,7 +9,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Threading;
 
-namespace DiskAccessLibraryTests
+namespace DiskAccessLibrary.Tests
 {
     public class MountHelper
     {

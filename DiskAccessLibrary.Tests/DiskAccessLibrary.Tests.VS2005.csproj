@@ -7,8 +7,8 @@
     <ProjectGuid>{0C358FE7-A183-4F61-AF87-1E3B9A296C96}</ProjectGuid>
     <OutputType>Exe</OutputType>
     <AppDesignerFolder>Properties</AppDesignerFolder>
-    <RootNamespace>DiskAccessLibraryTests</RootNamespace>
-    <AssemblyName>DiskAccessLibraryTests</AssemblyName>
+    <RootNamespace>DiskAccessLibrary.Tests</RootNamespace>
+    <AssemblyName>DiskAccessLibrary.Tests</AssemblyName>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
     <DebugSymbols>true</DebugSymbols>

@@ -8,7 +8,7 @@ using System;
 using System.Collections.Generic;
 using System.Text;
 
-namespace DiskAccessLibraryTests
+namespace DiskAccessLibrary.Tests
 {
     public class Program
     {

@@ -12,7 +12,7 @@ using DiskAccessLibrary.FileSystems;
 using DiskAccessLibrary.FileSystems.NTFS;
 using Utilities;
 
-namespace DiskAccessLibraryTests
+namespace DiskAccessLibrary.Tests
 {
     public class NTFSFormatTests
     {

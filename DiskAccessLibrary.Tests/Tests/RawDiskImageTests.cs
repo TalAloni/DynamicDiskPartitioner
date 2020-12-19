@@ -10,7 +10,7 @@ using System.IO;
 using DiskAccessLibrary;
 using Utilities;
 
-namespace DiskAccessLibraryTests
+namespace DiskAccessLibrary.Tests
 {
     public class RawDiskImageTests
     {
