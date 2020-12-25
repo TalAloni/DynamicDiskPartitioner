@@ -5,6 +5,7 @@
     <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
     <AssemblyName>DiskAccessLibrary</AssemblyName>
     <Version>1.5.9</Version>
+    <NoWarn>1573;1591</NoWarn>
     <RootNamespace>DiskAccessLibrary</RootNamespace>
     <GeneratePackageOnBuild>false</GeneratePackageOnBuild>
     <Authors>Tal Aloni</Authors>

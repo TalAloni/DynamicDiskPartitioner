@@ -5,6 +5,7 @@
     <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
     <AssemblyName>DiskAccessLibrary.FileSystems.Abstractions</AssemblyName>
     <Version>1.0.0</Version>
+    <NoWarn>1573;1591</NoWarn>
     <RootNamespace>DiskAccessLibrary.FileSystems.Abstractions</RootNamespace>
     <GeneratePackageOnBuild>false</GeneratePackageOnBuild>
     <Authors>Tal Aloni</Authors>
