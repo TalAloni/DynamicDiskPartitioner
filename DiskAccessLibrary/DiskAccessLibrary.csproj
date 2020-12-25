@@ -18,7 +18,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\DiskAccessLibrary.FileSystems.Abstractions\DiskAccessLibrary.FileSystems.Abstractions.csproj" />
-    <ProjectReference Include="..\Utilities\Utilities.csproj" />
+    <ProjectReference Include="..\Utilities\Utilities.csproj" PrivateAssets="All" />
   </ItemGroup>
 
   <Target Name="ILRepack" Condition="'$(Configuration)' == 'Publish'" AfterTargets="AfterBuild">
