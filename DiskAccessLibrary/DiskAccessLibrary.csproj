@@ -12,6 +12,7 @@
     <PackageLicenseExpression>LGPL-3.0-or-later</PackageLicenseExpression>
     <PackageProjectUrl>https://github.com/TalAloni/DynamicDiskPartitioner</PackageProjectUrl>
     <RepositoryUrl>https://github.com/TalAloni/DynamicDiskPartitioner</RepositoryUrl>
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
     <Configurations>Debug;Release;Publish</Configurations>
   </PropertyGroup>
 
