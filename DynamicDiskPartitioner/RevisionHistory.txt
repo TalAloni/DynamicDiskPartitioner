@@ -133,3 +133,5 @@ Revision History:
 1.5.7 - Mount NTFS volume as readonly when write access is not needed.
 
 1.5.8 - Skip reading NTFS restart record during Export.
+
+1.5.9 - Minor improvements.
