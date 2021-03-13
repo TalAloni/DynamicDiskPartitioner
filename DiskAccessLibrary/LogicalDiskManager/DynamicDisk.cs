@@ -93,7 +93,10 @@ namespace DiskAccessLibrary.LogicalDiskManager
             MasterBootRecord mbr = MasterBootRecord.ReadFromDisk(disk);
             if (mbr != null)
             {
-                if (mbr.PartitionTable[0].PartitionType == (byte)PartitionTypeName.DynamicData)
+                if (mbr.PartitionTable[0].PartitionType == (byte)PartitionTypeName.DynamicData ||
+                    mbr.PartitionTable[1].PartitionType == (byte)PartitionTypeName.DynamicData ||
+                    mbr.PartitionTable[2].PartitionType == (byte)PartitionTypeName.DynamicData ||
+                    mbr.PartitionTable[3].PartitionType == (byte)PartitionTypeName.DynamicData)
                 {
                     return true;
                 }
