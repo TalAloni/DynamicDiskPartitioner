@@ -112,5 +112,17 @@ namespace Utilities
             byte[] bytes = LittleEndianConverter.GetBytes(value);
             stream.Write(bytes, 0, bytes.Length);
         }
+
+        public static void WriteInt64(Stream stream, long value)
+        {
+            byte[] bytes = LittleEndianConverter.GetBytes(value);
+            stream.Write(bytes, 0, bytes.Length);
+        }
+
+        public static void WriteUInt64(Stream stream, ulong value)
+        {
+            byte[] bytes = LittleEndianConverter.GetBytes(value);
+            stream.Write(bytes, 0, bytes.Length);
+        }
     }
 }

@@ -128,6 +128,12 @@ namespace Utilities
             return ASCIIEncoding.GetEncoding(28591).GetString(buffer);
         }
 
+        public static string ReadUTF16String(Stream stream, int numberOfCharacters)
+        {
+            byte[] buffer = ReadBytes(stream, numberOfCharacters * 2);
+            return Encoding.Unicode.GetString(buffer);
+        }
+
         public static string ReadNullTerminatedAnsiString(Stream stream)
         {
             StringBuilder builder = new StringBuilder();
