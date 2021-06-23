@@ -8,6 +8,7 @@
     <RootNamespace>DynamicDiskPartitioner</RootNamespace>
     <UseWindowsForms>true</UseWindowsForms>
     <Configurations>Debug;Release;Publish</Configurations>
+    <ApplicationIcon>Icons\HardDisk.ico</ApplicationIcon>
   </PropertyGroup>
 
   <ItemGroup Condition=" '$(TargetFramework)' == 'net20' ">
