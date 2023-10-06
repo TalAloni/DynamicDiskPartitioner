@@ -1,4 +1,4 @@
-/* Copyright (C) 2014-2020 Tal Aloni <tal.aloni.il@gmail.com>. All rights reserved.
+/* Copyright (C) 2014-2023 Tal Aloni <tal.aloni.il@gmail.com>. All rights reserved.
  * 
  * You can redistribute this program and/or modify it under the terms of
  * the GNU Lesser Public License as published by the Free Software Foundation,
@@ -16,7 +16,7 @@ namespace DiskAccessLibrary.VMDK
         private RawDiskImage m_file;
         private SparseExtentHeader m_header;
         private VirtualMachineDiskDescriptor m_descriptor;
-        private Nullable<uint> m_grainTableStartSector;
+        private uint? m_grainTableStartSector;
 
         public SparseExtent(string path) : base(path)
         {
