@@ -1,4 +1,4 @@
-/* Copyright (C) 2014-2018 Tal Aloni <tal.aloni.il@gmail.com>. All rights reserved.
+/* Copyright (C) 2014-2023 Tal Aloni <tal.aloni.il@gmail.com>. All rights reserved.
  * 
  * You can redistribute this program and/or modify it under the terms of
  * the GNU Lesser Public License as published by the Free Software Foundation,
@@ -22,7 +22,7 @@ namespace DiskAccessLibrary.VMDK
         public ulong DescriptorOffset; // Expressed in sectors
         public ulong DescriptorSize; // Expressed in sectors
         public uint NumGTEsPerGT;
-        public ulong RGDOffset; // Expressed in sectors
+        public ulong RedundantGDOffset; // Expressed in sectors
         public ulong GDOffset;  // Expressed in sectors
         public ulong OverHead;
         public bool UncleanShutdown; // Stored as byte 
@@ -50,7 +50,7 @@ namespace DiskAccessLibrary.VMDK
             DescriptorOffset = LittleEndianConverter.ToUInt64(buffer, 0x1C);
             DescriptorSize = LittleEndianConverter.ToUInt64(buffer, 0x24);
             NumGTEsPerGT = LittleEndianConverter.ToUInt32(buffer, 0x2C);
-            RGDOffset = LittleEndianConverter.ToUInt64(buffer, 0x30);
+            RedundantGDOffset = LittleEndianConverter.ToUInt64(buffer, 0x30);
             GDOffset = LittleEndianConverter.ToUInt64(buffer, 0x38);
             OverHead = LittleEndianConverter.ToUInt64(buffer, 0x40);
             UncleanShutdown = ByteReader.ReadByte(buffer, 0x48) == 1;
