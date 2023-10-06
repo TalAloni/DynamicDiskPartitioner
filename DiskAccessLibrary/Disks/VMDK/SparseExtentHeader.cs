@@ -16,7 +16,7 @@ namespace DiskAccessLibrary.VMDK
 
         public string Signature; // MagicNumber
         public uint Version;
-        public uint Flags;
+        public SparseExtentHeaderFlags Flags;
         public ulong Capacity; // multiple of the grain size
         public ulong GrainSize; // Expressed in sectors
         public ulong DescriptorOffset; // Expressed in sectors
@@ -44,7 +44,7 @@ namespace DiskAccessLibrary.VMDK
                 throw new InvalidDataException("Sparse extent header signature is invalid");
             }
             Version = LittleEndianConverter.ToUInt32(buffer, 0x04);
-            Flags = LittleEndianConverter.ToUInt32(buffer, 0x08);
+            Flags = (SparseExtentHeaderFlags)LittleEndianConverter.ToUInt32(buffer, 0x08);
             Capacity = LittleEndianConverter.ToUInt64(buffer, 0x0C);
             GrainSize = LittleEndianConverter.ToUInt64(buffer, 0x14);
             DescriptorOffset = LittleEndianConverter.ToUInt64(buffer, 0x1C);

@@ -208,6 +208,7 @@
     <Compile Include="Volumes\RemovableVolume.cs" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Disks\VMDK\Enums\SparseExtentHeaderFlags.cs" />
     <Compile Include="Win32\Enums\Win32Error.cs" />
     <Compile Include="Win32\Helpers\IOExceptionHelper.cs" />
     <Compile Include="Win32\Utilities\FileStreamEx.cs" />
