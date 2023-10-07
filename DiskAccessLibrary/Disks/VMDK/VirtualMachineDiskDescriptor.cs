@@ -1,4 +1,4 @@
-/* Copyright (C) 2014 Tal Aloni <tal.aloni.il@gmail.com>. All rights reserved.
+/* Copyright (C) 2014-2023 Tal Aloni <tal.aloni.il@gmail.com>. All rights reserved.
  * 
  * You can redistribute this program and/or modify it under the terms of
  * the GNU Lesser Public License as published by the Free Software Foundation,
@@ -23,6 +23,14 @@ namespace DiskAccessLibrary.VMDK
         public long Cylinders;
         public int TracksPerCylinder; // heads
         public int SectorsPerTrack;
+
+        protected VirtualMachineDiskDescriptor()
+        {
+            Version = 1;
+            ContentID = (uint)new Random().Next();
+            ParentContentID = 0xFFFFFFFF;
+            ExtentEntries = new List<VirtualMachineDiskExtentEntry>();
+        }
 
         public VirtualMachineDiskDescriptor(List<string> lines)
         {
@@ -131,6 +139,41 @@ namespace DiskAccessLibrary.VMDK
             return new VirtualMachineDiskDescriptor(lines);
         }
 
+        public string GetDescriptorText()
+        {
+            StringBuilder builder = new StringBuilder();
+            builder.AppendFormat("# Disk DescriptorFile\n");
+            builder.AppendFormat("version={0}\n", Version);
+            builder.AppendFormat("encoding=\"{0}\"\n", "windows-1252");
+            builder.AppendFormat("CID={0}\n", ContentID.ToString("x8"));
+            builder.AppendFormat("parentCID={0}\n", ParentContentID.ToString("x8"));
+            builder.AppendFormat("createType=\"{0}\"\n", GetVirtualMachineDiskTypeString(DiskType));
+
+            builder.Append("\n");
+            builder.Append("# Extent description\n");
+            foreach (VirtualMachineDiskExtentEntry entry in ExtentEntries)
+            {
+                builder.AppendLine(entry.GetEntryLine());
+            }
+
+            builder.Append("\n");
+            builder.Append("# The Disk Data Base \n");
+            builder.Append("#DDB\n");
+            builder.Append("\n");
+            builder.AppendFormat("ddb.adapterType = \"{0}\"\n", Adapter);
+            builder.AppendFormat("ddb.geometry.cylinders = \"{0}\"\n", Cylinders);
+            builder.AppendFormat("ddb.geometry.heads = \"{0}\"\n", TracksPerCylinder);
+            builder.AppendFormat("ddb.geometry.sectors = \"{0}\"\n", SectorsPerTrack);
+
+            return builder.ToString();
+        }
+
+        public void SaveToFile(string path)
+        {
+            string text = GetDescriptorText();
+            File.WriteAllText(path, text, Encoding.ASCII);
+        }
+
         private static VirtualMachineDiskType GetFromString(string createType)
         {
             switch (createType.ToLower())
@@ -167,6 +210,45 @@ namespace DiskAccessLibrary.VMDK
                     return VirtualMachineDiskType.StreamOptimized;
                 default:
                     return VirtualMachineDiskType.Custom;
+            }
+        }
+
+        private static string GetVirtualMachineDiskTypeString(VirtualMachineDiskType diskType)
+        {
+            switch (diskType)
+            {
+                case VirtualMachineDiskType.Custom:
+                    return "custom";
+                case VirtualMachineDiskType.MonolithicSparse:
+                    return "monolithicSparse";
+                case VirtualMachineDiskType.MonolithicFlat:
+                    return "monolithicFlat";
+                case VirtualMachineDiskType.TwoGbMaxExtentSparse:
+                    return "twoGbMaxExtentSparse";
+                case VirtualMachineDiskType.TwoGbMaxExtentFlat:
+                    return "twoGbMaxExtentFlat";
+                case VirtualMachineDiskType.FullDevice:
+                    return "fullDevice";
+                case VirtualMachineDiskType.PartitionedDevice:
+                    return "partitionedDevice";
+                case VirtualMachineDiskType.VmfsPreallocated:
+                    return "vmfsPreallocated";
+                case VirtualMachineDiskType.VmfsEagerZeroedThick:
+                    return "vmfsEagerZeroedThick";
+                case VirtualMachineDiskType.VmfsThin:
+                    return "vmfsThin";
+                case VirtualMachineDiskType.VmfsSparse:
+                    return "vmfsSparse";
+                case VirtualMachineDiskType.VmfsRDM:
+                    return "vmfsRDM";
+                case VirtualMachineDiskType.VmfsRDMP:
+                    return "vmfsRDMP";
+                case VirtualMachineDiskType.VmfsRaw:
+                    return "vmfsRaw";
+                case VirtualMachineDiskType.StreamOptimized:
+                    return "streamOptimized";
+                default:
+                    return "custom";
             }
         }
 
@@ -227,6 +309,21 @@ namespace DiskAccessLibrary.VMDK
             }
             stream.Close();
             return builder.ToString();
+        }
+
+        public static VirtualMachineDiskDescriptor CreateMonolithicFlatDescriptor(long size)
+        {
+            VirtualMachineDiskDescriptor descriptor = new VirtualMachineDiskDescriptor();
+            descriptor.DiskType = VirtualMachineDiskType.MonolithicFlat;
+            descriptor.Adapter = "lsilogic";
+            byte heads;
+            byte sectorsPerTrack;
+            ushort cylinders;
+            VirtualHardDisk.GetDiskGeometry((ulong)size / VirtualMachineDisk.BytesPerDiskSector, out heads, out sectorsPerTrack, out cylinders);
+            descriptor.Cylinders = cylinders;
+            descriptor.TracksPerCylinder = heads;
+            descriptor.SectorsPerTrack = sectorsPerTrack;
+            return descriptor;
         }
     }
 }
