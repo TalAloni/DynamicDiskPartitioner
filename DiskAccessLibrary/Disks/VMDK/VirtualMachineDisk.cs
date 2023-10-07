@@ -1,4 +1,4 @@
-/* Copyright (C) 2014-2020 Tal Aloni <tal.aloni.il@gmail.com>. All rights reserved.
+/* Copyright (C) 2014-2023 Tal Aloni <tal.aloni.il@gmail.com>. All rights reserved.
  * 
  * You can redistribute this program and/or modify it under the terms of
  * the GNU Lesser Public License as published by the Free Software Foundation,
@@ -207,6 +207,28 @@ namespace DiskAccessLibrary
             {
                 return m_descriptor.SectorsPerTrack;
             }
+        }
+
+        public static VirtualMachineDisk CreateMonolithicFlat(string path, long size)
+        {
+            string directory = System.IO.Path.GetDirectoryName(path);
+            string extentFileName = System.IO.Path.GetFileNameWithoutExtension(path) + "-flat.vmdk";
+            string extentPath = System.IO.Path.Combine(directory, extentFileName);
+            RawDiskImage.Create(extentPath, size);
+            
+            VirtualMachineDiskDescriptor descriptor = VirtualMachineDiskDescriptor.CreateMonolithicFlatDescriptor(size);
+            
+            VirtualMachineDiskExtentEntry extentEntry = new VirtualMachineDiskExtentEntry();
+            extentEntry.ReadAccess = true;
+            extentEntry.WriteAccess = true;
+            extentEntry.SizeInSectors = size / VirtualMachineDisk.BytesPerDiskSector;
+            extentEntry.ExtentType = ExtentType.Flat;
+            extentEntry.FileName = extentFileName;
+            extentEntry.Offset = 0;
+            descriptor.ExtentEntries.Add(extentEntry);
+            descriptor.SaveToFile(path);
+
+            return new VirtualMachineDisk(path);
         }
     }
 }
