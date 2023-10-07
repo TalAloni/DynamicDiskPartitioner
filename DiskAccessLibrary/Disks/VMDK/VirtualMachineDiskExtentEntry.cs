@@ -21,21 +21,8 @@ namespace DiskAccessLibrary.VMDK
 
         public string GetEntryLine()
         {
-            string access;
-            if (ReadAccess && WriteAccess)
-            {
-                access = "RW";
-            }
-            else if (ReadAccess)
-            {
-                access = "RDONLY";
-            }
-            else
-            {
-                access = "NOACCESS";
-            }
-
-            string line = String.Format("{0} {1} {2} \"{3}\"", access, SizeInSectors, ExtentType.ToString().ToUpper(), FileName);
+            string accessString = GetAccessString(ReadAccess, WriteAccess);
+            string line = String.Format("{0} {1} {2} \"{3}\"", accessString, SizeInSectors, ExtentType.ToString().ToUpper(), FileName);
             if (Offset.HasValue)
             {
                 line += " " + Offset.Value.ToString();
@@ -86,6 +73,22 @@ namespace DiskAccessLibrary.VMDK
                     return ExtentType.VMFSRaw;
                 default:
                     return ExtentType.Zero;
+            }
+        }
+
+        private static string GetAccessString(bool readAccess, bool writeAccess)
+        {
+            if (readAccess && writeAccess)
+            {
+                return "RW";
+            }
+            else if (readAccess)
+            {
+                return "RDONLY";
+            }
+            else
+            {
+                return "NOACCESS";
             }
         }
     }
