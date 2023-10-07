@@ -230,5 +230,26 @@ namespace DiskAccessLibrary
 
             return new VirtualMachineDisk(path);
         }
+
+        // https://kb.vmware.com/s/article/1026266
+        public static void GetDiskGeometry(long totalSectors, out byte heads, out byte sectorsPerTrack, out long cylinders)
+        {
+            if (totalSectors * BytesPerDiskSector < 1073741824) // < 1 GB
+            {
+                heads = 64;
+                sectorsPerTrack = 32;
+            }
+            else if (totalSectors * BytesPerDiskSector < 2147483648) // < 2 GB
+            {
+                heads = 128;
+                sectorsPerTrack = 32;
+            }
+            else
+            {
+                heads = 255;
+                sectorsPerTrack = 63;
+            }
+            cylinders = totalSectors / (heads * sectorsPerTrack);
+        }
     }
 }

@@ -318,8 +318,8 @@ namespace DiskAccessLibrary.VMDK
             descriptor.Adapter = "lsilogic";
             byte heads;
             byte sectorsPerTrack;
-            ushort cylinders;
-            VirtualHardDisk.GetDiskGeometry((ulong)size / VirtualMachineDisk.BytesPerDiskSector, out heads, out sectorsPerTrack, out cylinders);
+            long cylinders;
+            VirtualMachineDisk.GetDiskGeometry(size / VirtualMachineDisk.BytesPerDiskSector, out heads, out sectorsPerTrack, out cylinders);
             descriptor.Cylinders = cylinders;
             descriptor.TracksPerCylinder = heads;
             descriptor.SectorsPerTrack = sectorsPerTrack;
