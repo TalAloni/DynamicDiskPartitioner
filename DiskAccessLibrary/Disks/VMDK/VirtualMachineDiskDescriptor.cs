@@ -168,6 +168,12 @@ namespace DiskAccessLibrary.VMDK
             return builder.ToString();
         }
 
+        public byte[] GetDescriptorBytes()
+        {
+            string text = GetDescriptorText();
+            return Encoding.ASCII.GetBytes(text);
+        }
+
         public void SaveToFile(string path)
         {
             string text = GetDescriptorText();
