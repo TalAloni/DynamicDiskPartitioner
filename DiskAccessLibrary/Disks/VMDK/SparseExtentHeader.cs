@@ -17,14 +17,14 @@ namespace DiskAccessLibrary.VMDK
         public string Signature; // MagicNumber
         public uint Version;
         public SparseExtentHeaderFlags Flags;
-        public ulong Capacity; // multiple of the grain size
+        public ulong Capacity; // Should be a multiple of the grain size
         public ulong GrainSize; // Expressed in sectors
         public ulong DescriptorOffset; // Expressed in sectors
         public ulong DescriptorSize; // Expressed in sectors
-        public uint NumGTEsPerGT;
+        public uint NumGTEsPerGT; // The number of entries in a grain table, must be 512 according to VMDK specs
         public ulong RedundantGDOffset; // Expressed in sectors
-        public ulong GDOffset;  // Expressed in sectors
-        public ulong OverHead;
+        public ulong GDOffset; // Expressed in sectors
+        public ulong OverHead; // The number of sectors occupied by the metadata (Header, descriptor, grain directory & grain tables)
         public bool UncleanShutdown; // Stored as byte 
         public char SingleEndLineChar;
         public char NonEndLineChar;
