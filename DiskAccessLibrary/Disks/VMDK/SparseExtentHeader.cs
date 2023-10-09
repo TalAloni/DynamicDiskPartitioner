@@ -15,6 +15,7 @@ namespace DiskAccessLibrary.VMDK
         private const string ValidSignature = "KDMV";
 
         public const int Length = 512;
+        public const int NumberOfGrainTableEntriesPerGrainTable = 512; // Each grain directory entry points to a level 1 page called grain table
 
         public string Signature; // MagicNumber
         public uint Version;
@@ -34,8 +35,28 @@ namespace DiskAccessLibrary.VMDK
         public char DoubleEndLineChar2;
         public SparseExtentCompression CompressionAlgirithm;
 
-        public SparseExtentHeader()
+        public SparseExtentHeader(ulong totalSectors, ulong grainSize, ulong descriptorSizeInSectors)
         {
+            if (totalSectors % grainSize != 0)
+            {
+                throw new ArgumentException("totalSectors should be a multiple of grainSize");
+            }
+
+            Signature = ValidSignature;
+            Version = 1;
+            Flags = SparseExtentHeaderFlags.ValidNewLineDetectionTest | SparseExtentHeaderFlags.UseRedundantGrainTable;
+            Capacity = totalSectors;
+            GrainSize = grainSize;
+            DescriptorOffset = 1;
+            DescriptorSize = descriptorSizeInSectors;
+            RedundantGDOffset = 1 + DescriptorSize;
+            GDOffset = 1 + DescriptorSize;
+            NumGTEsPerGT = NumberOfGrainTableEntriesPerGrainTable; 
+            SingleEndLineChar = '\n';
+            NonEndLineChar = ' ';
+            DoubleEndLineChar1 = '\r';
+            DoubleEndLineChar2 = '\n';
+            CompressionAlgirithm = SparseExtentCompression.None;
         }
 
         public SparseExtentHeader(byte[] buffer)
