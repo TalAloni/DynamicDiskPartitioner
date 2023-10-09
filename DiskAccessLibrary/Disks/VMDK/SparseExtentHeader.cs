@@ -14,6 +14,8 @@ namespace DiskAccessLibrary.VMDK
     {
         private const string ValidSignature = "KDMV";
 
+        public const int Length = 512;
+
         public string Signature; // MagicNumber
         public uint Version;
         public SparseExtentHeaderFlags Flags;
@@ -59,6 +61,30 @@ namespace DiskAccessLibrary.VMDK
             DoubleEndLineChar1 = (char)ByteReader.ReadByte(buffer, 0x4B);
             DoubleEndLineChar2 = (char)ByteReader.ReadByte(buffer, 0x4C);
             CompressionAlgirithm = (SparseExtentCompression)LittleEndianConverter.ToUInt16(buffer, 0x4D);
+        }
+
+        public byte[] GetBytes()
+        {
+            byte[] buffer = new byte[Length];
+            ByteWriter.WriteAnsiString(buffer, 0, ValidSignature);
+            LittleEndianWriter.WriteUInt32(buffer, 0x04, Version);
+            LittleEndianWriter.WriteUInt32(buffer, 0x08, (uint)Flags);
+            LittleEndianWriter.WriteUInt64(buffer, 0x0C, Capacity);
+            LittleEndianWriter.WriteUInt64(buffer, 0x14, GrainSize);
+            LittleEndianWriter.WriteUInt64(buffer, 0x1C, DescriptorOffset);
+            LittleEndianWriter.WriteUInt64(buffer, 0x24, DescriptorSize);
+            LittleEndianWriter.WriteUInt32(buffer, 0x2C, NumGTEsPerGT);
+            LittleEndianWriter.WriteUInt64(buffer, 0x30, RedundantGDOffset);
+            LittleEndianWriter.WriteUInt64(buffer, 0x38, GDOffset);
+            LittleEndianWriter.WriteUInt64(buffer, 0x40, OverHead);
+            ByteWriter.WriteByte(buffer, 0x48, Convert.ToByte(UncleanShutdown));
+            ByteWriter.WriteByte(buffer, 0x49, (byte)SingleEndLineChar);
+            ByteWriter.WriteByte(buffer, 0x4A, (byte)NonEndLineChar);
+            ByteWriter.WriteByte(buffer, 0x4B, (byte)DoubleEndLineChar1);
+            ByteWriter.WriteByte(buffer, 0x4C, (byte)DoubleEndLineChar2);
+            LittleEndianWriter.WriteUInt16(buffer, 0x4D, (ushort)CompressionAlgirithm);
+
+            return buffer;
         }
 
         public bool IsSupported
