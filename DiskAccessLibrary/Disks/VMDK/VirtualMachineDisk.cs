@@ -221,7 +221,7 @@ namespace DiskAccessLibrary
             VirtualMachineDiskExtentEntry extentEntry = new VirtualMachineDiskExtentEntry();
             extentEntry.ReadAccess = true;
             extentEntry.WriteAccess = true;
-            extentEntry.SizeInSectors = size / VirtualMachineDisk.BytesPerDiskSector;
+            extentEntry.SizeInSectors = size / BytesPerDiskSector;
             extentEntry.ExtentType = ExtentType.Flat;
             extentEntry.FileName = extentFileName;
             extentEntry.Offset = 0;
