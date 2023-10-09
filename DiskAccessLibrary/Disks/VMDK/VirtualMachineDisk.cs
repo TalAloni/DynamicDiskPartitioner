@@ -216,7 +216,7 @@ namespace DiskAccessLibrary
             string extentPath = System.IO.Path.Combine(directory, extentFileName);
             RawDiskImage.Create(extentPath, size);
             
-            VirtualMachineDiskDescriptor descriptor = VirtualMachineDiskDescriptor.CreateMonolithicFlatDescriptor(size);
+            VirtualMachineDiskDescriptor descriptor = VirtualMachineDiskDescriptor.CreateDescriptor(VirtualMachineDiskType.MonolithicFlat, size);
             
             VirtualMachineDiskExtentEntry extentEntry = new VirtualMachineDiskExtentEntry();
             extentEntry.ReadAccess = true;

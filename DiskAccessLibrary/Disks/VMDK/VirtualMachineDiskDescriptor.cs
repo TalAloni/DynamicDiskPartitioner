@@ -317,10 +317,10 @@ namespace DiskAccessLibrary.VMDK
             return builder.ToString();
         }
 
-        public static VirtualMachineDiskDescriptor CreateMonolithicFlatDescriptor(long size)
+        public static VirtualMachineDiskDescriptor CreateDescriptor(VirtualMachineDiskType diskType, long size)
         {
             VirtualMachineDiskDescriptor descriptor = new VirtualMachineDiskDescriptor();
-            descriptor.DiskType = VirtualMachineDiskType.MonolithicFlat;
+            descriptor.DiskType = diskType;
             descriptor.Adapter = "lsilogic";
             byte heads;
             byte sectorsPerTrack;
