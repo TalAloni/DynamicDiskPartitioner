@@ -47,9 +47,11 @@
     <Compile Include="Disks\VHD\VirtualHardDiskType.cs" />
     <Compile Include="Disks\VMDK\Enums\ExtentType.cs" />
     <Compile Include="Disks\VMDK\Enums\SparseExtentCompression.cs" />
+    <Compile Include="Disks\VMDK\Enums\SparseExtentHeaderFlags.cs" />
     <Compile Include="Disks\VMDK\Enums\VirtualMachineDiskType.cs" />
     <Compile Include="Disks\VMDK\SparseExtent.cs" />
     <Compile Include="Disks\VMDK\SparseExtentHeader.cs" />
+    <Compile Include="Disks\VMDK\VirtualMachineDisk.Create.cs" />
     <Compile Include="Disks\VMDK\VirtualMachineDisk.cs" />
     <Compile Include="Disks\VMDK\VirtualMachineDiskDescriptor.cs" />
     <Compile Include="Disks\VMDK\VirtualMachineDiskExtentEntry.cs" />
@@ -206,9 +208,6 @@
     <Compile Include="Volumes\MBRPartition.cs" />
     <Compile Include="Volumes\Partition.cs" />
     <Compile Include="Volumes\RemovableVolume.cs" />
-  </ItemGroup>
-  <ItemGroup>
-    <Compile Include="Disks\VMDK\Enums\SparseExtentHeaderFlags.cs" />
     <Compile Include="Win32\Enums\Win32Error.cs" />
     <Compile Include="Win32\Helpers\IOExceptionHelper.cs" />
     <Compile Include="Win32\Utilities\FileStreamEx.cs" />
