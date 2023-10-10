@@ -62,11 +62,6 @@ namespace DiskAccessLibrary.VMDK
             if (m_grainTableStartSector == null)
             {
                 ulong grainTableOffset = m_header.GDOffset;
-                if ((m_header.Flags & SparseExtentHeaderFlags.UseRedundantGrainTable) > 0)
-                {
-                    grainTableOffset = m_header.RedundantGDOffset;
-                }
-
                 byte[] grainDirectoryBytes = m_file.ReadSectors((long)grainTableOffset, 1);
                 m_grainTableStartSector = LittleEndianConverter.ToUInt32(grainDirectoryBytes, 0);
             }

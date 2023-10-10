@@ -44,7 +44,7 @@ namespace DiskAccessLibrary.VMDK
 
             Signature = ValidSignature;
             Version = 1;
-            Flags = SparseExtentHeaderFlags.ValidNewLineDetectionTest | SparseExtentHeaderFlags.UseRedundantGrainTable;
+            Flags = SparseExtentHeaderFlags.ValidNewLineDetectionTest | SparseExtentHeaderFlags.HasRedundantGrainTable;
             Capacity = totalSectors;
             GrainSize = grainSize;
             DescriptorOffset = 1;
@@ -113,6 +113,14 @@ namespace DiskAccessLibrary.VMDK
             get
             {
                 return (Version == 1);
+            }
+        }
+
+        public bool HasRedundantGrainTable
+        {
+            get
+            {
+                return (Flags & SparseExtentHeaderFlags.HasRedundantGrainTable) > 0;
             }
         }
     }
