@@ -74,10 +74,11 @@ namespace DiskAccessLibrary.VMDK
             }
 
             long grainIndex = sectorIndex / (long)m_header.GrainSize;
-            long grainSectorIndexInTable = grainIndex / 128;
-            int grainIndexInBuffer = (int)grainIndex % 128;
-            int sectorsToReadFromTable = (int)Math.Max(Math.Ceiling((double)(sectorCount - (128 - grainIndexInBuffer)) / 4), 1);
-            byte[] grainTableBuffer = m_file.ReadSectors(m_grainTableArrayStartSector.Value + grainSectorIndexInTable, sectorsToReadFromTable);
+            int grainTableEntriesPerSector = BytesPerSector / 4;
+            long grainSectorIndexInTableArray = grainIndex / grainTableEntriesPerSector;
+            int grainIndexInBuffer = (int)grainIndex % grainTableEntriesPerSector;
+            int sectorsToReadFromTable = 1 + (int)Math.Ceiling((double)(sectorCount - (grainTableEntriesPerSector - grainIndexInBuffer)) / grainTableEntriesPerSector);
+            byte[] grainTableBuffer = m_file.ReadSectors(m_grainTableArrayStartSector.Value + grainSectorIndexInTableArray, sectorsToReadFromTable);
 
             long sectorIndexInGrain = sectorIndex % (long)m_header.GrainSize;
 
