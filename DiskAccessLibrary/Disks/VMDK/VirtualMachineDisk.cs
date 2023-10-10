@@ -47,7 +47,7 @@ namespace DiskAccessLibrary
                 SparseExtent sparse;
                 try
                 {
-                    sparse = new SparseExtent(m_descriptorPath);
+                    sparse = new SparseExtent(m_descriptorPath, isReadOnly);
                 }
                 catch (InvalidDataException)
                 {

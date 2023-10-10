@@ -14,13 +14,19 @@ namespace DiskAccessLibrary.VMDK
     public partial class SparseExtent : DiskImage
     {
         private RawDiskImage m_file;
+        private bool m_isReadOnly;
         private SparseExtentHeader m_header;
         private VirtualMachineDiskDescriptor m_descriptor;
         private uint? m_grainTableStartSector;
 
-        public SparseExtent(string path) : base(path)
+        public SparseExtent(string path) : this(path, false)
         {
-            m_file = new RawDiskImage(path, VirtualMachineDisk.BytesPerDiskSector);
+        }
+
+        public SparseExtent(string path, bool isReadOnly) : base(path)
+        {
+            m_file = new RawDiskImage(path, VirtualMachineDisk.BytesPerDiskSector, isReadOnly);
+            m_isReadOnly = isReadOnly;
             byte[] headerBytes = m_file.ReadSector(0);
             m_header = new SparseExtentHeader(headerBytes);
             if (!m_header.IsSupported)
