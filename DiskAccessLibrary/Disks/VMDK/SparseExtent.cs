@@ -18,6 +18,7 @@ namespace DiskAccessLibrary.VMDK
         private SparseExtentHeader m_header;
         private VirtualMachineDiskDescriptor m_descriptor;
         private uint? m_grainTableArrayStartSector;
+        private uint? m_redundantGrainTableArrayStartSector;
 
         public SparseExtent(string path) : this(path, false)
         {
@@ -63,7 +64,7 @@ namespace DiskAccessLibrary.VMDK
             return m_file.ReleaseLock();
         }
 
-        private KeyValuePairList<long, int> MapSectors(long sectorIndex, int sectorCount)
+        private KeyValuePairList<long, int> MapSectors(long sectorIndex, int sectorCount, bool allocateUnmappedSectors)
         {
             if (m_grainTableArrayStartSector == null)
             {
@@ -84,6 +85,13 @@ namespace DiskAccessLibrary.VMDK
 
             KeyValuePairList<long, int> result = new KeyValuePairList<long, int>();
             uint grainOffset = LittleEndianConverter.ToUInt32(grainTableBuffer, grainIndexInBuffer * 4);
+            bool updateGrainTableArrays = false;
+            if (grainOffset == 0 && allocateUnmappedSectors)
+            {
+                grainOffset = AllocateGrain();
+                LittleEndianWriter.WriteUInt32(grainTableBuffer, grainIndexInBuffer * 4, grainOffset);
+                updateGrainTableArrays = true;
+            }
             grainOffset += (uint)sectorIndexInGrain;
             int sectorsLeft = sectorCount;
             int sectorsProcessedInGrain = (int)Math.Min(sectorsLeft, (long)m_header.GrainSize - sectorIndexInGrain);
@@ -94,6 +102,12 @@ namespace DiskAccessLibrary.VMDK
             {
                 grainIndexInBuffer++;
                 grainOffset = LittleEndianConverter.ToUInt32(grainTableBuffer, grainIndexInBuffer * 4);
+                if (grainOffset == 0 && allocateUnmappedSectors)
+                {
+                    grainOffset = AllocateGrain();
+                    LittleEndianWriter.WriteUInt32(grainTableBuffer, grainIndexInBuffer * 4, grainOffset);
+                    updateGrainTableArrays = true;
+                }
                 sectorsProcessedInGrain = (int)Math.Min(sectorsLeft, (long)m_header.GrainSize);
                 long lastSectorIndex = result[result.Count - 1].Key;
                 int lastSectorCount = result[result.Count - 1].Value;
@@ -108,7 +122,32 @@ namespace DiskAccessLibrary.VMDK
                 sectorsLeft -= sectorsProcessedInGrain;
             }
 
+            // Allocate unallocated grains
+            if (updateGrainTableArrays)
+            {
+                m_file.WriteSectors(m_grainTableArrayStartSector.Value + grainSectorIndexInTableArray, grainTableBuffer);
+
+                if (m_header.HasRedundantGrainTable)
+                {
+                    if (m_redundantGrainTableArrayStartSector == null)
+                    {
+                        ulong redundantGrainTableOffset = m_header.RedundantGDOffset;
+                        byte[] redundantGrainDirectoryBytes = m_file.ReadSectors((long)redundantGrainTableOffset, 1);
+                        // We assume that the grain table array is consecutive and do not bother reading the entire grain directory
+                        m_redundantGrainTableArrayStartSector = LittleEndianConverter.ToUInt32(redundantGrainDirectoryBytes, 0);
+                    }
+                    m_file.WriteSectors(m_redundantGrainTableArrayStartSector.Value + grainSectorIndexInTableArray, grainTableBuffer);
+                }
+            }
+
             return result;
+        }
+
+        private uint AllocateGrain()
+        {
+            uint grainOffet = (uint)m_file.TotalSectors;
+            m_file.Extend((long)m_header.GrainSize * BytesPerSector);
+            return grainOffet;
         }
 
         public override byte[] ReadSectors(long sectorIndex, int sectorCount)
@@ -116,7 +155,7 @@ namespace DiskAccessLibrary.VMDK
             CheckBoundaries(sectorIndex, sectorCount);
             byte[] result = new byte[sectorCount * this.BytesPerSector];
             int offset = 0;
-            KeyValuePairList<long, int> map = MapSectors(sectorIndex, sectorCount);
+            KeyValuePairList<long, int> map = MapSectors(sectorIndex, sectorCount, false);
             foreach (KeyValuePair<long, int> entry in map)
             {
                 byte[] temp;
@@ -137,7 +176,23 @@ namespace DiskAccessLibrary.VMDK
 
         public override void WriteSectors(long sectorIndex, byte[] data)
         {
-            throw new NotImplementedException("The method or operation is not implemented.");
+            if (m_isReadOnly)
+            {
+                throw new UnauthorizedAccessException("Attempted to perform write on a readonly disk");
+            }
+
+            int sectorCount = data.Length / BytesPerSector;
+            CheckBoundaries(sectorIndex, sectorCount);
+
+            KeyValuePairList<long, int> map = MapSectors(sectorIndex, sectorCount, true);
+            int offset = 0;
+            foreach (KeyValuePair<long, int> entry in map)
+            {
+                byte[] temp = new byte[entry.Value * BytesPerSector];
+                Array.Copy(data, offset, temp, 0, temp.Length);
+                m_file.WriteSectors(entry.Key, temp);
+                offset += temp.Length;
+            }
         }
 
         public override void Extend(long numberOfAdditionalBytes)
