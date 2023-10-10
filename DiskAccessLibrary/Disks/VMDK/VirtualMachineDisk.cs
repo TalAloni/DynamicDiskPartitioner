@@ -208,5 +208,14 @@ namespace DiskAccessLibrary
                 return m_descriptor.SectorsPerTrack;
             }
         }
+
+        public bool IsSparseDisk
+        {
+            get
+            {
+                return m_descriptor.DiskType == VirtualMachineDiskType.MonolithicSparse ||
+                       m_descriptor.DiskType == VirtualMachineDiskType.TwoGbMaxExtentSparse;
+            }
+        }
     }
 }
