@@ -17,7 +17,7 @@ namespace DiskAccessLibrary.VMDK
         private bool m_isReadOnly;
         private SparseExtentHeader m_header;
         private VirtualMachineDiskDescriptor m_descriptor;
-        private uint? m_grainTableStartSector;
+        private uint? m_grainTableArrayStartSector;
 
         public SparseExtent(string path) : this(path, false)
         {
@@ -65,18 +65,19 @@ namespace DiskAccessLibrary.VMDK
 
         private KeyValuePairList<long, int> MapSectors(long sectorIndex, int sectorCount)
         {
-            if (m_grainTableStartSector == null)
+            if (m_grainTableArrayStartSector == null)
             {
                 ulong grainTableOffset = m_header.GDOffset;
                 byte[] grainDirectoryBytes = m_file.ReadSectors((long)grainTableOffset, 1);
-                m_grainTableStartSector = LittleEndianConverter.ToUInt32(grainDirectoryBytes, 0);
+                // We assume that the grain table array is consecutive and do not bother reading the entire grain directory
+                m_grainTableArrayStartSector = LittleEndianConverter.ToUInt32(grainDirectoryBytes, 0);
             }
 
             long grainIndex = sectorIndex / (long)m_header.GrainSize;
             long grainSectorIndexInTable = grainIndex / 128;
             int grainIndexInBuffer = (int)grainIndex % 128;
             int sectorsToReadFromTable = (int)Math.Max(Math.Ceiling((double)(sectorCount - (128 - grainIndexInBuffer)) / 4), 1);
-            byte[] grainTableBuffer = m_file.ReadSectors(m_grainTableStartSector.Value + grainSectorIndexInTable, sectorsToReadFromTable);
+            byte[] grainTableBuffer = m_file.ReadSectors(m_grainTableArrayStartSector.Value + grainSectorIndexInTable, sectorsToReadFromTable);
 
             long sectorIndexInGrain = sectorIndex % (long)m_header.GrainSize;
 
