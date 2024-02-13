@@ -1,4 +1,4 @@
-/* Copyright (C) 2014-2019 Tal Aloni <tal.aloni.il@gmail.com>. All rights reserved.
+/* Copyright (C) 2014-2024 Tal Aloni <tal.aloni.il@gmail.com>. All rights reserved.
  * 
  * You can redistribute this program and/or modify it under the terms of
  * the GNU Lesser Public License as published by the Free Software Foundation,
@@ -21,7 +21,7 @@ namespace DiskAccessLibrary.FileSystems.NTFS
         public bool IsDirectory;
         private List<AttributeRecord> m_attributes;
 
-        internal FileRecord(FileRecordSegment segment)
+        public FileRecord(FileRecordSegment segment)
         {
             m_segments = new List<FileRecordSegment>();
             m_segments.Add(segment);
@@ -31,7 +31,7 @@ namespace DiskAccessLibrary.FileSystems.NTFS
             IsDirectory = m_segments[0].IsDirectory;
         }
 
-        internal FileRecord(List<FileRecordSegment> segments)
+        public FileRecord(List<FileRecordSegment> segments)
         {
             m_segments = segments;
 
