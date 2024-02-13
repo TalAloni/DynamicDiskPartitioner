@@ -1,4 +1,4 @@
-/* Copyright (C) 2014-2019 Tal Aloni <tal.aloni.il@gmail.com>. All rights reserved.
+/* Copyright (C) 2014-2024 Tal Aloni <tal.aloni.il@gmail.com>. All rights reserved.
  * 
  * You can redistribute this program and/or modify it under the terms of
  * the GNU Lesser Public License as published by the Free Software Foundation,
@@ -33,7 +33,7 @@ namespace DiskAccessLibrary.FileSystems.NTFS
         // ushort FirstAttributeOffset;
         private FileRecordFlags m_flags;
         // uint SegmentLength; // FirstFreeByte, this value must always be aligned to 8-byte boundary (since each attribute record must be aligned to 8-byte boundary).
-        // uint SegmentAllocatedLength; // BytesAvailable
+        private uint m_allocatedLength; // BytesAvailable
         private MftSegmentReference m_baseFileRecordSegment; // If this is the base file record, the value is 0
         public ushort NextAttributeInstance; // Starting from 0
         // 2 bytes padding
@@ -69,7 +69,7 @@ namespace DiskAccessLibrary.FileSystems.NTFS
             ushort firstAttributeOffset = LittleEndianConverter.ToUInt16(buffer, offset + 0x14);
             m_flags = (FileRecordFlags)LittleEndianConverter.ToUInt16(buffer, offset + 0x16);
             uint segmentLength = LittleEndianConverter.ToUInt32(buffer, offset + 0x18);
-            uint segmentAllocatedLength = LittleEndianConverter.ToUInt32(buffer, offset + 0x1C);
+            m_allocatedLength = LittleEndianConverter.ToUInt32(buffer, offset + 0x1C);
             m_baseFileRecordSegment = new MftSegmentReference(buffer, offset + 0x20);
             NextAttributeInstance = LittleEndianConverter.ToUInt16(buffer, offset + 0x28);
             // 2 bytes padding
@@ -357,6 +357,14 @@ namespace DiskAccessLibrary.FileSystems.NTFS
             get
             {
                 return new MftSegmentReference(m_segmentNumber, m_sequenceNumber);
+            }
+        }
+
+        public uint AllocatedLength
+        {
+            get
+            {
+                return m_allocatedLength;
             }
         }
 
