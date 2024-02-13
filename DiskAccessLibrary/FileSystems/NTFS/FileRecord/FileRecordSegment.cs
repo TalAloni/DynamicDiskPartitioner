@@ -17,7 +17,7 @@ namespace DiskAccessLibrary.FileSystems.NTFS
     /// <remarks>
     /// Attributes MUST be ordered by increasing attribute type code (with a secondary ordering by name) when written to disk.
     /// </remarks>
-    internal class FileRecordSegment
+    public class FileRecordSegment
     {
         private const string ValidSignature = "FILE";
         private const int NTFS30UpdateSequenceArrayOffset = 0x2A; // NTFS v3.0 and earlier (up to Windows 2000)
