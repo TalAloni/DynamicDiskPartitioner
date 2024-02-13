@@ -1,4 +1,4 @@
-/* Copyright (C) 2014-2019 Tal Aloni <tal.aloni.il@gmail.com>. All rights reserved.
+/* Copyright (C) 2014-2024 Tal Aloni <tal.aloni.il@gmail.com>. All rights reserved.
  * 
  * You can redistribute this program and/or modify it under the terms of
  * the GNU Lesser Public License as published by the Free Software Foundation,
@@ -40,6 +40,11 @@ namespace DiskAccessLibrary.FileSystems.NTFS
         {
             m_attribueType = (AttributeType)LittleEndianConverter.ToUInt32(buffer, offset + 0x00);
             m_recordLengthOnDisk = LittleEndianConverter.ToUInt32(buffer, offset + 0x04);
+            if (m_recordLengthOnDisk < AttributeRecordHeaderLength)
+            {
+                throw new InvalidDataException("Corrupt attribute, invalid record length");
+            }
+
             m_attributeForm = (AttributeForm)ByteReader.ReadByte(buffer, offset + 0x08);
             m_nameLength = ByteReader.ReadByte(buffer, offset + 0x09);
             ushort nameOffset = LittleEndianConverter.ToUInt16(buffer, offset + 0x0A);

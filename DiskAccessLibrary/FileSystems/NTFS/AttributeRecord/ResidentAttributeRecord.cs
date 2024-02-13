@@ -1,4 +1,4 @@
-/* Copyright (C) 2014-2019 Tal Aloni <tal.aloni.il@gmail.com>. All rights reserved.
+/* Copyright (C) 2014-2024 Tal Aloni <tal.aloni.il@gmail.com>. All rights reserved.
  * 
  * You can redistribute this program and/or modify it under the terms of
  * the GNU Lesser Public License as published by the Free Software Foundation,
@@ -28,6 +28,10 @@ namespace DiskAccessLibrary.FileSystems.NTFS
 
         public ResidentAttributeRecord(byte[] buffer, int offset) : base(buffer, offset)
         {
+            if (RecordLengthOnDisk < HeaderLength)
+            {
+                throw new InvalidDataException("Corrupt resident attribute, invalid record length");
+            }
             uint dataLength = LittleEndianConverter.ToUInt32(buffer, offset + 0x10);
             ushort dataOffset = LittleEndianConverter.ToUInt16(buffer, offset + 0x14);
             m_residentForm = (ResidentForm)ByteReader.ReadByte(buffer, offset + 0x16);
