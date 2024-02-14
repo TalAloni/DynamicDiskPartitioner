@@ -70,6 +70,10 @@ namespace DiskAccessLibrary.FileSystems.NTFS
             m_flags = (FileRecordFlags)LittleEndianConverter.ToUInt16(buffer, offset + 0x16);
             uint segmentLength = LittleEndianConverter.ToUInt32(buffer, offset + 0x18);
             m_allocatedLength = LittleEndianConverter.ToUInt32(buffer, offset + 0x1C);
+            if (segmentLength > m_allocatedLength)
+            {
+                throw new InvalidDataException("Invalid file record segment, record length is invalid");
+            }
             m_baseFileRecordSegment = new MftSegmentReference(buffer, offset + 0x20);
             NextAttributeInstance = LittleEndianConverter.ToUInt16(buffer, offset + 0x28);
             // 2 bytes padding
