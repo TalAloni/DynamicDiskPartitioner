@@ -82,7 +82,7 @@ namespace DiskAccessLibrary.FileSystems.NTFS
 
             if (firstAttributeOffset % 8 > 0)
             {
-                throw new InvalidDataException("Corrupt file record segment, first attribute not aligned to 8-byte boundary");
+                throw new InvalidDataException("Invalid file record segment, first attribute is not aligned to 8-byte boundary");
             }
 
             // Read attributes
