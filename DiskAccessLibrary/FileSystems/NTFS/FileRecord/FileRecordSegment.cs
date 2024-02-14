@@ -93,9 +93,9 @@ namespace DiskAccessLibrary.FileSystems.NTFS
 
                 m_immediateAttributes.Add(attribute);
                 position += (int)attribute.RecordLengthOnDisk;
-                if (position > buffer.Length)
+                if (position > offset + segmentLength - 4)
                 {
-                    throw new InvalidDataException("Invalid attribute length");
+                    throw new InvalidDataException("Invalid file record segment, attribute length exceed segment boundary");
                 }
             }
 
