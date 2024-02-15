@@ -29,7 +29,7 @@ namespace DiskAccessLibrary.FileSystems.NTFS
         public ulong FileSize;        // The real size of a file with all of its runs combined (not valid if the LowestVCN member is nonzero).
         public ulong ValidDataLength; // Actual data written so far, (always less than or equal to the file size).
                                       // Data beyond ValidDataLength should be treated as 0 (not valid if the LowestVCN member is nonzero).
-        // ulong TotalAllocated;      // Presented for the first file record of a compressed stream.
+        public ulong TotalAllocated;  // Presented for the first file record of a compressed stream.
         private DataRunSequence m_dataRunSequence;
 
         public NonResidentAttributeRecord(AttributeType attributeType, string name) : base(attributeType, name, false)
@@ -61,13 +61,12 @@ namespace DiskAccessLibrary.FileSystems.NTFS
             AllocatedLength = LittleEndianConverter.ToUInt64(buffer, offset + 0x28);
             FileSize = LittleEndianConverter.ToUInt64(buffer, offset + 0x30);
             ValidDataLength = LittleEndianConverter.ToUInt64(buffer, offset + 0x38);
-            m_dataRunSequence = new DataRunSequence(buffer, offset + mappingPairsOffset, (int)this.RecordLengthOnDisk - mappingPairsOffset);
-
             if (CompressionUnit != 0)
             {
-                throw new NotSupportedException("NTFS compression is not supported");
+                TotalAllocated = LittleEndianConverter.ToUInt64(buffer, offset + 0x40);
             }
 
+            m_dataRunSequence = new DataRunSequence(buffer, offset + mappingPairsOffset, (int)this.RecordLengthOnDisk - mappingPairsOffset);
             if ((HighestVCN - LowestVCN + 1) != m_dataRunSequence.DataClusterCount)
             {
                 throw new InvalidDataException("Invalid non-resident attribute record");

@@ -1,4 +1,4 @@
-/* Copyright (C) 2014-2019 Tal Aloni <tal.aloni.il@gmail.com>. All rights reserved.
+/* Copyright (C) 2014-2024 Tal Aloni <tal.aloni.il@gmail.com>. All rights reserved.
  * 
  * You can redistribute this program and/or modify it under the terms of
  * the GNU Lesser Public License as published by the Free Software Foundation,
@@ -26,6 +26,11 @@ namespace DiskAccessLibrary.FileSystems.NTFS
             m_fileRecord = fileRecord;
             m_attributeRecord = attributeRecord;
             m_contentType = GetContentType(fileRecord, attributeRecord.AttributeType);
+
+            if (m_attributeRecord.CompressionUnit != 0)
+            {
+                throw new NotSupportedException("NTFS compression is not supported");
+            }
         }
 
         /// <param name="clusterVCN">Cluster index</param>
