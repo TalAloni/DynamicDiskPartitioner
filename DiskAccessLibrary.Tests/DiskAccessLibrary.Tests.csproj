@@ -2,11 +2,12 @@
 
   <PropertyGroup>
     <TargetFrameworks>net40</TargetFrameworks>
-    <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
     <AssemblyName>DiskAccessLibrary.Tests</AssemblyName>
     <RootNamespace>DiskAccessLibrary.Tests</RootNamespace>
     <OutputType>Exe</OutputType>
     <Configurations>Debug;Release;Publish</Configurations>
+    <Authors>Tal Aloni</Authors>
+    <Copyright>Copyright © Tal Aloni 2018-2024</Copyright>
   </PropertyGroup>
 
   <ItemGroup>

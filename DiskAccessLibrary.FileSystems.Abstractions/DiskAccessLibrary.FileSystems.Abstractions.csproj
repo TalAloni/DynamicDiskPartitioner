@@ -2,7 +2,6 @@
 
   <PropertyGroup>
     <TargetFrameworks>net20;net40;netstandard2.0</TargetFrameworks>
-    <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
     <AssemblyName>DiskAccessLibrary.FileSystems.Abstractions</AssemblyName>
     <Version>1.0.0</Version>
     <NoWarn>1573;1591</NoWarn>
@@ -14,6 +13,8 @@
     <PackageProjectUrl>https://github.com/TalAloni/DynamicDiskPartitioner</PackageProjectUrl>
     <RepositoryUrl>https://github.com/TalAloni/DynamicDiskPartitioner</RepositoryUrl>
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
+    <Authors>Tal Aloni</Authors>
+    <Copyright>Copyright © Tal Aloni 2012-2024</Copyright>
   </PropertyGroup>
 
 </Project>
