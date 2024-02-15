@@ -46,7 +46,17 @@ namespace DiskAccessLibrary.FileSystems.NTFS
             }
             LowestVCN = (long)LittleEndianConverter.ToUInt64(buffer, offset + 0x10);
             HighestVCN = (long)LittleEndianConverter.ToUInt64(buffer, offset + 0x18);
+            if (LowestVCN > HighestVCN + 1)
+            {
+                throw new InvalidDataException("Invalid non-resident attribute record, LowestVCN must be less than or equal to HighestVCN + 1");
+            }
+
             ushort mappingPairsOffset = LittleEndianConverter.ToUInt16(buffer, offset + 0x20);
+            if (mappingPairsOffset > RecordLengthOnDisk)
+            {
+                throw new InvalidDataException("Invalid non-resident attribute record, mappingPairsOffset exceed attribute boundary");
+            }
+
             CompressionUnit = ByteReader.ReadByte(buffer, offset + 0x22);
             AllocatedLength = LittleEndianConverter.ToUInt64(buffer, offset + 0x28);
             FileSize = LittleEndianConverter.ToUInt64(buffer, offset + 0x30);
