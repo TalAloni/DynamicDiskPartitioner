@@ -26,9 +26,6 @@
     <AssemblyAttribute Include="System.Runtime.CompilerServices.InternalsVisibleTo">
       <_Parameter1>DiskAccessLibrary.Tests</_Parameter1>
     </AssemblyAttribute>
-    <AssemblyAttribute Include="System.Runtime.CompilerServices.InternalsVisibleTo">
-      <_Parameter1>DiskAccessLibrary.Win32</_Parameter1>
-    </AssemblyAttribute>
   </ItemGroup>
 
   <Target Name="ILRepack" Condition="'$(Configuration)' == 'Publish'" AfterTargets="AfterBuild">
