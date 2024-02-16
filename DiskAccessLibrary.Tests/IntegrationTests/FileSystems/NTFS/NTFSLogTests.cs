@@ -1,61 +1,76 @@
-/* Copyright (C) 2018-2019 Tal Aloni <tal.aloni.il@gmail.com>. All rights reserved.
+/* Copyright (C) 2018-2024 Tal Aloni <tal.aloni.il@gmail.com>. All rights reserved.
  * 
  * You can redistribute this program and/or modify it under the terms of
  * the GNU Lesser Public License as published by the Free Software Foundation,
  * either version 3 of the License, or (at your option) any later version.
  */
 using System;
-using System.Collections.Generic;
 using System.IO;
-using DiskAccessLibrary;
 using DiskAccessLibrary.FileSystems.NTFS;
+using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Utilities;
 
-namespace DiskAccessLibrary.Tests
+namespace DiskAccessLibrary.Tests.IntegrationTests.FileSystems.NTFS
 {
+    [TestClass]
     public class NTFSLogTests
     {
-        public static void Test(string path, long size)
+        private const long DiskSizeInBytes = 100 * 1024 * 1024;
+
+        private VirtualHardDisk m_disk;
+
+        [TestInitialize]
+        public void Initialize()
         {
-            TestRedo(path, size);
+            string diskPath = $@"C:\LogRedoTest_{Guid.NewGuid()}.vhd";
+            m_disk = VirtualHardDisk.CreateFixedDisk(diskPath, DiskSizeInBytes);
         }
 
-        public static void TestRedo(string path, long size)
+        [TestCleanup]
+        public void Cleanup()
         {
-            int bytesPerCluster = 512;
-            while (bytesPerCluster <= 65536)
+            File.Delete(m_disk.Path);
+        }
+
+        [DataTestMethod]
+        [DataRow(512)]
+        [DataRow(1024)]
+        [DataRow(2048)]
+        [DataRow(4096)]
+        [DataRow(8192)]
+        [DataRow(16384)]
+        [DataRow(32768)]
+        [DataRow(65536)]
+        public void WhenRedoRecordPresent_ChkdskReportNoErrors(int bytesPerCluster)
+        {
+            Assert.IsTrue(VHDMountHelper.IsVHDMountInstalled(), "vhdmount.exe was not found! Please install Virtual Server 2005 R2 SP1 (select the VHDMount component)");
+
+            string volumeLabel = "RedoTest_" + bytesPerCluster.ToString();
+            string fileName = "Test.txt";
+            byte[] fileData = System.Text.Encoding.ASCII.GetBytes("Redone");
+            CreateVolumeWithPendingFileCreation(m_disk, bytesPerCluster, volumeLabel, fileName, fileData);
+
+            VHDMountHelper.MountVHD(m_disk.Path);
+            string driveName = MountHelper.WaitForDriveToMount(volumeLabel);
+            if (driveName == null)
             {
-                string volumeLabel = "RedoTest_" + bytesPerCluster.ToString();
-                string fileName = "Test.txt";
-                byte[] fileData = System.Text.Encoding.ASCII.GetBytes("Redone");
-                CreateVolumeWithPendingFileCreation(path, size, bytesPerCluster, volumeLabel, fileName, fileData);
-
-                VHDMountHelper.MountVHD(path);
-                string driveName = MountHelper.WaitForDriveToMount(volumeLabel);
-                if (driveName == null)
-                {
-                    throw new Exception("Timeout waiting for volume to mount");
-                }
-                bool isErrorFree = ChkdskHelper.Chkdsk(driveName);
-                if (!isErrorFree)
-                {
-                    throw new InvalidDataException("CHKDSK reported errors");
-                }
-                byte[] bytesRead = File.ReadAllBytes(driveName + fileName);
-                if (!ByteUtils.AreByteArraysEqual(fileData, bytesRead))
-                {
-                    throw new InvalidDataException("Test failed");
-                }
-                VHDMountHelper.UnmountVHD(path);
-                File.Delete(path);
-
-                bytesPerCluster = bytesPerCluster * 2;
+                throw new Exception("Timeout waiting for volume to mount");
             }
+            bool isErrorFree = ChkdskHelper.Chkdsk(driveName);
+            if (!isErrorFree)
+            {
+                throw new InvalidDataException("CHKDSK reported errors");
+            }
+            byte[] bytesRead = File.ReadAllBytes(driveName + fileName);
+            if (!ByteUtils.AreByteArraysEqual(fileData, bytesRead))
+            {
+                throw new InvalidDataException("Test failed");
+            }
+            VHDMountHelper.UnmountVHD(m_disk.Path);
         }
 
-        public static void CreateVolumeWithPendingFileCreation(string path, long size, int bytesPerCluster, string volumeLabel, string fileName, byte[] fileData)
+        public static void CreateVolumeWithPendingFileCreation(VirtualHardDisk disk, int bytesPerCluster, string volumeLabel, string fileName, byte[] fileData)
         {
-            VirtualHardDisk disk = VirtualHardDisk.CreateFixedDisk(path, size);
             disk.ExclusiveLock();
             Partition partition = NTFSFormatTests.CreatePrimaryPartition(disk);
             NTFSVolume volume = NTFSVolumeCreator.Format(partition, bytesPerCluster, volumeLabel);

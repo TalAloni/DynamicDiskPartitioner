@@ -1,97 +1,107 @@
-/* Copyright (C) 2018 Tal Aloni <tal.aloni.il@gmail.com>. All rights reserved.
+/* Copyright (C) 2018-2024 Tal Aloni <tal.aloni.il@gmail.com>. All rights reserved.
  * 
  * You can redistribute this program and/or modify it under the terms of
  * the GNU Lesser Public License as published by the Free Software Foundation,
  * either version 3 of the License, or (at your option) any later version.
  */
 using System;
-using System.Collections.Generic;
 using System.IO;
-using DiskAccessLibrary;
+using System.Threading;
 using DiskAccessLibrary.Win32;
+using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Utilities;
 
-namespace DiskAccessLibrary.Tests
+namespace DiskAccessLibrary.Tests.UnitTests
 {
+    [TestClass]
     public class RawDiskImageTests
     {
-        public static void Test(string path, long size)
+        private const long DiskSizeInBytes = 100 * 1024 * 1024;
+
+        private RawDiskImage m_disk;
+
+        [TestInitialize]
+        public void Initialize()
         {
-            TestWriteRead(path, size);
-            File.Delete(path);
-            TestOverlappedWriteAndOverlappedRead(path, size);
-            File.Delete(path);
-            TestSimultaneousWriteAndRead(path, size);
-            File.Delete(path);
+            string diskPath = $@"C:\RawDiskTest_{Guid.NewGuid()}.vhd";
+            m_disk = RawDiskImage.Create(diskPath, DiskSizeInBytes);
         }
 
-        public static void TestWriteRead(string path, long size)
+        [TestCleanup]
+        public void Cleanup()
         {
-            RawDiskImage disk = RawDiskImage.Create(path, size);
-            disk.ExclusiveLock();
-            for (long sectorIndex = 0; sectorIndex < disk.TotalSectors; sectorIndex += PhysicalDisk.MaximumDirectTransferSizeLBA)
+            // File may still be in use for a brief period after vhdmount unmount
+            Thread.Sleep(250);
+            File.Delete(m_disk.Path);
+        }
+
+        [TestMethod]
+        public void TestWriteRead()
+        {
+            m_disk.ExclusiveLock();
+            for (long sectorIndex = 0; sectorIndex < m_disk.TotalSectors; sectorIndex += PhysicalDisk.MaximumDirectTransferSizeLBA)
             {
-                long leftToWrite = disk.TotalSectors - sectorIndex;
+                long leftToWrite = m_disk.TotalSectors - sectorIndex;
                 int sectorsToWrite = (int)Math.Min(leftToWrite, PhysicalDisk.MaximumDirectTransferSizeLBA);
                 byte[] pattern = GetTestPattern(sectorIndex, sectorsToWrite, RawDiskImage.DefaultBytesPerSector);
-                disk.WriteSectors(sectorIndex, pattern);
+                m_disk.WriteSectors(sectorIndex, pattern);
             }
 
-            for (long sectorIndex = 0; sectorIndex < disk.TotalSectors; sectorIndex += PhysicalDisk.MaximumDirectTransferSizeLBA)
+            for (long sectorIndex = 0; sectorIndex < m_disk.TotalSectors; sectorIndex += PhysicalDisk.MaximumDirectTransferSizeLBA)
             {
-                long leftToRead = disk.TotalSectors - sectorIndex;
+                long leftToRead = m_disk.TotalSectors - sectorIndex;
                 int sectorsToRead = (int)Math.Min(leftToRead, PhysicalDisk.MaximumDirectTransferSizeLBA);
                 byte[] pattern = GetTestPattern(sectorIndex, sectorsToRead, RawDiskImage.DefaultBytesPerSector);
-                byte[] sectorBytes = disk.ReadSectors(sectorIndex, sectorsToRead);
+                byte[] sectorBytes = m_disk.ReadSectors(sectorIndex, sectorsToRead);
                 if (!ByteUtils.AreByteArraysEqual(pattern, sectorBytes))
                 {
                     throw new InvalidDataException("Test failed");
                 }
             }
 
-            disk.ReleaseLock();
+            m_disk.ReleaseLock();
         }
 
-        public static void TestOverlappedWriteAndOverlappedRead(string path, long size)
+        [TestMethod]
+        public void TestOverlappedWriteAndOverlappedRead()
         {
-            RawDiskImage disk = RawDiskImage.Create(path, size);
-            disk.ExclusiveLock(true);
-            int totalSectors = (int)Math.Min(disk.TotalSectors, Int32.MaxValue);
-            Parallel.For(0, totalSectors, 1, 4, delegate(int sectorIndex)
+            m_disk.ExclusiveLock(true);
+            int totalSectors = (int)Math.Min(m_disk.TotalSectors, int.MaxValue);
+            Parallel.For(0, totalSectors, 1, 4, delegate (int sectorIndex)
             {
                 byte[] pattern = GetTestPattern(sectorIndex, RawDiskImage.DefaultBytesPerSector);
-                disk.WriteSectors(sectorIndex, pattern);
+                m_disk.WriteSectors(sectorIndex, pattern);
             });
 
-            Parallel.For(0, totalSectors, 1, 4, delegate(int sectorIndex)
+            Parallel.For(0, totalSectors, 1, 4, delegate (int sectorIndex)
             {
                 byte[] pattern = GetTestPattern(sectorIndex, RawDiskImage.DefaultBytesPerSector);
-                byte[] sectorBytes = disk.ReadSector(sectorIndex);
+                byte[] sectorBytes = m_disk.ReadSector(sectorIndex);
                 if (!ByteUtils.AreByteArraysEqual(pattern, sectorBytes))
                 {
                     throw new InvalidDataException("Test failed");
                 }
             });
 
-            disk.ReleaseLock();
+            m_disk.ReleaseLock();
         }
 
-        public static void TestSimultaneousWriteAndRead(string path, long size)
+        [TestMethod]
+        public void TestSimultaneousWriteAndRead()
         {
-            RawDiskImage disk = RawDiskImage.Create(path, size);
-            disk.ExclusiveLock(true);
-            int totalSectors = (int)Math.Min(disk.TotalSectors, Int32.MaxValue);
-            Parallel.For(0, totalSectors / 2, 1, 4, delegate(int sectorHint)
+            m_disk.ExclusiveLock(true);
+            int totalSectors = (int)Math.Min(m_disk.TotalSectors, Int32.MaxValue);
+            Parallel.For(0, totalSectors / 2, 1, 4, delegate (int sectorHint)
             {
                 long sectorIndex = sectorHint * 2;
                 byte[] pattern = GetTestPattern(sectorIndex, 2, RawDiskImage.DefaultBytesPerSector);
-                disk.WriteSectors(sectorIndex, pattern);
+                m_disk.WriteSectors(sectorIndex, pattern);
 
                 if (sectorIndex > 100)
                 {
                     long sectorIndexToVerify = sectorIndex - 100;
                     byte[] expectedPattern = GetTestPattern(sectorIndexToVerify, 2, RawDiskImage.DefaultBytesPerSector);
-                    byte[] sectorBytes = disk.ReadSectors(sectorIndexToVerify, 2);
+                    byte[] sectorBytes = m_disk.ReadSectors(sectorIndexToVerify, 2);
                     if (!ByteUtils.AreByteArraysEqual(sectorBytes, expectedPattern))
                     {
                         throw new InvalidDataException("Test failed");
@@ -99,7 +109,7 @@ namespace DiskAccessLibrary.Tests
                 }
             });
 
-            disk.ReleaseLock();
+            m_disk.ReleaseLock();
         }
 
         private static byte[] GetTestPattern(long sectorIndex, int bytesPerSector)

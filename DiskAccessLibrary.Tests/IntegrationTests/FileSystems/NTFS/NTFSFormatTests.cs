@@ -1,48 +1,66 @@
-/* Copyright (C) 2018-2019 Tal Aloni <tal.aloni.il@gmail.com>. All rights reserved.
+/* Copyright (C) 2018-2024 Tal Aloni <tal.aloni.il@gmail.com>. All rights reserved.
  * 
  * You can redistribute this program and/or modify it under the terms of
  * the GNU Lesser Public License as published by the Free Software Foundation,
  * either version 3 of the License, or (at your option) any later version.
  */
 using System;
-using System.Collections.Generic;
 using System.IO;
-using DiskAccessLibrary;
-using DiskAccessLibrary.FileSystems;
 using DiskAccessLibrary.FileSystems.NTFS;
-using Utilities;
+using Microsoft.VisualStudio.TestTools.UnitTesting;
 
-namespace DiskAccessLibrary.Tests
+namespace DiskAccessLibrary.Tests.IntegrationTests.FileSystems.NTFS
 {
+    [TestClass]
     public class NTFSFormatTests
     {
-        public static void Test(string path, long size)
-        {
-            int bytesPerCluster = 512;
-            while (bytesPerCluster <= 65536)
-            {
-                string volumeLabel = "FormatTest_" + bytesPerCluster.ToString();
-                VirtualHardDisk disk = VirtualHardDisk.CreateFixedDisk(path, size);
-                disk.ExclusiveLock();
-                Partition partition = CreatePrimaryPartition(disk);
-                NTFSVolumeCreator.Format(partition, bytesPerCluster, volumeLabel);
-                disk.ReleaseLock();
-                VHDMountHelper.MountVHD(path);
-                string driveName = MountHelper.WaitForDriveToMount(volumeLabel);
-                if (driveName == null)
-                {
-                    throw new Exception("Timeout waiting for volume to mount");
-                }
-                bool isErrorFree = ChkdskHelper.Chkdsk(driveName);
-                if (!isErrorFree)
-                {
-                    throw new InvalidDataException("CHKDSK reported errors");
-                }
-                VHDMountHelper.UnmountVHD(path);
-                File.Delete(path);
+        private const long DiskSizeInBytes = 100 * 1024 * 1024;
+        
+        private VirtualHardDisk m_disk;
 
-                bytesPerCluster = bytesPerCluster * 2;
+        [TestInitialize]
+        public void Initialize()
+        {
+            string diskPath = $@"C:\FormatTest_{Guid.NewGuid()}.vhd";
+            m_disk = VirtualHardDisk.CreateFixedDisk(diskPath, DiskSizeInBytes);
+        }
+
+        [TestCleanup]
+        public void Cleanup()
+        {
+            File.Delete(m_disk.Path);
+        }
+
+        [DataTestMethod]
+        [DataRow(512)]
+        [DataRow(1024)]
+        [DataRow(2048)]
+        [DataRow(4096)]
+        [DataRow(8192)]
+        [DataRow(16384)]
+        [DataRow(32768)]
+        [DataRow(65536)]
+        public void WhenVolumeIsFormatted_ChkdskReportNoErrors(int bytesPerCluster)
+        {
+            Assert.IsTrue(VHDMountHelper.IsVHDMountInstalled(), "vhdmount.exe was not found! Please install Virtual Server 2005 R2 SP1 (select the VHDMount component)");
+
+            string volumeLabel = "FormatTest_" + bytesPerCluster.ToString();
+            m_disk.ExclusiveLock();
+            Partition partition = CreatePrimaryPartition(m_disk);
+            NTFSVolumeCreator.Format(partition, bytesPerCluster, volumeLabel);
+            m_disk.ReleaseLock();
+            VHDMountHelper.MountVHD(m_disk.Path);
+            string driveName = MountHelper.WaitForDriveToMount(volumeLabel);
+            if (driveName == null)
+            {
+                throw new Exception("Timeout waiting for volume to mount");
             }
+            bool isErrorFree = ChkdskHelper.Chkdsk(driveName);
+            if (!isErrorFree)
+            {
+                throw new InvalidDataException("CHKDSK reported errors");
+            }
+            VHDMountHelper.UnmountVHD(m_disk.Path);
         }
 
         public static Partition CreatePrimaryPartition(Disk disk)

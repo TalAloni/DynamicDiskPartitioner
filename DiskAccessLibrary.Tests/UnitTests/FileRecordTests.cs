@@ -1,21 +1,25 @@
+/* Copyright (C) 2018-2024 Tal Aloni <tal.aloni.il@gmail.com>. All rights reserved.
+ * 
+ * You can redistribute this program and/or modify it under the terms of
+ * the GNU Lesser Public License as published by the Free Software Foundation,
+ * either version 3 of the License, or (at your option) any later version.
+ */
 using System;
 using System.Collections.Generic;
 using DiskAccessLibrary.FileSystems.NTFS;
+using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Utilities;
 
-namespace DiskAccessLibrary.Tests
+namespace DiskAccessLibrary.Tests.UnitTests
 {
+    [TestClass]
     public class FileRecordTests
     {
-        public static void Tests()
-        {
-            AttributeCloneTest();
-        }
-
         /// <summary>
         /// This test checks that attributes are deep cloned when assembled from FileRecordSegment list and sliced into FileRecordSegment list.
         /// </summary>
-        public static void AttributeCloneTest()
+        [TestMethod]
+        public void AttributeCloneTest()
         {
             byte minorNTFSVersion = 1;
             int bytesPerFileRecordSegment = 1024;
