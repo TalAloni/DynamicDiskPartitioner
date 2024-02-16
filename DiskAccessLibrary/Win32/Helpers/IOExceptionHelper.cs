@@ -1,4 +1,4 @@
-/* Copyright (C) 2018 Tal Aloni <tal.aloni.il@gmail.com>. All rights reserved.
+/* Copyright (C) 2018-2024 Tal Aloni <tal.aloni.il@gmail.com>. All rights reserved.
  * 
  * You can redistribute this program and/or modify it under the terms of
  * the GNU Lesser Public License as published by the Free Software Foundation,
@@ -37,37 +37,37 @@ namespace DiskAccessLibrary
             }
         }
 
-        /// <param name="errorCode">The Win32 error code associated with this exception</param>
-        internal static void ThrowIOError(int errorCode, string defaultMessage)
+        /// <param name="win32ErrorCode">The Win32 error code associated with the exception to throw</param>
+        public static void ThrowIOError(int win32ErrorCode, string defaultMessage)
         {
-            if (errorCode == (int)Win32Error.ERROR_ACCESS_DENIED)
+            if (win32ErrorCode == (int)Win32Error.ERROR_ACCESS_DENIED)
             {
                 // UnauthorizedAccessException will be thrown if stream was opened only for writing or if a user is not an administrator
                 throw new UnauthorizedAccessException(defaultMessage);
             }
-            else if (errorCode == (int)Win32Error.ERROR_SHARING_VIOLATION)
+            else if (win32ErrorCode == (int)Win32Error.ERROR_SHARING_VIOLATION)
             {
                 throw new SharingViolationException(defaultMessage);
             }
-            else if (errorCode == (int)Win32Error.ERROR_SECTOR_NOT_FOUND)
+            else if (win32ErrorCode == (int)Win32Error.ERROR_SECTOR_NOT_FOUND)
             {
                 string message = defaultMessage + " The sector does not exist.";
-                int hresult = GetHResultFromWin32Error((Win32Error)errorCode);
+                int hresult = GetHResultFromWin32Error((Win32Error)win32ErrorCode);
                 throw new IOException(message, hresult);
             }
-            else if (errorCode == (int)Win32Error.ERROR_CRC)
+            else if (win32ErrorCode == (int)Win32Error.ERROR_CRC)
             {
                 string message = defaultMessage + " Data Error (Cyclic Redundancy Check).";
                 throw new CyclicRedundancyCheckException(message);
             }
-            else if (errorCode == (int)Win32Error.ERROR_NO_SYSTEM_RESOURCES)
+            else if (win32ErrorCode == (int)Win32Error.ERROR_NO_SYSTEM_RESOURCES)
             {
                 throw new OutOfMemoryException();
             }
             else
             {
-                string message = defaultMessage + String.Format(" Win32 Error: {0}", errorCode);
-                int hresult = GetHResultFromWin32Error((Win32Error)errorCode);
+                string message = defaultMessage + String.Format(" Win32 Error: {0}", win32ErrorCode);
+                int hresult = GetHResultFromWin32Error((Win32Error)win32ErrorCode);
                 throw new IOException(message, hresult);
             }
         }
