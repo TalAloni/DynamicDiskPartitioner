@@ -6,6 +6,7 @@
     <AssemblyName>DynamicDiskPartitioner</AssemblyName>
     <AssemblyTitle>Dynamic Disk Partitioner</AssemblyTitle>
     <Product>Dynamic Disk Partitioner</Product>
+    <Version>1.6.0</Version>
     <RootNamespace>DynamicDiskPartitioner</RootNamespace>
     <UseWindowsForms>true</UseWindowsForms>
     <Configurations>Debug;Release</Configurations>

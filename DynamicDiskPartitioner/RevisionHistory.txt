@@ -135,3 +135,5 @@ Revision History:
 1.5.8 - Skip reading NTFS restart record during Export.
 
 1.5.9 - Minor improvements.
+
+1.6.0 - Updated DiskAccessLibrary to v1.6.1 (NTFS related improvements).
