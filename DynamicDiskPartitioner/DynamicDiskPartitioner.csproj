@@ -8,7 +8,7 @@
     <Product>Dynamic Disk Partitioner</Product>
     <RootNamespace>DynamicDiskPartitioner</RootNamespace>
     <UseWindowsForms>true</UseWindowsForms>
-    <Configurations>Debug;Release;Publish</Configurations>
+    <Configurations>Debug;Release</Configurations>
     <ApplicationIcon>Icons\HardDisk.ico</ApplicationIcon>
     <Authors>Tal Aloni</Authors>
     <Copyright>Copyright © Tal Aloni 2012-2024</Copyright>
@@ -19,13 +19,12 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\DiskAccessLibrary.Win32\DiskAccessLibrary.Win32.csproj" />
-    <ProjectReference Include="..\DiskAccessLibrary\DiskAccessLibrary.csproj" />
-    <ProjectReference Include="..\DiskAccessLibrary.FileSystems.Abstractions\DiskAccessLibrary.FileSystems.Abstractions.csproj" />
+    <PackageReference Include="DiskAccessLibrary" Version="1.6.1" />
+    <PackageReference Include="DiskAccessLibrary.Win32" Version="1.6.1" />
   </ItemGroup>
   
-  <ItemGroup Condition="'$(Configuration)' != 'Publish'">  
-      <ProjectReference Include="..\Utilities\Utilities.csproj" />
+  <ItemGroup>
+    <ProjectReference Include="..\Utilities\Utilities.csproj" />
   </ItemGroup>
 
   <ItemGroup Condition="'$(TargetFramework)' == 'net20' Or '$(TargetFramework)' == 'net40'">
@@ -37,12 +36,6 @@
       <Version>5.0.0</Version>
     </PackageReference>
   </ItemGroup>
-
-  <Target Name="RemoveMergedReferences" AfterTargets="ResolveAssemblyReferences">
-    <ItemGroup Condition="'$(Configuration)' == 'Publish'">
-      <ReferencePath Remove="@(ReferencePath)" Condition="'%(FileName)' == 'Utilities'" />
-    </ItemGroup>
-  </Target>
   
   <Target Name="PostBuild" AfterTargets="PostBuildEvent" Condition="'$(Configuration)' == 'Release' And '$(TargetFramework)' != 'netcoreapp3.1'">
       <Exec Command="&quot;C:\Program Files\Microsoft SDKs\Windows\v6.1\Bin\mt.exe&quot; -nologo -manifest &quot;$(ProjectDir)Properties\DynamicDiskPartitioner.exe.manifest&quot; -outputresource:&quot;$(TargetPath)&quot;" />
